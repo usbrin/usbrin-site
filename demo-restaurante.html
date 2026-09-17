@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brasa & Mesa — Case demonstrativo USBRIN</title>
+<link rel="icon" href="data:,">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&display=swap');
+
+:root{
+  --bg:#1B1712;
+  --bg-2:#231D16;
+  --card:#2A2219;
+  --accent:#D98E4A;
+  --accent-2:#E8B074;
+  --text:#F5EFE6;
+  --text-secondary:#C9BBA6;
+  --border:rgba(245,239,230,0.1);
+  --font-display:'Fraunces', serif;
+  --font-body:'Inter', sans-serif;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-body);line-height:1.6;}
+img{max-width:100%;display:block;}
+a{color:inherit;text-decoration:none;}
+.container{max-width:1140px;margin:0 auto;padding:0 28px;}
+h1,h2,h3{font-family:var(--font-display);font-weight:600;line-height:1.15;margin:0;}
+.eyebrow{display:block;font-size:12.5px;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent-2);margin-bottom:14px;font-weight:600;}
+section{padding:96px 0;}
+@media(max-width:720px){ section{padding:64px 0; } }
+
+/* case bar */
+.case-bar{
+  background:#100E0A;
+  color:#C9BBA6;
+  font-size:12.5px;
+  text-align:center;
+  padding:10px 16px;
+  border-bottom:1px solid var(--border);
+}
+.case-bar a{color:var(--accent-2);font-weight:600; margin-left:6px;}
+
+/* header */
+header{
+  position:sticky; top:0; z-index:50;
+  background:rgba(27,23,18,0.85);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+}
+header .container{display:flex;align-items:center;justify-content:space-between;height:76px;}
+.logo{font-family:var(--font-display);font-size:22px;font-weight:600;letter-spacing:0.01em;}
+.logo span{color:var(--accent-2);}
+nav{display:flex;gap:30px;}
+nav a{font-size:14px;color:var(--text-secondary);}
+nav a:hover{color:var(--text);}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:12px 24px;border-radius:999px;
+  font-size:14px;font-weight:600;
+  background:var(--accent);color:#1B1712;
+  transition:transform .2s;
+}
+.btn:hover{transform:translateY(-2px);}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text);}
+@media(max-width:800px){ nav{display:none;} }
+
+/* hero */
+.hero{
+  padding:90px 0 80px;
+  background:radial-gradient(ellipse at top right, rgba(217,142,74,0.16), transparent 55%);
+  display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:center;
+}
+.hero h1{font-size:clamp(34px,4.6vw,54px);margin-bottom:20px;}
+.hero p{color:var(--text-secondary);font-size:17px;max-width:42ch;margin-bottom:32px;}
+.hero-actions{display:flex;gap:14px;flex-wrap:wrap;}
+.hero-art{
+  aspect-ratio:4/3;border-radius:20px;overflow:hidden;
+  background:linear-gradient(135deg,#E8B074,#8a4f1e);
+  position:relative;
+  display:flex;align-items:center;justify-content:center;
+}
+.hero-art svg{width:60%;opacity:0.9;}
+@media(max-width:860px){ .hero{grid-template-columns:1fr;} }
+
+/* pratos */
+.section-head{max-width:560px;margin-bottom:48px;}
+.section-head p{color:var(--text-secondary);}
+.dishes{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
+.dish-card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;}
+.dish-img{aspect-ratio:4/3;background:linear-gradient(135deg,#8a4f1e,#3a2312);display:flex;align-items:center;justify-content:center;}
+.dish-img svg{width:40%;color:var(--accent-2);}
+.dish-body{padding:18px 20px;}
+.dish-body h3{font-size:17px;margin-bottom:6px;}
+.dish-body p{font-size:13.5px;color:var(--text-secondary);margin:0;}
+.dish-price{color:var(--accent-2);font-weight:600;font-size:14px;margin-top:10px;}
+@media(max-width:860px){ .dishes{grid-template-columns:1fr 1fr;} }
+@media(max-width:560px){ .dishes{grid-template-columns:1fr;} }
+
+/* cardapio */
+.menu-alt{background:var(--bg-2);}
+.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;}
+.menu-list h3{font-size:15px;color:var(--accent-2);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:18px;}
+.menu-item{display:flex;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px dashed var(--border);}
+.menu-item .name{font-weight:600;font-size:15px;}
+.menu-item .desc{font-size:13px;color:var(--text-secondary);margin-top:4px;}
+.menu-item .price{color:var(--accent-2);font-weight:600;white-space:nowrap;}
+@media(max-width:720px){ .menu-grid{grid-template-columns:1fr;} }
+
+/* galeria */
+.gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.gallery div{aspect-ratio:1;border-radius:12px;background:linear-gradient(135deg,#E8B074,#3a2312);}
+.gallery div:nth-child(2){background:linear-gradient(135deg,#c97b3a,#2a1c0f);}
+.gallery div:nth-child(3){background:linear-gradient(135deg,#8a4f1e,#1B1712);}
+.gallery div:nth-child(4){background:linear-gradient(135deg,#e8b074,#8a4f1e);}
+@media(max-width:720px){ .gallery{grid-template-columns:1fr 1fr;} }
+
+/* sobre */
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:center;}
+.about-grid p{color:var(--text-secondary);font-size:16px;margin-bottom:16px;}
+.about-art{aspect-ratio:1;border-radius:20px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;}
+.about-art svg{width:34%;color:var(--accent-2);}
+@media(max-width:860px){ .about-grid{grid-template-columns:1fr;} .about-art{order:-1;height:220px;} }
+
+/* info: localização/horário/contato */
+.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
+.info-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;}
+.info-card svg{width:26px;height:26px;color:var(--accent-2);margin-bottom:16px;}
+.info-card h3{font-size:16px;margin-bottom:10px;font-family:var(--font-body);font-weight:600;}
+.info-card p{font-size:14px;color:var(--text-secondary);margin:0;}
+@media(max-width:860px){ .info-grid{grid-template-columns:1fr;} }
+
+/* cta back to usbrin */
+.produced-by{
+  background:var(--bg-2);
+  border-top:1px solid var(--border);
+  padding:40px 0;
+  text-align:center;
+}
+.produced-by p{color:var(--text-secondary);font-size:14px;margin-bottom:16px;}
+footer{padding:36px 0;text-align:center;color:var(--text-secondary);font-size:13px;}
+</style>
+</head>
+<body>
+
+<div class="case-bar">Case demonstrativo criado pela USBRIN — não é um cliente real. <a href="index.html">← Voltar para USBRIN</a></div>
+
+<header>
+  <div class="container">
+    <div class="logo">Brasa <span>&amp; Mesa</span></div>
+    <nav>
+      <a href="#pratos">Pratos</a>
+      <a href="#cardapio">Cardápio</a>
+      <a href="#galeria">Galeria</a>
+      <a href="#sobre">Sobre</a>
+      <a href="#contato">Contato</a>
+    </nav>
+    <a href="#contato" class="btn">Reservar mesa</a>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="container" style="display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:center;">
+    <div>
+      <span class="eyebrow">Cozinha de brasa · Ambiente acolhedor</span>
+      <h1>Sabor que conecta pessoas.</h1>
+      <p>Carnes selecionadas, brasa lenta e um ambiente pensado para boas conversas. Bem-vindo à mesa da Brasa &amp; Mesa.</p>
+      <div class="hero-actions">
+        <a href="#cardapio" class="btn">Ver cardápio</a>
+        <a href="#contato" class="btn btn-outline">Fazer reserva</a>
+      </div>
+    </div>
+    <div class="hero-art">
+      <svg viewBox="0 0 100 100" fill="none" stroke="#1B1712" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="50" cy="50" r="34"/><path d="M50 26v10M50 64v10M26 50h10M64 50h10M35 35l7 7M58 58l7 7M65 35l-7 7M42 58l-7 7"/></svg>
+    </div>
+  </div>
+</section>
+
+<section id="pratos">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Destaques</span>
+      <h2>Pratos que marcam a experiência.</h2>
+    </div>
+    <div class="dishes">
+      <div class="dish-card">
+        <div class="dish-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 3v7a3 3 0 0 0 6 0V3M9 10v11M17 3c-1.7 0-3 2-3 5s1.3 5 3 5v8"/></svg></div>
+        <div class="dish-body">
+          <h3>Picanha na brasa</h3>
+          <p>Cortada na hora, com farofa da casa e vinagrete.</p>
+          <div class="dish-price">R$ 89</div>
+        </div>
+      </div>
+      <div class="dish-card">
+        <div class="dish-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg></div>
+        <div class="dish-body">
+          <h3>Risoto de cogumelos</h3>
+          <p>Arbóreo cremoso com mix de cogumelos frescos.</p>
+          <div class="dish-price">R$ 62</div>
+        </div>
+      </div>
+      <div class="dish-card">
+        <div class="dish-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 12a8 8 0 1 1 16 0"/><path d="M4 12h16"/></svg></div>
+        <div class="dish-body">
+          <h3>Polvo grelhado</h3>
+          <p>Com purê de batata-doce e azeite defumado.</p>
+          <div class="dish-price">R$ 96</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="cardapio" class="menu-alt">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Cardápio</span>
+      <h2>Uma seleção para todos os momentos.</h2>
+    </div>
+    <div class="menu-grid">
+      <div class="menu-list">
+        <h3>Entradas</h3>
+        <div class="menu-item"><div><div class="name">Pão de alho na brasa</div><div class="desc">Com manteiga de ervas</div></div><div class="price">R$ 24</div></div>
+        <div class="menu-item"><div><div class="name">Carpaccio de tomate</div><div class="desc">Manjericão e lascas de queijo</div></div><div class="price">R$ 32</div></div>
+        <div class="menu-item"><div><div class="name">Tábua de frios</div><div class="desc">Seleção de queijos e curados</div></div><div class="price">R$ 58</div></div>
+      </div>
+      <div class="menu-list">
+        <h3>Sobremesas</h3>
+        <div class="menu-item"><div><div class="name">Petit gâteau</div><div class="desc">Com sorvete de creme</div></div><div class="price">R$ 28</div></div>
+        <div class="menu-item"><div><div class="name">Cheesecake de frutas vermelhas</div><div class="desc">Base amanteigada</div></div><div class="price">R$ 26</div></div>
+        <div class="menu-item"><div><div class="name">Doce de leite com queijo</div><div class="desc">Receita da casa</div></div><div class="price">R$ 22</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="galeria">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Galeria</span>
+      <h2>O ambiente da casa.</h2>
+    </div>
+    <div class="gallery">
+      <div></div><div></div><div></div><div></div>
+    </div>
+  </div>
+</section>
+
+<section id="sobre" class="menu-alt">
+  <div class="container about-grid">
+    <div class="about-art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M4 21V9l8-6 8 6v12"/><path d="M9 21v-8h6v8"/></svg></div>
+    <div>
+      <span class="eyebrow">Nossa história</span>
+      <h2 style="font-size:30px;margin-bottom:18px;">Tradição na brasa, todos os dias.</h2>
+      <p>A Brasa &amp; Mesa nasceu da vontade de reunir boa comida e boas conversas em um só lugar. Cada prato é preparado com atenção aos detalhes, do preparo ao acabamento.</p>
+      <p>Um espaço pensado para receber bem, seja num almoço rápido ou num jantar especial.</p>
+    </div>
+  </div>
+</section>
+
+<section id="contato">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Visite-nos</span>
+      <h2>Localização, horário e contato.</h2>
+    </div>
+    <div class="info-grid">
+      <div class="info-card">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        <h3>Localização</h3>
+        <p>Av. das Palmeiras, 482 — Centro</p>
+      </div>
+      <div class="info-card">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        <h3>Horário</h3>
+        <p>Terça a domingo, 18h às 23h30</p>
+      </div>
+      <div class="info-card">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.3 7.6L3 20l1.1-5.4A8.5 8.5 0 1 1 21 11.5Z"/></svg>
+        <h3>Reservas</h3>
+        <p>(69) 9 8888-1234</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="produced-by">
+  <div class="container">
+    <p>Este site é um case demonstrativo desenvolvido pela USBRIN para mostrar o que sua empresa pode ter.</p>
+    <a href="index.html#contato" class="btn">Quero um site assim para meu negócio</a>
+  </div>
+</div>
+
+<footer>Brasa &amp; Mesa — case demonstrativo USBRIN.</footer>
+
+</body>
+</html>
