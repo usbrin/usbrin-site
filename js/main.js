@@ -12,13 +12,27 @@ document.addEventListener('DOMContentLoaded', () => {
   const navToggle = document.querySelector('.nav-toggle');
   const mobileNav = document.querySelector('.mobile-nav');
   if (navToggle && mobileNav) {
-    navToggle.addEventListener('click', () => {
-      const isOpen = mobileNav.classList.toggle('open');
-      navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    const setMenu = (open) => {
+      mobileNav.classList.toggle('open', open);
+      document.body.classList.toggle('menu-open', open);
+      navToggle.setAttribute('aria-expanded', String(open));
+      navToggle.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
+    };
+    navToggle.addEventListener('click', () => setMenu(!mobileNav.classList.contains('open')));
+    mobileNav.querySelectorAll('a').forEach(link => link.addEventListener('click', () => {
+      setMenu(false);
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) { target.setAttribute('tabindex', '-1'); target.focus({preventScroll:true}); }
+    }));
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && mobileNav.classList.contains('open')) { setMenu(false); navToggle.focus(); }
+      if (event.key === 'Tab' && mobileNav.classList.contains('open')) {
+        const links = [...mobileNav.querySelectorAll('a')];
+        if (event.shiftKey && document.activeElement === navToggle) { event.preventDefault(); links.at(-1).focus(); }
+        else if (!event.shiftKey && document.activeElement === links.at(-1)) { event.preventDefault(); navToggle.focus(); }
+      }
     });
-    mobileNav.querySelectorAll('a').forEach(link => {
-      link.addEventListener('click', () => mobileNav.classList.remove('open'));
-    });
+    window.matchMedia('(min-width:1101px)').addEventListener('change', event => { if (event.matches) setMenu(false); });
   }
 
   /* ---------- Scroll reveal ---------- */
@@ -44,24 +58,6 @@ document.addEventListener('DOMContentLoaded', () => {
     revealEls.forEach(el => el.classList.add('in'));
   }
 
-  /* ---------- FAQ accordion ---------- */
-  document.querySelectorAll('.faq-item').forEach(item => {
-    const question = item.querySelector('.faq-question');
-    const answer = item.querySelector('.faq-answer');
-    if (!question || !answer) return;
-    question.addEventListener('click', () => {
-      const isOpen = item.classList.contains('open');
-      document.querySelectorAll('.faq-item.open').forEach(openItem => {
-        if (openItem !== item) {
-          openItem.classList.remove('open');
-          openItem.querySelector('.faq-answer').style.maxHeight = null;
-        }
-      });
-      item.classList.toggle('open', !isOpen);
-      answer.style.maxHeight = !isOpen ? answer.scrollHeight + 'px' : null;
-    });
-  });
-
   /* ---------- Active nav link on scroll ---------- */
   const sections = document.querySelectorAll('main section[id]');
   const navLinks = document.querySelectorAll('.main-nav a, .mobile-nav a');
@@ -86,8 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const nextBtn = document.querySelector('[data-demo-next]');
   if (track && prevBtn && nextBtn) {
     const scrollAmount = () => track.clientWidth * 0.9;
-    nextBtn.addEventListener('click', () => track.scrollBy({ left: scrollAmount(), behavior: 'smooth' }));
-    prevBtn.addEventListener('click', () => track.scrollBy({ left: -scrollAmount(), behavior: 'smooth' }));
+    nextBtn.addEventListener('click', () => track.scrollBy({ left: scrollAmount(), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' }));
+    prevBtn.addEventListener('click', () => track.scrollBy({ left: -scrollAmount(), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' }));
   }
 
   /* ---------- Spotlight hover glow (cards) ---------- */

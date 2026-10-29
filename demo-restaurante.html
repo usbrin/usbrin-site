@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Brasa & Mesa — Case demonstrativo USBRIN</title>
+<meta name="robots" content="noindex, follow">
 <link rel="icon" href="data:,">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&display=swap');
@@ -140,11 +141,18 @@ nav a:hover{color:var(--text);}
 }
 .produced-by p{color:var(--text-secondary);font-size:14px;margin-bottom:16px;}
 footer{padding:36px 0;text-align:center;color:var(--text-secondary);font-size:13px;}
+section[id], #aviso-demonstracao{scroll-margin-top:110px;}
+.btn{white-space:normal;text-align:center;}
+@media(max-width:480px){header .container{height:auto;min-height:80px;gap:14px;flex-wrap:wrap;padding-top:12px;padding-bottom:12px;}.produced-by .btn{max-width:100%;}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto;}*{transition:none!important;}}
+.hero{display:block;}
+.demo-hero-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:50px;align-items:center;}
+@media(max-width:860px){.demo-hero-grid{grid-template-columns:minmax(0,1fr);gap:32px;}}
 </style>
 </head>
 <body>
 
-<div class="case-bar">Case demonstrativo criado pela USBRIN — não é um cliente real. <a href="index.html">← Voltar para USBRIN</a></div>
+<div class="case-bar" id="aviso-demonstracao">Case demonstrativo criado pela USBRIN — empresa, dados e ofertas fictícios; não há reservas, agendamentos ou vendas reais. <a href="index.html">← Voltar para USBRIN</a></div>
 
 <header>
   <div class="container">
@@ -161,7 +169,7 @@ footer{padding:36px 0;text-align:center;color:var(--text-secondary);font-size:13
 </header>
 
 <section class="hero">
-  <div class="container" style="display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:center;">
+  <div class="container demo-hero-grid">
     <div>
       <span class="eyebrow">Cozinha de brasa · Ambiente acolhedor</span>
       <h1>Sabor que conecta pessoas.</h1>
@@ -288,7 +296,7 @@ footer{padding:36px 0;text-align:center;color:var(--text-secondary);font-size:13
 <div class="produced-by">
   <div class="container">
     <p>Este site é um case demonstrativo desenvolvido pela USBRIN para mostrar o que sua empresa pode ter.</p>
-    <a href="index.html#contato" class="btn">Quero um site assim para meu negócio</a>
+    <a href="index.html?demo=restaurante#contato" class="btn">Quero um site assim para meu negócio</a>
   </div>
 </div>
 
