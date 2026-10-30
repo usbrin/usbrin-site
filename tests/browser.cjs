@@ -44,7 +44,7 @@ const assert=require('node:assert/strict');
   if(option==='Selecione uma opção')continue;
   await p.locator('#quote-type').selectOption(option);await p.locator('button[type="submit"]').click();ok((await p.locator('#quote-preview').innerText()).includes('Tipo de site: '+option),'Site category '+option);
  }
- await p.locator('#quote-company').fill('');await p.locator('#quote-notes').fill('');await p.locator('input[value="Contato pelo WhatsApp"]').uncheck();await p.locator('button[type="submit"]').click();ok((await p.locator('#quote-preview').innerText()).includes('A definir com orientação'),'Optional fields empty');
+ await p.locator('#quote-company').fill('');await p.locator('#quote-notes').fill('');await p.locator('input[value="Contato pelo WhatsApp"]').uncheck();await p.locator('button[type="submit"]').click();ok((await p.locator('#quote-preview').innerText()).includes('A definir com a orientação'),'Optional fields empty');
  await p.setViewportSize({width:390,height:844});await p.goto('http://localhost:8001/');
  await p.locator('[data-demo-next]').click();await p.waitForFunction(()=>document.querySelector('.demo-grid').scrollLeft>0);ok(true,'Carousel next');await p.locator('[data-demo-prev]').click();await p.waitForFunction(()=>document.querySelector('.demo-grid').scrollLeft<5);ok(true,'Carousel previous');
  await p.goto('http://localhost:8001/?demo=unknown');ok(await p.locator('#quote-context').isHidden(),'Unknown parameter ignored');

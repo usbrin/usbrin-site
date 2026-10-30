@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const reference = Object.hasOwn(demos, slug) ? demos[slug] : '';
   if (reference) {
     const context = document.querySelector('#quote-context');
-    context.textContent = `Referência selecionada: demonstração de ${reference}.`;
+    context.textContent = `Demonstração selecionada: ${reference}.`;
     context.hidden = false;
   }
   const reset = () => {
@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   form.addEventListener('change', reset);
   form.addEventListener('submit', event => {
     event.preventDefault();
-    name.setCustomValidity(name.value.trim() ? '' : 'Informe seu nome, sem usar apenas espaços.');
+    name.setCustomValidity(name.value.trim() ? '' : 'Digite seu nome. O campo não pode conter apenas espaços.');
     if (!form.reportValidity()) return;
     const data = new FormData(form);
     const value = key => String(data.get(key) || '').trim();
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
       value('company') ? `Empresa: ${value('company')}` : '',
       `Tipo de site: ${value('type')}`,
       `Objetivo: ${value('goal')}`,
-      `Funcionalidades: ${data.getAll('features').join(', ') || 'A definir com orientação da USBRIN'}`,
+      `Funcionalidades: ${data.getAll('features').join(', ') || 'A definir com a orientação da USBRIN'}`,
       reference ? `Demonstração de referência: ${reference}` : '',
       value('notes') ? `Informações adicionais: ${value('notes')}` : ''
     ].filter((line, index) => line || index === 1).join('\n');
