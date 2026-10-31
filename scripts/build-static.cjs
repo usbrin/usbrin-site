@@ -40,8 +40,8 @@ if(configuredURL){
     urls.map(x=>'<url><loc>'+x+'</loc></url>').join('\n')+'\n</urlset>\n';
   fs.writeFileSync(path.join(output,'sitemap.xml'),sitemap);
 }
-for(const filename of ['studio.html','index.html']){
-  const content=fs.readFileSync(path.join(output,filename),'utf8');
-  if(!content.includes('studio.html')) throw new Error('Acesso ao Studio ausente: '+filename);
-}
+const homepage=fs.readFileSync(path.join(output,'index.html'),'utf8');
+if(!homepage.includes('href="studio.html"')) throw new Error('Link do Studio ausente na página inicial.');
+const studioPage=fs.readFileSync(path.join(output,'studio.html'),'utf8');
+if(!studioPage.includes('id="studio-form"')) throw new Error('Formulário do Studio ausente.');
 console.log('Bundle estático gerado em dist: '+pages.length+' páginas e '+folders.length+' diretórios.');
