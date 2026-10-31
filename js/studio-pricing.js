@@ -1,4 +1,4 @@
-/* USBRIN Studio — regras comerciais provisórias (não constituem proposta). */
+/* USBRIN Studio — preços iniciais autorizados para teste comercial, estimativas não vinculantes. */
 (function(root,factory){
   'use strict';
   const engine=factory();
