@@ -12,7 +12,7 @@ Integração estática (GitHub Pages no repositório atual), sem backend, sem ch
 
 O sistema **não** formaliza contrato, **não** recebe pagamento e **não** envia mensagens automaticamente.
 
-## Tabela comercial PROVISÓRIA (alterar após revisão)
+## Tabela comercial aprovada para fase experimental de cinco contratos
 As regras estão centralizadas em `js/studio-pricing.js`, versão `mvp-2026-10-30`.
 
 | Produto | Base | Incluído | Limite |
