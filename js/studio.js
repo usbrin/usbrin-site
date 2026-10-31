@@ -16,7 +16,11 @@ document.addEventListener('DOMContentLoaded',()=>{
     'Comércio':'Apresente o melhor do seu negócio.',
     'Outro':'Um site que representa seu negócio.'
   };
-  let lastRendered='',preparedMessage='';
+  let preparedMessage='',started=false;
+  function track(name){
+    // Eventos agregados, sem dados pessoais ou texto do briefing.
+    if(Array.isArray(window.dataLayer))window.dataLayer.push({event:'usbrin_studio_'+name});
+  }
   const checkboxValues=()=>[...form.querySelectorAll('input[name="feature"]:checked')].map(e=>e.value);
   const selectedStyle=()=>form.querySelector('input[name="style"]:checked')?.value||'moderno';
   const product=()=>form.querySelector('input[name="product"]:checked')?.value||'business';
@@ -179,10 +183,11 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(Object.hasOwn(refMap,slug))$('reference').value=refMap[slug];
   }
   form.querySelectorAll('input[name="product"]').forEach(input=>input.addEventListener('change',()=>{
-    updatePageOptions(P.PRODUCTS[product()].pages);render();invalidate();
+    updatePageOptions(P.PRODUCTS[product()].pages);if(!started){started=true;track('configuration_started');}render();invalidate();
   }));
   form.addEventListener('input',event=>{
     if(event.target.name==='product')return;
+    if(!started){started=true;track('configuration_started');}
     render();invalidate();
   });
   form.addEventListener('change',event=>{
@@ -207,6 +212,13 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
   $('copy-config').addEventListener('click',()=>copyText(configurationText(),quoteStatus));
   $('share-config').addEventListener('click',()=>copyText(shareUrl(),quoteStatus));
+  $('download-config').addEventListener('click',()=>{
+    const blob=new Blob([configurationText()+'\n'],{type:'text/plain;charset=utf-8'});
+    const href=URL.createObjectURL(blob),link=document.createElement('a');
+    link.href=href;link.download='usbrin-studio-configuracao.txt';document.body.append(link);link.click();link.remove();
+    window.setTimeout(()=>URL.revokeObjectURL(href),1000);
+    quoteStatus.textContent='Resumo preparado para download, sem nome ou briefing.';
+  });
   function clearValidation(){for(const id of ['name','goal'])$(id).setCustomValidity('')}
   form.addEventListener('input',clearValidation);
   form.addEventListener('submit',event=>{
@@ -219,9 +231,12 @@ document.addEventListener('DOMContentLoaded',()=>{
     $('whatsapp-link').href='https://wa.me/5569992967459?text='+encodeURIComponent(preparedMessage);
     $('email-link').href='mailto:usbrin.contato@gmail.com?subject='+encodeURIComponent('Solicitação de proposta — USBRIN Studio')+'&body='+encodeURIComponent(preparedMessage);
     result.hidden=false;
+    track('proposal_prepared');
     status.textContent='Mensagem preparada. Revise e escolha como deseja enviá-la.';
     result.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth',block:'start'});
   });
   $('copy-message').addEventListener('click',()=>{if(preparedMessage)copyText(preparedMessage,status)});
+  $('whatsapp-link').addEventListener('click',()=>track('whatsapp_open_clicked'));
+  $('email-link').addEventListener('click',()=>track('email_open_clicked'));
   restoreFromUrl();render();
 });
