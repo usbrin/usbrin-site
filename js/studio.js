@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     return P.normalize({product:product(),pages:Number(pages.value),features:checkboxValues(),style:selectedStyle(),special:$('special').checked,largeCatalog:$('large-catalog').checked});
   }
   function persist(data){
-    try{localStorage.setItem(storageKey,JSON.stringify({product:data.product,pages:data.pages,features:data.features,style:data.style,special:data.special,largeCatalog:data.largeCatalog,reference:allowedReferences.includes($('reference').value)?$('reference').value:'',sector:$('business-sector').value}));}catch(_){}
+    try{localStorage.setItem(storageKey,JSON.stringify({product:data.product,pages:data.pages,features:data.features,style:data.style,special:data.special,largeCatalog:data.largeCatalog,reference:allowedReferences.includes($('reference').value)?$('reference').value:'',sector:$('business-sector').value,colorCount:$('color-count').value}));}catch(_){}
   }
   function readSaved(){try{return JSON.parse(localStorage.getItem(storageKey)||'null')}catch(_){return null}}
   function apply(data){
@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(data&&allowedReferences.includes(data.reference))$('reference').value=data.reference;
     const sectorOptions=[...$('business-sector').options].map(x=>x.value);
     if(data&&sectorOptions.includes(data.sector))$('business-sector').value=data.sector;
+    $('color-count').value=data&&['2','3','4'].includes(String(data.colorCount))?String(data.colorCount):'3';
     updateConditional();
   }
   function updatePageOptions(value){
@@ -73,6 +74,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   function renderPreview(data){
     const target=$('site-preview');target.dataset.style=data.style;
     const sector=$('business-sector').value;
+    $('site-brand').textContent=($('company').value.trim().slice(0,24)||'Sua marca.')
     $('site-kicker').textContent=sector?sector.toUpperCase():'APRESENTAÇÃO PROFISSIONAL';
     $('site-title').textContent=previewTitles[sector]||(
       data.product==='landing'?'Seu serviço merece ser visto.':
@@ -109,6 +111,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       'Segmento: '+($('business-sector').value||'A definir'),
       'Demonstração de referência: '+($('reference').value||'Nenhuma'),
       'Cores da marca: '+($('brand-colors').value.trim()||'A definir'),
+      'Quantidade de cores principais: '+$('color-count').value,
       'Funcionalidades: '+features,
       'Funções especiais: '+(d.special?'Sim — análise individual':'Não'),
       'Catálogo com mais de 20 itens: '+(d.largeCatalog?'Sim — análise individual':'Não'),
@@ -153,7 +156,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     const d=P.calculate(capture());
     const params=new URLSearchParams();
     params.set('tipo',d.product);params.set('paginas',String(d.pages));params.set('estilo',d.style);
-    if(d.features.length)params.set('recursos',d.features.join(','));
+    params.set('recursos',d.features.join(','));
+    params.set('cores',$('color-count').value);
     if(d.special)params.set('especial','1');
     if(d.largeCatalog)params.set('catalogo-ampliado','1');
     if(allowedReferences.includes($('reference').value))params.set('demo',$('reference').value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''));
@@ -164,7 +168,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     const hasConfig=['tipo','paginas','estilo','recursos','especial','catalogo-ampliado'].some(k=>query.has(k));
     if(hasConfig){
       const features=query.has('recursos')?query.get('recursos').split(','):['whatsapp'];
-      const raw={product:query.get('tipo'),pages:query.get('paginas'),features,style:query.get('estilo'),special:query.get('especial')==='1',largeCatalog:query.get('catalogo-ampliado')==='1'};
+      const raw={product:query.get('tipo'),pages:query.get('paginas'),features,style:query.get('estilo'),special:query.get('especial')==='1',largeCatalog:query.get('catalogo-ampliado')==='1',colorCount:query.get('cores')};
       apply(raw);
     }else{
       const saved=readSaved();
@@ -198,7 +202,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     try{localStorage.removeItem(storageKey)}catch(_){}
     form.reset();$('name').value='';$('company').value='';$('goal').value='';$('notes').value='';
     $('reference').value='';$('brand-colors').value='';$('business-sector').value='';
-    $('special-notes').value='';updatePageOptions(5);render();invalidate();quoteStatus.textContent='Configuração reiniciada.';
+    $('special-notes').value='';$('color-count').value='3';updatePageOptions(5);render();invalidate();quoteStatus.textContent='Configuração reiniciada.';
     document.getElementById('modelos').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'});
   });
   $('copy-config').addEventListener('click',()=>copyText(configurationText(),quoteStatus));
