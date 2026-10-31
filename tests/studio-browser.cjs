@@ -25,6 +25,11 @@ const server=http.createServer((req,res)=>{
     ok(await page.locator('#site-preview').isVisible(),'preview visible '+width);
   }
   await page.setViewportSize({width:1280,height:900});await page.goto(url);
+  const shots=path.join(root,'tests','artifacts');fs.mkdirSync(shots,{recursive:true});
+  await page.screenshot({path:path.join(shots,'studio-desktop.png'),fullPage:true});
+  await page.setViewportSize({width:390,height:844});await page.goto(url);
+  await page.screenshot({path:path.join(shots,'studio-mobile.png'),fullPage:true});
+  await page.setViewportSize({width:1280,height:900});await page.goto(url);
   await page.locator('input[name="product"][value="landing"]').check();
   ok(await page.locator('#pages option').count()===1,'landing one page');
   ok((await page.locator('#estimate').innerText()).includes('690'),'landing amount');
