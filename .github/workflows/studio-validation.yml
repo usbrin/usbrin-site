@@ -6,6 +6,10 @@ on:
       - 'js/studio*.js'
       - 'css/studio.css'
       - 'tests/studio-*.cjs'
+      - 'scripts/build-static.cjs'
+      - 'package.json'
+      - 'vercel.json'
+      - 'privacidade.html'
       - '.github/workflows/studio-validation.yml'
   push:
     branches: [main]
@@ -33,6 +37,17 @@ jobs:
           node --check tests/studio-browser.cjs
       - name: Testar precificação
         run: node --test tests/studio-pricing.test.cjs
+      - name: Gerar pacote estático de publicação
+        run: |
+          npm run build
+          test -f dist/index.html
+          test -f dist/studio.html
+          test -f dist/privacidade.html
+          test -f dist/js/studio.js
+          test -f dist/js/studio-pricing.js
+          test -f dist/css/studio.css
+          test ! -f dist/tests/studio-browser.cjs
+          test ! -f dist/docs/USBRIN-STUDIO-OPERACAO.md
   browser:
     runs-on: ubuntu-latest
     timeout-minutes: 18
