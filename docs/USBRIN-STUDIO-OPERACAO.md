@@ -26,7 +26,7 @@ As regras estão centralizadas em `js/studio-pricing.js`, versão `mvp-2026-10-3
 | Galeria | R$ 180 | exposição de projetos | |
 | Blog gerenciável | R$ 450 | conforme escopo combinado | |
 
-Valores **não testados com clientes**, não são dados de mercado ou preços aprovados. A revisão de briefing pode gerar preço superior ou inferior ao estimado, desde que haja explicação comercial e concordância do cliente.
+Valores **aprovados pelo fundador como hipótese inicial de venda**, mas ainda não testados com clientes; não representam preços de mercado. O piloto compreende os cinco primeiros contratos padronizados, com análise de margem antes da proposta definitiva. A revisão de briefing pode gerar preço superior ou inferior ao estimado, desde que haja explicação comercial e concordância do cliente.
 
 **Nunca precificar automaticamente:** agendamento com integração, e-commerce com checkout, pagamentos, login/área restrita, integrações externas, sistemas sob medida, catálogo acima de 20 itens ou qualquer requisito de segurança/regulamentação mais rigorosa. O motor marca `reviewRequired`, mantém a estimativa apenas do escopo padrão e avisa a exclusão explícita.
 
@@ -97,3 +97,8 @@ Indicadores recomendados:
 **Não implementadas:** contas de clientes, CRM persistente, painel administrativo privado, edição remota de preços, geração de propostas contratuais, envio automático de mensagens, analytics efetivo entre dispositivos e cobrança. Essas funções exigem hospedagem/backend apropriado, autenticação e governança; não simular uma área administrativa no JavaScript público.
 
 **Diferencial entregue no MVP:** experiência guiada com quatro demonstrações, prévia visual, estimate híbrido, proteção de projetos complexos, persistência não pessoal no navegador, compartilhamento e envio revisado.
+
+## Decisão de lançamento (30/10/2026)
+O fundador confirmou a tabela-base (Landing R$ 690, Business R$ 1.190, Catálogo R$ 1.790) para uma fase de validação com cinco contratos, mantendo orçamentos especiais sob análise humana. A estimativa de 2–4 horas de produção completa é uma hipótese informada pelo fundador; medir horas reais, incluindo negociação e revisões não previstas, em cada contrato. Não reajustar automaticamente o preço antes de verificar custos e satisfação.
+
+A publicação comercial deve usar provedor de hospedagem compatível com sites empresariais. A documentação do GitHub Pages restringe expressamente seu uso como hospedagem gratuita de negócios e sites destinados principalmente a transações comerciais; portanto **não mesclar esta PR enquanto Pages continuar sendo o destino ativo de produção**. A integração com hospedagem apropriada requer conexão/autorização do provedor e revisão dos endereços canônicos, sitemap e Open Graph.
