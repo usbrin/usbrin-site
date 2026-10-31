@@ -1,0 +1,35 @@
+name: USBRIN Studio — validação
+on:
+  pull_request:
+    paths:
+      - 'studio.html'
+      - 'js/studio*.js'
+      - 'css/studio.css'
+      - 'tests/studio-*.cjs'
+      - '.github/workflows/studio-validation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'studio.html'
+      - 'js/studio*.js'
+      - 'css/studio.css'
+      - 'tests/studio-*.cjs'
+permissions:
+  contents: read
+jobs:
+  pricing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verificar sintaxe
+        run: |
+          node --check js/studio-pricing.js
+          node --check js/studio.js
+          node --check tests/studio-pricing.test.cjs
+          node --check tests/studio-browser.cjs
+      - name: Testar precificação
+        run: node --test tests/studio-pricing.test.cjs
