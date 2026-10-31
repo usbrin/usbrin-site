@@ -9,6 +9,7 @@ on:
       - 'scripts/build-static.cjs'
       - 'package.json'
       - 'vercel.json'
+      - '_headers'
       - 'privacidade.html'
       - '.github/workflows/studio-validation.yml'
   push:
@@ -46,6 +47,11 @@ jobs:
           test -f dist/js/studio.js
           test -f dist/js/studio-pricing.js
           test -f dist/css/studio.css
+          test -f dist/_headers
+          CF_PAGES=1 CF_PAGES_URL=https://abcdef123.usbrin-site.pages.dev CF_PAGES_BRANCH=feature/usbrin-studio-mvp npm run build
+          grep -q 'https://usbrin-site.pages.dev/' dist/index.html
+          grep -q 'https://usbrin-site.pages.dev/studio.html' dist/studio.html
+          grep -q 'https://usbrin-site.pages.dev/studio.html' dist/sitemap.xml
           test ! -f dist/tests/studio-browser.cjs
           test ! -f dist/docs/USBRIN-STUDIO-OPERACAO.md
   browser:
