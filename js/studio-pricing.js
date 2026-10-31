@@ -24,7 +24,7 @@
     const s=payload&&typeof payload==='object'?payload:{};
     const product=Object.hasOwn(PRODUCTS,s.product)?s.product:'business';
     const item=PRODUCTS[product];
-    const rawPages=Number(s.pages);
+    const rawPages=(s.pages===undefined||s.pages===null||s.pages==='')?NaN:Number(s.pages);
     const pages=Number.isInteger(rawPages)?Math.max(1,Math.min(item.maxPages,rawPages)):item.pages;
     const features=Array.isArray(s.features)?[...new Set(s.features.filter(x=>typeof x==='string'&&Object.hasOwn(FEATURES,x)))]:['whatsapp'];
     const style=STYLES.includes(s.style)?s.style:'moderno';
