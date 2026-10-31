@@ -12,7 +12,10 @@ Abra http://localhost:8000. O servidor não é necessário em produção; publiq
 
 ## Estrutura
 
-- `index.html`: apresentação, quatro demonstrações, soluções, processo, FAQ nativo e formulário.
+- `index.html`: apresentação, quatro demonstrações, soluções, processo, FAQ nativo e formulário; acesso ao Studio no branch de desenvolvimento.
+- `studio.html`: configurador híbrido e prévia conceitual, com valores preliminares (noindex enquanto não aprovado).
+- `css/studio.css`: estilo do Studio, responsivo.
+- `js/studio.js` e `js/studio-pricing.js`: interação, regras comerciais e geração do resumo.
 - `css/style.css`: identidade e responsividade.
 - `js/main.js`: navegação, carrossel e interações visuais.
 - `js/quote.js`: validação, prévia e composição do link WhatsApp.
@@ -26,7 +29,7 @@ WhatsApp: https://wa.me/5569992967459. E-mail: usbrin.contato@gmail.com.
 
 O formulário exige nome, tipo e objetivo. Empresa, funcionalidades e detalhes são opcionais. Os dados ficam somente na página até o visitante abrir o WhatsApp. A prévia usa `textContent` e o texto do link usa `encodeURIComponent`; não existe envio automático, armazenamento, backend ou rastreamento adicionado. Ao editar um campo, a prévia anterior é invalidada. Sem JavaScript, os contatos diretos e FAQ continuam disponíveis.
 
-O parâmetro `?demo=restaurante`, `construtora`, `clinica` ou `imobiliaria` acrescenta uma referência conhecida ao pedido. Outros valores são ignorados. Preços da USBRIN não são publicados; valores fictícios de pratos e imóveis permanecem nas demonstrações.
+O parâmetro `?demo=restaurante`, `construtora`, `clinica` ou `imobiliaria` acrescenta uma referência conhecida ao pedido. Outros valores são ignorados. A página inicial não publica preços. O Studio exibe preços **provisórios de teste**, não vinculantes; devem ser aprovados antes de produção. Os valores fictícios de pratos e imóveis permanecem nas demonstrações. Consulte `docs/USBRIN-STUDIO-OPERACAO.md`.
 
 ## Recuperação
 
@@ -41,3 +44,5 @@ Uma alternativa a avaliar é Cloudflare Pages: requisições de arquivos estáti
 ## Testes
 
 Instale Playwright no ambiente de desenvolvimento e disponibilize Chromium. Execute `CHROMIUM_PATH=/caminho/do/chromium node tests/browser.cjs`. O teste cria seu próprio servidor local na porta 8001 e não envia mensagens. Consulte `docs/VALIDACAO-2026-10-29.md` para resultados e limites.
+
+Para o Studio: execute `node --test tests/studio-pricing.test.cjs` e, com Playwright/Chromium instalados, `CHROMIUM_PATH=/caminho/do/chromium node tests/studio-browser.cjs`. A documentação de operação e pré-lançamento está em `docs/USBRIN-STUDIO-OPERACAO.md`.
