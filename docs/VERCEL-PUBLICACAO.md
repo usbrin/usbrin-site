@@ -1,3 +1,9 @@
+# ARQUIVADO — hospedagem não selecionada para o lançamento
+
+A USBRIN escolheu **Cloudflare Pages Free** para a publicação inicial. As instruções ativas estão em `docs/CLOUDFLARE-PUBLICACAO.md`. Este arquivo permanece apenas como referência histórica, não deve ser seguido para o lançamento atual.
+
+---
+
 # Publicar USBRIN + USBRIN Studio na Vercel
 
 ## Situação em 30/10/2026
