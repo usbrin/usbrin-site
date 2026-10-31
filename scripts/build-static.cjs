@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const output = path.join(root, 'dist');
-const pages = ['index.html','studio.html','privacidade.html','demo-clinica.html','demo-construtora.html','demo-imobiliaria.html','demo-restaurante.html','sitemap.xml'];
+const pages = ['index.html','studio.html','privacidade.html','demo-clinica.html','demo-construtora.html','demo-imobiliaria.html','demo-restaurante.html','sitemap.xml','_headers'];
 const folders = ['assets','css','js'];
 fs.rmSync(output, {recursive:true,force:true});
 fs.mkdirSync(output,{recursive:true});
@@ -18,7 +18,20 @@ for(const folder of folders){
   if(!fs.existsSync(source)) throw new Error('Diretório obrigatório ausente: '+folder);
   fs.cpSync(source,path.join(output,folder),{recursive:true});
 }
+// PUBLIC_SITE_URL overrides the default for a later custom domain.
+function cloudflareProductionUrl(raw){
+  if(!raw)return '';
+  const url=new URL(raw);
+  const parts=url.hostname.split('.');
+  // CF_PAGES_URL can point to a unique deployment; use stable project.pages.dev.
+  if(parts.length===4 && url.hostname.endsWith('.pages.dev')){
+    url.hostname=parts.slice(-3).join('.');
+    url.pathname='/';
+  }
+  return url.origin+url.pathname;
+}
 const configuredURL=process.env.PUBLIC_SITE_URL ||
+  cloudflareProductionUrl(process.env.CF_PAGES_URL) ||
   (process.env.VERCEL_PROJECT_PRODUCTION_URL ? 'https://'+process.env.VERCEL_PROJECT_PRODUCTION_URL : '');
 if(configuredURL){
   const website=new URL(configuredURL);
