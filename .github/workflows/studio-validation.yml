@@ -33,3 +33,20 @@ jobs:
           node --check tests/studio-browser.cjs
       - name: Testar precificação
         run: node --test tests/studio-pricing.test.cjs
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar navegador de testes
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Testar Studio e site original
+        run: |
+          export CHROMIUM_PATH="$(node -e "process.stdout.write(require('playwright').chromium.executablePath())")"
+          node tests/studio-browser.cjs
+          node tests/browser.cjs
