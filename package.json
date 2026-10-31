@@ -1,0 +1,10 @@
+{
+  "name": "usbrin-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Site oficial da USBRIN e USBRIN Studio",
+  "scripts": {
+    "build": "node scripts/build-static.cjs",
+    "test:pricing": "node --test tests/studio-pricing.test.cjs"
+  }
+}

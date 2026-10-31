@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Configure seu site, explore demonstrações e conheça uma estimativa preliminar com o USBRIN Studio.">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>USBRIN Studio — Seu site começa aqui</title>
+<link rel="icon" type="image/png" href="assets/favicon-small.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/studio.css?v=20261030">
+<script src="js/studio-pricing.js?v=20261030" defer></script>
+<script src="js/studio.js?v=20261030" defer></script>
+</head>
+<body>
+<a class="skip" href="#studio-form">Pular para o configurador</a>
+<header class="header"><div class="container header-inner">
+  <a class="brand" href="index.html" aria-label="USBRIN — página inicial"><img src="assets/usbrin-logo-cropped.webp" alt=""><span>USBRIN</span><span class="brand-studio">/ STUDIO</span></a>
+  <nav class="header-nav" aria-label="Navegação do Studio"><a href="#modelos">Modelos</a><a href="#personalizar">Personalizar</a><a href="#proposta">Proposta</a></nav>
+  <a class="back" href="index.html">← Voltar ao início</a>
+</div></header>
+<main>
+<section class="hero container">
+  <div class="hero-content"><p class="eyebrow"><span class="eyebrow-dot"></span> USBRIN STUDIO / EXPERIÊNCIA INTERATIVA</p>
+    <h1>Seu site começa <span>com uma boa ideia.</span></h1>
+    <p class="hero-intro">Escolha o modelo, personalize as funcionalidades e descubra uma estimativa inicial para o seu projeto. A USBRIN cuida dos próximos passos com você.</p>
+    <div class="hero-badges"><span>01 / Inspire-se</span><span>02 / Configure</span><span>03 / Solicite</span></div>
+  </div>
+  <div class="hero-art" aria-hidden="true"><div class="art-back"></div><div class="art-screen"><div class="art-top"><i></i><i></i><i></i><b>seusite.com.br</b></div><div class="art-nav"><span class="art-brand"></span><span></span><span></span><span></span></div><div class="art-grid"><div><strong></strong><strong></strong><em></em><em></em><small></small></div><div class="art-photo"><div class="art-circle"></div></div></div><div class="art-cards"><b></b><b></b><b></b></div></div><div class="art-tag">Feito para o seu negócio ↗</div></div>
+</section>
+<div class="container">
+  <div class="workspace-heading"><div><p class="eyebrow">CONFIGURADOR INTERATIVO</p><h2>Vamos desenhar seu projeto.</h2><p>Você pode ajustar as escolhas quantas vezes quiser. Nada será enviado sem sua ação.</p></div><button type="button" class="text-button" id="reset-config">Recomeçar configuração ↺</button></div>
+  <div class="workspace">
+    <form id="studio-form" novalidate>
+      <section class="panel step" id="modelos" aria-labelledby="heading-modelos">
+        <div class="step-heading"><span class="step-num">01</span><div><p class="step-caption">O PONTO DE PARTIDA</p><h3 id="heading-modelos">Qual site você imagina?</h3><p>Escolha a solução mais próxima do que precisa. Nós podemos refiná-la na proposta.</p></div></div>
+        <fieldset class="model-grid"><legend class="sr-only">Tipo de site</legend>
+          <label class="model-card"><input type="radio" name="product" value="landing"><span class="model-icon">↗</span><strong>Landing Page</strong><small>Uma página organizada em seções, ideal para apresentar um serviço ou campanha.</small><span class="model-price">A partir de R$ 690</span></label>
+          <label class="model-card"><input type="radio" name="product" value="business" checked><span class="model-icon">▦</span><strong>Institucional</strong><small>Uma presença completa para apresentar sua empresa, serviços e contatos.</small><span class="model-price">A partir de R$ 1.190</span></label>
+          <label class="model-card"><input type="radio" name="product" value="catalogo"><span class="model-icon">◈</span><strong>Catálogo</strong><small>Uma vitrine organizada de produtos ou serviços, sem pagamento online.</small><span class="model-price">A partir de R$ 1.790</span></label>
+        </fieldset>
+        <div class="reference-head"><div><h4>Inspire-se em projetos demonstrativos</h4><p>Exemplos fictícios da USBRIN. Não representam clientes reais.</p></div></div>
+        <div class="demo-grid">
+          <div class="demo"><div class="demo-visual clinic"><span class="mini-bar"></span><span class="mini-hero">Cuidado em cada detalhe.</span><span class="mini-button">Agendar</span></div><div class="demo-foot"><strong>Clínica</strong><a href="demo-clinica.html" target="_blank" rel="noopener" aria-label="Abrir demonstração de clínica">Visitar ↗</a></div></div>
+          <div class="demo"><div class="demo-visual restaurant"><span class="mini-bar"></span><span class="mini-hero">Uma experiência especial.</span><span class="mini-button">Cardápio</span></div><div class="demo-foot"><strong>Restaurante</strong><a href="demo-restaurante.html" target="_blank" rel="noopener" aria-label="Abrir demonstração de restaurante">Visitar ↗</a></div></div>
+          <div class="demo"><div class="demo-visual construction"><span class="mini-bar"></span><span class="mini-hero">Construindo o futuro.</span><span class="mini-button">Projetos</span></div><div class="demo-foot"><strong>Construtora</strong><a href="demo-construtora.html" target="_blank" rel="noopener" aria-label="Abrir demonstração de construtora">Visitar ↗</a></div></div>
+          <div class="demo"><div class="demo-visual estate"><span class="mini-bar"></span><span class="mini-hero">Encontre seu lugar.</span><span class="mini-button">Explorar</span></div><div class="demo-foot"><strong>Imobiliária</strong><a href="demo-imobiliaria.html" target="_blank" rel="noopener" aria-label="Abrir demonstração de imobiliária">Visitar ↗</a></div></div>
+        </div>
+        <div class="field reference-field"><label for="reference">Qual demonstração mais se aproxima da sua ideia?</label><select id="reference"><option value="">Ainda não escolhi</option><option value="Clínica">Clínica</option><option value="Restaurante">Restaurante</option><option value="Construtora">Construtora</option><option value="Imobiliária">Imobiliária</option></select></div>
+      </section>
+      <section class="panel step" id="personalizar" aria-labelledby="heading-custom">
+        <div class="step-heading"><span class="step-num">02</span><div><p class="step-caption">ESTRUTURA E APARÊNCIA</p><h3 id="heading-custom">Do seu jeito, com propósito.</h3><p>Escolha a estrutura e a direção visual. A prévia abaixo é ilustrativa.</p></div></div>
+        <div class="field-grid"><div class="field"><label for="pages">Quantidade de páginas</label><select id="pages"></select><small id="pages-help">Páginas institucionais padronizadas.</small></div><div class="field"><label for="business-sector">Segmento do seu negócio</label><select id="business-sector"><option value="">Selecione (opcional)</option><option value="Saúde">Saúde</option><option value="Alimentação">Alimentação</option><option value="Construção">Construção</option><option value="Imobiliário">Imobiliário</option><option value="Serviços profissionais">Serviços profissionais</option><option value="Comércio">Comércio</option><option value="Outro">Outro</option></select></div></div>
+        <fieldset class="palette-section"><legend>Estilo visual</legend><div class="palettes">
+          <label class="palette"><input type="radio" name="style" value="moderno" checked><span class="swatches"><i style="background:#101a30"></i><i style="background:#6478fe"></i><i style="background:#fafbff"></i></span><span>Moderno</span></label>
+          <label class="palette"><input type="radio" name="style" value="minimalista"><span class="swatches"><i style="background:#eee9dd"></i><i style="background:#313834"></i><i style="background:#a9afa0"></i></span><span>Minimalista</span></label>
+          <label class="palette"><input type="radio" name="style" value="elegante"><span class="swatches"><i style="background:#181819"></i><i style="background:#aa8f5d"></i><i style="background:#f4efdf"></i></span><span>Elegante</span></label>
+          <label class="palette"><input type="radio" name="style" value="editorial"><span class="swatches"><i style="background:#f3efe8"></i><i style="background:#d15d44"></i><i style="background:#233c3b"></i></span><span>Editorial</span></label>
+        </div></fieldset>
+        <div class="field-grid brand-colors"><div class="field"><label for="brand-colors">Sua marca já possui cores definidas?</label><input id="brand-colors" type="text" maxlength="100" placeholder="Ex.: azul-marinho e branco"></div><div class="field"><label for="color-count">Quantidade de cores principais</label><select id="color-count"><option value="2">2 cores</option><option value="3" selected>3 cores</option><option value="4">4 cores</option></select><small>A escolha de cores não aumenta o preço padrão.</small></div></div>
+        <div class="preview-frame">
+          <div class="preview-heading"><div><span class="live-dot"></span><strong>Prévia conceitual</strong><small>Visual ilustrativo, não é o projeto final.</small></div><div class="device-tabs" role="group" aria-label="Modo de visualização"><button class="device-button active" id="device-desktop" type="button" aria-pressed="true">Desktop</button><button class="device-button" id="device-mobile" type="button" aria-pressed="false">Celular</button></div></div>
+          <div class="preview-stage"><div class="site-preview" id="site-preview" data-style="moderno"><div class="site-preview-top"><span class="site-logo" id="site-brand">Sua marca.</span><div class="site-nav"><span>Início</span><span>Serviços</span><span>Contato</span></div><span class="site-cta">Conhecer</span></div><div class="site-hero"><div><span class="site-kicker" id="site-kicker">APRESENTAÇÃO PROFISSIONAL</span><h4 id="site-title">Um site que representa seu negócio.</h4><p id="site-subtitle">Mostre seus serviços e facilite o primeiro contato com seus clientes.</p><span class="site-button">Vamos conversar ↗</span></div><div class="site-graphic"><div class="site-graphic-ring"></div><div class="site-graphic-card"></div></div></div><div class="site-preview-cards"><i></i><i></i><i></i></div></div></div>
+        </div>
+      </section>
+      <section class="panel step" id="funcionalidades" aria-labelledby="heading-features">
+        <div class="step-heading"><span class="step-num">03</span><div><p class="step-caption">O QUE SEU SITE PRECISA FAZER</p><h3 id="heading-features">Escolha as funcionalidades.</h3><p>Comece pelo essencial. Recursos adicionais aumentam o investimento.</p></div></div>
+        <fieldset class="feature-grid"><legend class="sr-only">Funcionalidades opcionais</legend>
+          <label class="feature"><input type="checkbox" name="feature" value="whatsapp" checked><span><strong>Botão de WhatsApp</strong><small>Contato rápido para visitantes</small></span><b>Incluso</b></label>
+          <label class="feature"><input type="checkbox" name="feature" value="formulario"><span><strong>Formulário avançado</strong><small>Campos extras e validação</small></span><b>+ R$ 150</b></label>
+          <label class="feature"><input type="checkbox" name="feature" value="galeria"><span><strong>Galeria de projetos</strong><small>Exposição de trabalhos ou fotos</small></span><b>+ R$ 180</b></label>
+          <label class="feature"><input type="checkbox" name="feature" value="blog"><span><strong>Blog gerenciável</strong><small>Publicações e administração de conteúdo</small></span><b>+ R$ 450</b></label>
+        </fieldset>
+        <div class="extra-options"><label class="special-check"><input type="checkbox" id="large-catalog"><span><strong>Preciso cadastrar mais de 20 itens no catálogo.</strong><small>Quantidade e escopo serão definidos com a equipe.</small></span></label><label class="special-check"><input type="checkbox" id="special"><span><strong>Preciso de funções personalizadas.</strong><small>Agendamento integrado, login, pagamentos, sistemas externos ou funcionalidades sob medida.</small></span></label></div>
+        <div class="field" id="special-notes-field" hidden><label for="special-notes">Descreva a funcionalidade especial (opcional)</label><textarea id="special-notes" maxlength="450" rows="3" placeholder="Conte brevemente o que você precisa"></textarea></div>
+        <p class="info-note">Serviços como loja virtual com pagamento, área restrita e integrações complexas não estão precificados no configurador. Nossa equipe avalia separadamente.</p>
+      </section>
+      <section class="panel step" id="proposta" aria-labelledby="heading-proposal">
+        <div class="step-heading"><span class="step-num">04</span><div><p class="step-caption">FINALIZAR BRIEFING</p><h3 id="heading-proposal">Vamos conversar sobre seu projeto?</h3><p>Preencha seus dados para preparar uma mensagem. Você decide se quer enviá-la.</p></div></div>
+        <div class="field-grid"><div class="field"><label for="name">Seu nome <span aria-hidden="true">*</span></label><input id="name" name="name" autocomplete="name" required maxlength="90" placeholder="Como podemos te chamar?"></div><div class="field"><label for="company">Nome da empresa</label><input id="company" autocomplete="organization" maxlength="100" placeholder="Opcional"></div><div class="field span"><label for="goal">Qual o principal objetivo do site? <span aria-hidden="true">*</span></label><textarea id="goal" required minlength="8" maxlength="700" rows="3" placeholder="Ex.: apresentar meus serviços e receber pedidos de orçamento"></textarea></div><div class="field span"><label for="notes">Informações adicionais</label><textarea id="notes" rows="3" maxlength="700" placeholder="Ex.: já tenho textos e fotos; quero receber contatos pelo WhatsApp"></textarea></div></div>
+        <label class="consent"><input id="consent" type="checkbox" required><span>Quero preparar uma mensagem com estes dados para enviar à USBRIN pelo WhatsApp. Entendo que o envio é opcional e realizado por mim.</span></label>
+        <p class="privacy">Não armazenamos seu nome e briefing no site. Só a configuração técnica pode ser salva neste navegador. Abrir o WhatsApp não envia a mensagem automaticamente. <a href="privacidade.html" target="_blank" rel="noopener">Saiba como tratamos informações pessoais ↗</a></p>
+        <button type="submit" class="primary main-submit">Revisar mensagem e solicitar proposta ↗</button>
+        <div class="message-result" id="message-result" hidden><div class="message-result-head"><strong>Seu pedido está pronto para revisão</strong><p>Confira o texto antes de abrir o WhatsApp. A contratação só acontecerá mediante proposta e aceite.</p></div><pre id="message-preview"></pre><div class="message-actions"><a id="whatsapp-link" class="primary" href="#" target="_blank" rel="noopener noreferrer">Abrir WhatsApp ↗</a><button type="button" class="secondary" id="copy-message">Copiar mensagem</button><a id="email-link" class="secondary" href="mailto:usbrin.contato@gmail.com">Enviar por e-mail</a></div></div>
+        <p role="status" id="status" aria-live="polite"></p>
+      </section>
+    </form>
+    <aside class="right-column"><div class="quote-card"><div class="quote-header"><span class="eyebrow">SEU INVESTIMENTO</span><span class="quote-tag">Estimativa</span></div><div class="price" id="estimate" aria-live="polite">R$ 1.190</div><p class="price-note">Valor preliminar para o escopo padrão escolhido.</p><div class="quote-lines" id="quote-lines"></div><div class="manual-review" id="manual-review" hidden><b>Necessita análise individual</b><span>Funcionalidades especiais ou catálogo ampliado não estão incluídos na estimativa acima.</span></div><div class="quote-disclaimer"><b>Sem compromisso.</b> O valor definitivo, o prazo e as entregas serão confirmados em uma proposta após nossa análise.</div><a href="#proposta" class="primary quote-cta">Solicitar proposta ↗</a><div class="quote-actions"><button type="button" id="copy-config">Copiar configuração</button><button type="button" id="share-config">Compartilhar opções</button><button type="button" id="download-config">Baixar resumo</button></div><p id="quote-status" class="status" role="status" aria-live="polite"></p><p class="quote-footnote">Domínio, hospedagem, manutenção, produção de conteúdo, licenças e serviços de terceiros são tratados separadamente.</p></div><div class="support-card"><span class="support-symbol">✳</span><div><strong>Precisa de orientação?</strong><p>Você não precisa definir tudo agora. A USBRIN ajuda a escolher o escopo adequado.</p><a href="https://wa.me/5569992967459" target="_blank" rel="noopener noreferrer">Conversar com a equipe ↗</a></div></div></aside>
+  </div>
+</div>
+<section class="faq container" aria-labelledby="faq-title"><p class="eyebrow">TRANSPARÊNCIA</p><h2 id="faq-title">Antes de começar, é bom saber.</h2><div class="faq-list"><details><summary>O preço mostrado é definitivo?</summary><p>Não. É uma estimativa comercial preliminar para um escopo padronizado. A proposta final depende de briefing, funcionalidades, materiais disponíveis e avaliação técnica.</p></details><details><summary>Preciso pagar agora?</summary><p>Não. O Studio não recebe pagamentos nem formaliza contratos. Você só solicita uma análise comercial.</p></details><details><summary>Posso pedir um site fora desses modelos?</summary><p>Sim. Descreva as funcionalidades desejadas. Projetos personalizados recebem orçamento individual.</p></details><details><summary>O que acontece depois que eu enviar?</summary><p>A equipe analisa a solicitação, esclarece o escopo e apresenta uma proposta com valor, prazo, entregas e condições de contratação.</p></details></div></section>
+</main>
+<footer><div class="container footer-inner"><div class="brand"><img src="assets/usbrin-logo-cropped.webp" alt=""><span>USBRIN</span></div><p>© 2026 USBRIN · Projetos digitais com clareza, do início ao fim.</p><a href="privacidade.html">Privacidade</a><a href="index.html">Site oficial ↗</a></div></footer>
+<noscript><div class="noscript">O configurador exige JavaScript. Para orçamento direto, entre em contato: <a href="https://wa.me/5569992967459">WhatsApp da USBRIN</a>.</div></noscript>
+</body></html>
