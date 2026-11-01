@@ -1,0 +1,81 @@
+name: USBRIN Studio — validação
+on:
+  pull_request:
+    paths:
+      - 'studio.html'
+      - 'js/studio*.js'
+      - 'css/studio.css'
+      - 'tests/studio-*.cjs'
+      - 'scripts/build-static.cjs'
+      - 'package.json'
+      - 'vercel.json'
+      - '_headers'
+      - 'privacidade.html'
+      - '.github/workflows/studio-validation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'studio.html'
+      - 'js/studio*.js'
+      - 'css/studio.css'
+      - 'tests/studio-*.cjs'
+permissions:
+  contents: read
+jobs:
+  pricing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verificar sintaxe
+        run: |
+          node --check js/studio-pricing.js
+          node --check js/studio.js
+          node --check tests/studio-pricing.test.cjs
+          node --check tests/studio-browser.cjs
+      - name: Testar precificação
+        run: node --test tests/studio-pricing.test.cjs
+      - name: Gerar pacote estático de publicação
+        run: |
+          npm run build
+          test -f dist/index.html
+          test -f dist/studio.html
+          test -f dist/privacidade.html
+          test -f dist/js/studio.js
+          test -f dist/js/studio-pricing.js
+          test -f dist/css/studio.css
+          test -f dist/_headers
+          CF_PAGES=1 CF_PAGES_URL=https://abcdef123.usbrin-site.pages.dev CF_PAGES_BRANCH=feature/usbrin-studio-mvp npm run build
+          grep -q 'https://usbrin-site.pages.dev/' dist/index.html
+          grep -q 'https://usbrin-site.pages.dev/studio.html' dist/studio.html
+          grep -q 'https://usbrin-site.pages.dev/studio.html' dist/sitemap.xml
+          test ! -f dist/tests/studio-browser.cjs
+          test ! -f dist/docs/USBRIN-STUDIO-OPERACAO.md
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar navegador de testes
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Testar Studio e site original
+        run: |
+          export CHROMIUM_PATH="$(node -e "process.stdout.write(require('playwright').chromium.executablePath())")"
+          node tests/studio-browser.cjs
+          node tests/browser.cjs
+      - name: Guardar capturas de tela do Studio
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: usbrin-studio-capturas
+          path: tests/artifacts/studio-*.png
+          if-no-files-found: warn
+          retention-days: 7
