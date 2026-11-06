@@ -5,13 +5,13 @@
 - O site de produção existente não foi substituído.
 - Cloudflare Pages constrói `dist` com `npm run build`; rotas da API utilizam Pages Functions.
 - Banco D1 de homologação: `usbrin_partners_preview`, exclusivamente associado ao ambiente **preview** pelo binding `DB`. Não contém clientes ou candidaturas reais.
-- Migração SQL `migrations/0001_partners.sql` aplicada apenas ao D1 de homologação.
-- `APPLICATIONS_ENABLED=false` em preview. Nenhuma candidatura é aceita até liberação explícita, conclusão da privacidade e antifraude.
-- Cloudflare Access **não está habilitado na conta**: áreas administrativas e privadas deverão negar acesso até a configuração legítima.
+- Migrações SQL `migrations/0001_partners.sql`, `0002_financial_integrity.sql` e `0003_partner_contracts.sql` aplicadas sequencialmente apenas ao D1 de homologação.
+- `APPLICATIONS_ENABLED=false` em preview. Nenhuma candidatura ou consulta externa é aceita até liberação explícita, conclusão da privacidade e antifraude.
+- Cloudflare Access **não está habilitado na conta**: áreas administrativas e privadas deverão negar acesso até a configuração legítima. A configuração inicial exige ação do proprietário no Cloudflare Dashboard, com escolha de um plano e cadastro de dados de pagamento mesmo no Free (segundo a documentação atual).
 
 ## Entregas no código
 1. `parceiros.html`: programa comercial e desenvolvedores.
-2. `candidatura.html`, `js/candidatura.js`: formulário validado, antispam Turnstile, recibo com protocolo.
+2. `candidatura.html`, `js/candidatura.js`: formulário validado, antispam Turnstile, recibo com protocolo; `status-candidatura.html` e `api/application-status`: consulta protegida por protocolo, e-mail e Turnstile, mostrando apenas o andamento.
 3. `portal.html`, `js/portal.js`: interfaces de administração, representante e desenvolvedor.
 4. `functions/api/applications.js`: recebimento de inscrições, D1, validação de origem, verificação Turnstile e bloqueio se faltar configuração.
 5. `functions/api/private/[[path]].js`: consulta, revisão e ativação de candidatos; leads por proprietário; metas, vendas e comissões; projetos e remuneração técnica; trilha de auditoria.
@@ -41,12 +41,15 @@
 
 ## Ressalvas e limites do MVP
 - O backend possui endpoints e telas para administração, mas **não** representa folha de pagamento, ERP ou software contábil certificado.
+- O fluxo exige registrar cada parcela recebida com referência única e os pagamentos com referência bancária; não permite registrar comissão de venda ainda não integralmente recebida. Não automatiza conciliação bancária.
+- O portal do desenvolvedor permite consultar obrigações registradas para sua conta, não dados de outros parceiros.
+- O processo seletivo exige passar por análise, pré-aprovação e documentação antes da aprovação final; ativação exige referência de contrato já assinado.
 - Não há processamento bancário automático, assinatura eletrônica, e-mail transacional ou ativação automática de usuários.
 - Registro de venda e pagamento depende de conciliação pela administração.
 - A experiência de candidatura está fechada por padrão para impedir coleta prematura de dados.
 - O painel não foi testado com usuários reais, pois o Access não está habilitado.
 - Faltam testes completos ponta a ponta com identidades reais; sem isso, não deve ser publicado como sistema pronto.
-- Avaliar endurecimento de integridade transacional e de concorrência para recibos e comissões antes de volume expressivo.
+- Há controles de unicidade e verificações de concorrência, mas a integridade financeira e a conciliação precisam de testes adicionais sob carga antes de operar com grande volume. Métodos de pagamento, impostos e custos ainda não formam um ERP completo.
 - A capacidade de entrega da USBRIN e a revisão das condições comerciais permanecem decisões empresariais, não automações.
 
 ## Verificação
@@ -61,3 +64,21 @@
 
 ## Operação sugerida
 Abrir primeiro candidaturas controladas; selecionar até três representantes e um ou dois desenvolvedores; revisar a conversão, a margem de cada plano, a qualidade das entregas e o suporte antes de ampliar a rede.
+
+## Novos requisitos de qualidade
+- A implantação inclui fluxo de recibos com referências de transação e três migrações SQL versionadas. Aplicar na ordem, em banco exclusivo da produção quando houver autorização.
+- Nenhum usuário administrador deve ser cadastrado com senha hardcoded. A identidade deve ser estabelecida pelo serviço de login, associada ao e-mail previamente verificado e à linha aprovada em D1.
+- Os testes de integração usam banco SQLite temporário e chaves RSA geradas para teste; não são clientes ou parceiros reais.
+- A URL de homologação não deve receber inscrições reais até o Turnstile, aviso de privacidade e fluxo administrativo serem concluídos.
+- O saldo de venda, referências de pagamento e margens não substituem contabilidade e conciliação financeira. Recomenda-se um contador para regras tributárias e advogado para enquadramento dos parceiros.
+- Se o Cloudflare Access não puder ser habilitado, não substituir por um login fake, senha localStorage ou endpoint sem assinatura.
+
+## Ações do proprietário para desbloquear a homologação
+1. Abra https://dash.cloudflare.com/ e entre na conta da USBRIN.
+2. Acesse Zero Trust; conclua o cadastro da organização, escolha o plano Free (se disponível para a conta), revise limites e providencie dados de cobrança exigidos pela Cloudflare.
+3. Confirme o domínio de equipe gerado em Zero Trust > Settings.
+4. Configure uma aplicação Access para a prévia, autorizando apenas identidades aprovadas, protegendo as rotas do portal e das APIs. Exija MFA para administrador.
+5. Registre a referência da aplicação Access e as credenciais de configuração no painel da Cloudflare, nunca no repositório.
+6. Crie uma chave Turnstile para o domínio de prévia e configure site key e segredo, mantendo inscrições fechadas até passar nos testes.
+7. Só após verificações e aprovação de privacidade/contratos abra candidaturas; configuração de produção requer banco D1 diferente do ambiente de teste.
+
