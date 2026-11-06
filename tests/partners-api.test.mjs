@@ -81,7 +81,7 @@ test("JWT requires a valid Cloudflare signature, correct audience and active use
  const missing=new Request("https://usbrin-preview.pages.dev/api/private/me");
  const response=await privateAPI({request:missing,env});
  assert.equal(response.status,403);
- const good=await signed(users[0][1]),bad=good.replace(/.$/,good.endsWith("A")?"B":"A");
+ const good=await signed(users[0][1]);const pieces=good.split(".");pieces[2]=(pieces[2][0]==="A"?"B":"A")+pieces[2].slice(1);const bad=pieces.join(".");
  for(const token of [bad,await signed(users[0][1],{aud:"wrong-audience"}),await signed(users[0][1],{exp:1})]){
    await assert.rejects(()=>authenticatedUser(new Request("https://usbrin-preview.pages.dev",{headers:{"Cf-Access-Jwt-Assertion":token}}),env));
  }
