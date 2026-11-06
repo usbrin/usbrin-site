@@ -1,0 +1,56 @@
+name: USBRIN Partners — Validation
+on:
+  push:
+    branches:
+      - feature/usbrin-partners-platform
+  pull_request:
+    branches:
+      - feature/usbrin-studio-mvp
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate JavaScript syntax
+        run: |
+          node --check js/candidatura.js
+          node --check js/portal.js
+          node --check functions/_lib/security.js
+          node --check functions/_lib/auth.js
+          node --check functions/api/public-config.js
+          node --check functions/api/applications.js
+          node --check 'functions/api/private/[[path]].js'
+      - name: Check D1 schema in isolated SQLite memory database
+        run: |
+          python3 - <<'PY'
+          import sqlite3
+          c=sqlite3.connect(':memory:')
+          c.executescript(open('migrations/0001_partners.sql').read())
+          expected=['users','applications','opportunities','sales','commissions','goals','projects','developer_payments','audit_events']
+          for name in expected:
+              assert c.execute("select name from sqlite_master where name=?",(name,)).fetchone(),name
+          print('Schema OK: '+', '.join(expected))
+          PY
+      - name: Existing Studio price rules
+        run: node --test tests/studio-pricing.test.cjs
+      - name: Build static assets
+        run: npm run build
+      - name: Verify new pages are included and preserved
+        run: |
+          test -f dist/index.html
+          test -f dist/studio.html
+          test -f dist/parceiros.html
+          test -f dist/candidatura.html
+          test -f dist/portal.html
+          test -f dist/privacidade-parceiros.html
+          test -f dist/css/parceiros.css
+          test -f dist/js/portal.js
+          grep -q 'id="studio-form"' dist/studio.html
+          grep -q 'href="studio.html"' dist/index.html
+          grep -q 'parceiros.html' dist/index.html
+          echo 'Static build checks passed'
