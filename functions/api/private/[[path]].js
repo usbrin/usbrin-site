@@ -158,8 +158,8 @@ export async function onRequest(context){
       const saleId=fresh(),status=received===gross?"paid":received>0?"partially_paid":"pending";
       try{
         const statements=[
-          query(db,"INSERT INTO sales(id,opportunity_id,gross_cents,received_cents,receipt_reference,status) VALUES (?,?,?,?,?,?)",saleId,id,gross,received,reference||null,status),
-          query(db,"UPDATE opportunities SET stage=?,updated_at=datetime('now') WHERE id=?",received===gross?"paid":"contracted",id)
+          query(db,"INSERT INTO sales(id,opportunity_id,gross_cents,received_cents,receipt_reference,status) VALUES (?,?,?,?,?,'pending')",saleId,id,gross,0,reference||null),
+          query(db,"UPDATE opportunities SET stage='contracted',updated_at=datetime('now') WHERE id=?",id)
         ];
         if(received>0)statements.push(query(db,"INSERT INTO sale_receipts (id,sale_id,amount_cents,reference,actor_id) VALUES (?,?,?,?,?)",fresh(),saleId,received,reference,user.id));
         statements.push(query(db,"INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at) VALUES (?,?,?,?,?,?,datetime('now'))",fresh(),user.id,"sale.create","sale",saleId,"received="+received));
@@ -175,20 +175,17 @@ export async function onRequest(context){
       if(!positive(amount)||amount===0||reference.length<3)return error("Recebimento ou referência inválida.");
       const sale=await query(db,"SELECT id,gross_cents,received_cents,status,opportunity_id FROM sales WHERE id=?",saleId).first();
       if(!sale||!["pending","partially_paid"].includes(sale.status)||sale.received_cents+amount>sale.gross_cents)return error("Recebimento excede o saldo ou venda não permite novos lançamentos.");
-      const newTotal=sale.received_cents+amount,final=newTotal===sale.gross_cents?"paid":"partially_paid";
       try{
-        const results=await db.batch([
+        await db.batch([
           query(db,"INSERT INTO sale_receipts(id,sale_id,amount_cents,reference,actor_id) VALUES (?,?,?,?,?)",fresh(),saleId,amount,reference,user.id),
-          query(db,"UPDATE sales SET received_cents=?,status=?,updated_at=datetime('now') WHERE id=? AND received_cents=? AND status=?",newTotal,final,saleId,sale.received_cents,sale.status),
-          query(db,"UPDATE opportunities SET stage=?,updated_at=datetime('now') WHERE id=?",final==="paid"?"paid":"contracted",sale.opportunity_id),
           query(db,"INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at) VALUES (?,?,?,?,?,?,datetime('now'))",fresh(),user.id,"sale.receipt","sale",saleId,"amount="+amount+" reference="+reference)
         ]);
-        if(results[1]?.meta?.changes!==1)throw Error("Conflito de atualização, revise o saldo da venda.");
       }catch(e){
-        if(/UNIQUE|constraint/i.test(String(e)))return error("Referência duplicada ou falha de integridade.",409);
+        if(/UNIQUE|constraint|receipt exceeds|immutable/i.test(String(e)))return error("Referência duplicada, saldo insuficiente ou venda indisponível. Revise a conciliação.",409);
         throw e;
       }
-      return respond({ok:true,saleId,receivedCents:newTotal,status:final});
+      const updated=await query(db,"SELECT received_cents,status FROM sales WHERE id=?",saleId).first();
+      return respond({ok:true,saleId,receivedCents:updated.received_cents,status:updated.status});
     }
     if(route==="admin/commission"&&method==="POST"&&allowed(user,"admin")){
       const b=await readBody(request),saleId=str(b.saleId,50),rate=b.rateBps;
