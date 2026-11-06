@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
  const setNavigation=role=>{
    const allowed=role==='admin'?['overview','leads','applications','projects','commissions']:role==='representante'?['overview','leads','commissions']:['overview','projects','commissions'];
    document.querySelectorAll('#portal-nav button').forEach(b=>b.classList.toggle('hidden',!allowed.includes(b.dataset.view)));
-   el('lead-create').classList.toggle('hidden',role!=='representante');
+   el('lead-create').classList.toggle('hidden',role!=='representante');el('goal-panel').classList.toggle('hidden',role!=='admin');
    el('project-create').classList.toggle('hidden',role!=='admin');
  };
  const open=async(name)=>{
@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
  const load=async(name)=>{
    if(name==='overview'){
      const info=user.role==='admin'?await request('admin/overview'):user.role==='representante'?await request('representante/dashboard'):await request('desenvolvedor/dashboard');
+     if(user.role==='admin'){const people=await request('admin/users');const target=el('goal-partner');target.replaceChildren(new Option('Selecione um representante',''));people.users.filter(x=>x.role==='representante'&&x.status==='active').forEach(x=>target.add(new Option(x.name+' — '+x.email,x.id)));}
      metrics.replaceChildren();
      if(user.role==='admin'){metric('Candidaturas recebidas',info.applications.reduce((n,x)=>n+x.total,0));metric('Parceiros ativos',info.users.reduce((n,x)=>n+(x.role==='admin'?0:x.total),0));metric('Receita recebida',currency(info.receivedCents));metric('Comissões pendentes',currency(info.commissionsPendingCents));}
      else if(user.role==='representante'){const month=new Date().toISOString().slice(0,7),goal=info.goals.find(x=>x.period===month),collected=info.sales.filter(x=>String(x.updated_at).slice(0,7)===month).reduce((n,x)=>n+x.received_cents,0);
@@ -67,6 +68,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
      });
    }
    if(name==='projects'){
+     if(user.role==='admin'){const people=await request('admin/users');const target=el('project-developer');target.replaceChildren(new Option('Selecione um desenvolvedor aprovado',''));people.users.filter(x=>x.role==='desenvolvedor'&&x.status==='active').forEach(x=>target.add(new Option(x.name+' — '+x.email,x.id)));}
      const data=user.role==='admin'?await request('admin/projects'):await request('desenvolvedor/dashboard'),projects=data.projects;
      table(el('project-list'),['Projeto','Etapa','Remuneração','Prazo','Prévia'],projects.map(x=>[x.title,x.stage,currency(x.compensation_cents),x.due_at||'-',x.preview_url||'-']),(cell,i)=>{
        const p=projects[i],allowed=user.role==='admin'?['proposed','accepted','in_progress','review','changes','approved','done','cancelled']:['accepted','in_progress','review'];
@@ -92,6 +94,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
      }else {const data=await request('desenvolvedor/dashboard');table(target,['Projeto','Valor','Situação','Pagamento'],data.payments.map(x=>[x.project_id,currency(x.amount_cents),x.status,x.paid_at||'Pendente']));}
    }
  };
+ el('goal-form').addEventListener('submit',async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));try{await request('admin/goal',{partnerId:d.partnerId,period:d.period,goalCents:Math.round(Number(d.amount)*100)});message('Meta comercial atualizada.')}catch(err){message(err.message,true)}});
  el('lead-form').addEventListener('submit',async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));try{await request('representante/lead',{company:d.company,contact:d.contact,city:d.city,segment:d.segment,product:d.product,estimatedCents:Math.round(Number(d.estimated||0)*100),note:d.note});e.target.reset();await open('leads')}catch(err){message(err.message,true)}});
  el('project-form').addEventListener('submit',async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));try{await request('admin/project',{title:d.title,description:d.description,developerId:d.developerId,compensationCents:Math.round(Number(d.compensation)*100),dueAt:d.dueAt});e.target.reset();await open('projects')}catch(err){message(err.message,true)}});
  try{const res=await request('me');user=res.user;el('identity').textContent='Conta: '+user.name+' · '+user.role;setNavigation(user.role);await open('overview');}catch(e){message('Portal indisponível: '+e.message+' O acesso é liberado somente após aprovação e configuração do Cloudflare Access.',true);document.querySelectorAll('#portal-nav button').forEach(x=>x.disabled=true)}
