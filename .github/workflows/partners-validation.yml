@@ -20,6 +20,8 @@ jobs:
         run: |
           node --check js/candidatura.js
           node --check js/portal.js
+          node --check js/studio.js
+          node --check functions/api/studio-inquiry.js
           node --check js/status-candidatura.js
           node --check functions/api/application-status.js
           node --check functions/_lib/security.js
@@ -32,7 +34,7 @@ jobs:
           python3 - <<'PY'
           import sqlite3
           c=sqlite3.connect(':memory:')
-          for migration in ['0001_partners.sql','0002_financial_integrity.sql','0003_partner_contracts.sql']:
+          for migration in ['0001_partners.sql','0002_financial_integrity.sql','0003_partner_contracts.sql','0004_studio_inquiries.sql','0005_studio_assignments.sql']:
               c.executescript(open('migrations/'+migration).read())
           expected=['users','applications','opportunities','sales','commissions','goals','projects','developer_payments','audit_events']
           for name in expected:
@@ -49,6 +51,7 @@ jobs:
         run: |
           test -f dist/index.html
           test -f dist/studio.html
+          test -f dist/privacidade-studio.html
           test -f dist/parceiros.html
           test -f dist/candidatura.html
           test -f dist/status-candidatura.html
