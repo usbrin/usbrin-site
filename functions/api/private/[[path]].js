@@ -51,11 +51,12 @@ export async function onRequest(context){
       await audit(db,user,"user.activate","application",id,role);return respond({ok:true});
     }
     if(route==="admin/finance"&&method==="GET"&&allowed(user,"admin")){
-      const [commissions,sales]=await db.batch([
+      const [commissions,sales,receivableSales]=await db.batch([
         db.prepare("SELECT c.*,u.name partner_name FROM commissions c JOIN users u ON u.id=c.partner_id ORDER BY c.created_at DESC LIMIT 200"),
-        db.prepare("SELECT s.id,s.received_cents,s.status,s.gross_cents,o.company FROM sales s JOIN opportunities o ON o.id=s.opportunity_id WHERE s.status='paid' AND NOT EXISTS(SELECT 1 FROM commissions c WHERE c.sale_id=s.id) ORDER BY s.created_at DESC LIMIT 200")
+        db.prepare("SELECT s.id,s.received_cents,s.status,s.gross_cents,o.company FROM sales s JOIN opportunities o ON o.id=s.opportunity_id WHERE s.status='paid' AND NOT EXISTS(SELECT 1 FROM commissions c WHERE c.sale_id=s.id) ORDER BY s.created_at DESC LIMIT 200"),
+        db.prepare("SELECT s.id,s.received_cents,s.gross_cents,o.company FROM sales s JOIN opportunities o ON o.id=s.opportunity_id WHERE s.status IN ('pending','partially_paid') AND s.received_cents<s.gross_cents ORDER BY s.updated_at DESC LIMIT 200")
       ]);
-      return respond({ok:true,commissions:commissions.results,sales:sales.results});
+      return respond({ok:true,commissions:commissions.results,sales:sales.results,receivableSales:receivableSales.results});
     }
     if(route==="admin/users"&&method==="GET"&&allowed(user,"admin")){
       const rows=await db.prepare("SELECT id,name,email,role,status FROM users ORDER BY created_at DESC LIMIT 250").all();
@@ -157,7 +158,7 @@ export async function onRequest(context){
     if(route==="representante/lead-stage"&&method==="POST"&&allowed(user,"representante")){
       const b=await readBody(request),id=str(b.id,50),stage=str(b.stage,30);
       if(!repStages.has(stage))return error("O parceiro não pode confirmar contratos nem pagamentos.");
-      const result=await query(db,"UPDATE opportunities SET stage=?,updated_at=datetime('now') WHERE id=? AND partner_id=? AND stage NOT IN ('contracted','paid','cancelled')",stage,id,user.id).run();
+      const result=await query(db,"UPDATE opportunities SET stage=?,updated_at=datetime('now') WHERE id=? AND partner_id=? AND stage NOT IN ('contracted','paid','cancelled','lost')",stage,id,user.id).run();
       if(!result.meta?.changes)return error("Oportunidade inexistente ou bloqueada.",404);
       await audit(db,user,"lead.stage","opportunity",id,stage);return respond({ok:true});
     }
@@ -177,8 +178,12 @@ export async function onRequest(context){
     if(route==="admin/project-stage"&&method==="POST"&&allowed(user,"admin")){
       const b=await readBody(request),id=str(b.id,50),stage=str(b.stage,25);
       if(!projectStages.has(stage))return error("Etapa inválida.");
-      const result=await query(db,"UPDATE projects SET stage=?,updated_at=datetime('now') WHERE id=?",stage,id).run();
-      if(!result.meta?.changes)return error("Projeto não encontrado.",404);
+      const project=await query(db,"SELECT id,stage FROM projects WHERE id=?",id).first();
+      if(!project)return error("Projeto não encontrado.",404);
+      const allowedTransitions={proposed:["cancelled"],accepted:["cancelled"],in_progress:["changes","cancelled"],review:["changes","approved","cancelled"],changes:["review","cancelled"],approved:["done"],done:[],cancelled:[]};
+      if(!(allowedTransitions[project.stage]||[]).includes(stage))return error("Mudança de etapa inválida para o projeto.",409);
+      const result=await query(db,"UPDATE projects SET stage=?,updated_at=datetime('now') WHERE id=? AND stage=?",stage,id,project.stage).run();
+      if(result.meta?.changes!==1)return error("Projeto alterado por outra operação. Atualize os dados.",409);
       await audit(db,user,"project.stage","project",id,stage);return respond({ok:true});
     }
     if(route==="admin/developer-payment"&&method==="POST"&&allowed(user,"admin")){
@@ -218,7 +223,8 @@ export async function onRequest(context){
       if(!project||!({proposed:["accepted"],accepted:["in_progress"],in_progress:["review"],changes:["in_progress"]}[project.stage]||[]).includes(stage))return error("Transição não autorizada.");
       const preview=str(b.previewUrl,350);
       if(preview&&!/^https:\/\//.test(preview))return error("A prévia precisa usar HTTPS.");
-      await query(db,"UPDATE projects SET stage=?,preview_url=CASE WHEN ?='' THEN preview_url ELSE ? END,updated_at=datetime('now') WHERE id=? AND developer_id=?",stage,preview,preview,id,user.id).run();
+      const updated=await query(db,"UPDATE projects SET stage=?,preview_url=CASE WHEN ?='' THEN preview_url ELSE ? END,updated_at=datetime('now') WHERE id=? AND developer_id=? AND stage=?",stage,preview,preview,id,user.id,project.stage).run();
+      if(updated.meta?.changes!==1)return error("Projeto alterado por outra operação.",409);
       await audit(db,user,"project.progress","project",id,stage);return respond({ok:true});
     }
     return error("Recurso não encontrado ou acesso insuficiente.",404);
