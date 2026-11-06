@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const output = path.join(root, 'dist');
-const pages = ['index.html','studio.html','privacidade.html','demo-clinica.html','demo-construtora.html','demo-imobiliaria.html','demo-restaurante.html','sitemap.xml','_headers'];
+const pages = ['index.html','studio.html','privacidade.html','demo-clinica.html','demo-construtora.html','demo-imobiliaria.html','demo-restaurante.html','parceiros.html','candidatura.html','portal.html','privacidade-parceiros.html','sitemap.xml','_headers'];
 const folders = ['assets','css','js'];
 fs.rmSync(output, {recursive:true,force:true});
 fs.mkdirSync(output,{recursive:true});
