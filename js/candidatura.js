@@ -15,7 +15,7 @@ try{
  const config=await request.json();
  if(!config.applicationsOpen||!config.turnstileSiteKey){availability.textContent='As candidaturas ainda não estão abertas. A USBRIN está finalizando a estrutura de seleção.';return;}
  const script=document.createElement('script');script.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';script.async=true;
- script.onload=()=>{window.turnstile.render('#turnstile',{sitekey:config.turnstileSiteKey,callback:(value)=>{token=value;button.disabled=false;},'expired-callback':()=>{token='';button.disabled=true;},'error-callback':()=>{token='';button.disabled=true;}})};
+ script.onload=()=>{window.turnstile.render('#turnstile',{sitekey:config.turnstileSiteKey,action:'usbrin_application',callback:(value)=>{token=value;button.disabled=false;},'expired-callback':()=>{token='';button.disabled=true;},'error-callback':()=>{token='';button.disabled=true;}})};
  script.onerror=()=>{availability.textContent='Verificação de segurança indisponível. Tente novamente mais tarde.';form.classList.add('hidden');};
  document.head.append(script);availability.textContent='Candidaturas abertas. Preencha suas informações e finalize a verificação de segurança.';form.classList.remove('hidden');
 }catch{availability.textContent='Não foi possível verificar a disponibilidade das candidaturas. Tente mais tarde.';}
