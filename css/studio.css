@@ -17,3 +17,15 @@
 @media(max-width:620px){.container{width:min(100% - 32px,1200px)}.header-inner{min-height:72px}.brand{font-size:1.09rem}.brand{gap:6px}.header .brand img{width:clamp(110px,32vw,150px);height:auto}.header-inner{gap:12px}.brand-studio{font-size:.66rem}.back{font-size:.72rem}.hero{padding:39px 0}.hero h1{font-size:clamp(2.5rem,10vw,3.8rem)}.hero-intro{font-size:.94rem}.hero-badges{gap:13px;margin-top:23px}.hero-badges span{font-size:.68rem}.workspace-heading{flex-direction:column;gap:3px}.panel{padding:19px;border-radius:15px}.step-heading{gap:11px;margin-bottom:23px}.step-num{width:36px;height:36px}.model-grid{grid-template-columns:1fr}.model-card{min-height:0}.model-card strong{font-size:.93rem}.model-card small{max-width:95%;font-size:.78rem}.demo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.demo-visual{height:118px}.field-grid{grid-template-columns:1fr}.span{grid-column:auto}.palettes{grid-template-columns:1fr 1fr}.feature-grid{grid-template-columns:1fr}.preview-heading{align-items:flex-start;flex-direction:column}.preview-stage{padding:12px}.site-preview{min-height:195px}.site-hero h4{font-size:.91rem}.site-hero p{font-size:.48rem}.site-graphic{height:95px}.site-graphic-ring{width:80px;height:80px}.site-nav{gap:5px}.footer-inner{padding:23px 0;min-height:0;align-items:flex-start;flex-direction:column;gap:9px}.faq-list{grid-template-columns:1fr}.faq{padding-top:35px;padding-bottom:55px}.message-actions{grid-template-columns:1fr}.message-actions a:first-child{grid-column:auto}}
 @media print{body{background:#fff;color:#111}header,.hero,.workspace-heading,.step,.support-card,.faq,footer,.quote-actions,.quote-cta,.no-print{display:none!important}.workspace{display:block}.right-column{position:static}.quote-card{background:#fff;color:#111;border:1px solid #ccc}.quote-line span,.quote-footnote,.quote-disclaimer{color:#222}.price{color:#111}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important;animation:none!important}}
+
+/* Envio direto opcional: não altera a experiência do Studio enquanto estiver desativado. */
+.direct-inquiry{border:1px solid #75639d;border-radius:16px;background:rgba(137,103,207,.10);padding:20px;margin-top:18px}
+.direct-inquiry[hidden]{display:none!important}
+.direct-inquiry>strong{display:block;font-family:'Space Grotesk',sans-serif;font-size:18px;color:#eee7ff}
+.direct-inquiry p{font-size:13px;color:#c9bfdc;line-height:1.55}
+.direct-inquiry .field-grid{gap:12px;margin:16px 0}
+.direct-inquiry .field input{width:100%;background:#100e18;color:#fff;border:1px solid #645875;border-radius:10px;padding:12px}
+.direct-inquiry .consent{margin:18px 0;font-size:13px}
+.direct-inquiry a{color:#d6c2ff;text-decoration:underline}
+.direct-inquiry button:disabled{opacity:.45;cursor:not-allowed}
+#studio-direct-status{min-height:20px;white-space:normal;word-break:break-word}
