@@ -201,7 +201,7 @@ test("SQL receipt ledger prevents overpayment even with stale concurrent reads a
  assert.equal(sale.status,200);
  let row=db.sqlite.prepare("SELECT status,received_cents FROM sales WHERE id=?").get(sale.data.saleId);
  assert.equal(row.received_cents,25000);assert.equal(row.status,"partially_paid");
- const add=await call(users[0][1],"admin/sale-receipt",{saleId:sale.data.saleId,amountCents:45000,reference:"BANK-IMMUTABLE-002"});
+ const add=await call(users[0][1],"admin/sale-receipt",{saleId:sale.data.saleId,amountCents:44000,reference:"BANK-IMMUTABLE-002"});
  assert.equal(add.status,200);assert.equal(add.data.receivedCents,69000);
  assert.throws(()=>{
    db.sqlite.prepare("INSERT INTO sale_receipts(id,sale_id,amount_cents,reference,actor_id) VALUES (?,?,?,?,?)")
