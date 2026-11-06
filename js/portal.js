@@ -39,9 +39,11 @@ document.addEventListener('DOMContentLoaded',async()=>{
      const info=user.role==='admin'?await request('admin/overview'):user.role==='representante'?await request('representante/dashboard'):await request('desenvolvedor/dashboard');
      metrics.replaceChildren();
      if(user.role==='admin'){metric('Candidaturas recebidas',info.applications.reduce((n,x)=>n+x.total,0));metric('Parceiros ativos',info.users.reduce((n,x)=>n+(x.role==='admin'?0:x.total),0));metric('Receita recebida',currency(info.receivedCents));metric('Comissões pendentes',currency(info.commissionsPendingCents));}
-     else if(user.role==='representante'){metric('Oportunidades',info.leads.length);metric('Em negociação',info.leads.filter(x=>x.stage==='negotiation').length);metric('Comissões previstas',currency(info.commissions.filter(x=>x.status!=='reversed').reduce((n,x)=>n+x.amount_cents,0)));metric('Comissões pagas',currency(info.commissions.filter(x=>x.status==='paid').reduce((n,x)=>n+x.amount_cents,0)));}
+     else if(user.role==='representante'){const month=new Date().toISOString().slice(0,7),goal=info.goals.find(x=>x.period===month),collected=info.sales.filter(x=>String(x.updated_at).slice(0,7)===month).reduce((n,x)=>n+x.received_cents,0);
+       metric('Oportunidades',info.leads.length);metric('Vendas recebidas no mês',currency(collected));metric('Meta mensal',goal?currency(goal.goal_cents):'Não definida');metric('Progresso da meta',goal&&goal.goal_cents>0?(100*collected/goal.goal_cents).toFixed(1)+'%':'—');
+       const details=el('overview-description');details.textContent='Comissões em aberto: '+currency(info.commissions.filter(x=>['estimated','approved','due'].includes(x.status)).reduce((n,x)=>n+x.amount_cents,0))+'. Comissões pagas: '+currency(info.commissions.filter(x=>x.status==='paid').reduce((n,x)=>n+x.amount_cents,0))+'.';}
      else {metric('Projetos atribuídos',info.projects.length);metric('Em desenvolvimento',info.projects.filter(x=>x.stage==='in_progress').length);metric('Para revisão',info.projects.filter(x=>x.stage==='review').length);metric('Remuneração paga',currency(info.payments.filter(x=>x.status==='paid').reduce((n,x)=>n+x.amount_cents,0)));}
-     el('overview-description').textContent='Esses números correspondem exclusivamente aos registros disponíveis para o seu perfil.';
+     if(user.role!=='representante')el('overview-description').textContent='Esses números correspondem exclusivamente aos registros disponíveis para o seu perfil.';
    }
    if(name==='applications'&&user.role==='admin'){
      const data=await request('admin/applications');table(el('application-list'),['Protocolo','Modalidade','Nome','Cidade/UF','Status'],data.applications.map(a=>[a.protocol,a.type,a.name,a.city+'/'+a.state,a.status]),(cell,i)=>{
