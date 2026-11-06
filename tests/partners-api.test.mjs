@@ -13,7 +13,7 @@ import {readBody,checkOrigin} from "../functions/_lib/security.js";
 class TestD1{
  constructor(){
    this.sqlite=new DatabaseSync(":memory:");
-   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql","migrations/0004_studio_inquiries.sql","migrations/0005_studio_assignments.sql","migrations/0006_sale_project_links.sql"]){
+   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql","migrations/0004_studio_inquiries.sql","migrations/0005_studio_assignments.sql","migrations/0006_sale_project_links.sql","migrations/0007_atomic_receipts.sql"]){
      this.sqlite.exec(readFileSync(new URL("../"+migration,import.meta.url),"utf8"));
    }
  }
@@ -194,6 +194,26 @@ test("records real partial receipts, refuses duplicates and creates commission o
  assert.ok(rep.data.sales.reduce((n,x)=>n+x.amount_cents,0)>=119000); // A representative may have receipts from other tests/clients.
 });
 
+test("SQL receipt ledger prevents overpayment even with stale concurrent reads and blocks history edits",async()=>{
+ const lead=await call(users[1][1],"representante/lead",{company:"Empresa Financeira Demo",contact:"Contato Financeiro",estimatedCents:69000});
+ assert.equal(lead.status,201);
+ const sale=await call(users[0][1],"admin/sale",{opportunityId:lead.data.id,grossCents:69000,receivedCents:25000,reference:"BANK-IMMUTABLE-001"});
+ assert.equal(sale.status,200);
+ let row=db.sqlite.prepare("SELECT status,received_cents FROM sales WHERE id=?").get(sale.data.saleId);
+ assert.equal(row.received_cents,25000);assert.equal(row.status,"partially_paid");
+ const add=await call(users[0][1],"admin/sale-receipt",{saleId:sale.data.saleId,amountCents:45000,reference:"BANK-IMMUTABLE-002"});
+ assert.equal(add.status,200);assert.equal(add.data.receivedCents,69000);
+ assert.throws(()=>{
+   db.sqlite.prepare("INSERT INTO sale_receipts(id,sale_id,amount_cents,reference,actor_id) VALUES (?,?,?,?,?)")
+   .run(crypto.randomUUID(),sale.data.saleId,1,"BANK-OVERPAID","a1");
+ },/receipt exceeds payable balance/);
+ const first=db.sqlite.prepare("SELECT id FROM sale_receipts WHERE sale_id=? LIMIT 1").get(sale.data.saleId);
+ assert.throws(()=>db.sqlite.prepare("DELETE FROM sale_receipts WHERE id=?").run(first.id),/immutable/);
+ assert.throws(()=>db.sqlite.prepare("UPDATE sale_receipts SET amount_cents=1 WHERE id=?").run(first.id),/immutable/);
+ const receiptTotal=db.sqlite.prepare("SELECT SUM(amount_cents) total FROM sale_receipts WHERE sale_id=?").get(sale.data.saleId).total;
+ row=db.sqlite.prepare("SELECT status,received_cents FROM sales WHERE id=?").get(sale.data.saleId);
+ assert.equal(receiptTotal,69000);assert.equal(row.received_cents,69000);assert.equal(row.status,"paid");
+});
 test("developer access remains isolated and project transitions are guarded",async()=>{
  const create=await call(users[0][1],"admin/project",{title:"Site Projeto",description:"Construir uma página responsiva e acessível.",developerId:"d1",compensationCents:35000});
  assert.equal(create.status,201);const id=create.data.id;
