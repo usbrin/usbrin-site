@@ -27,7 +27,7 @@ export async function onRequest(context){
         db.prepare("SELECT COALESCE(SUM(received_cents),0) total FROM sales WHERE status IN ('paid','partially_paid')"),
         db.prepare("SELECT COALESCE(SUM(amount_cents),0) total FROM commissions WHERE status IN ('due','approved')")
       ]);
-      return respond({ok:true,applications:applicants.results,users:reps.results,projects:devs.results,opportunities:opportunities.results,receivedCents:sales.results[0].total,commissionsPendingCents:(await db.prepare("SELECT COALESCE(SUM(amount_cents),0) total FROM commissions WHERE status IN ('due','approved')").first()).total});
+      return respond({ok:true,applications:applicants.results,users:reps.results,projects:devs.results,opportunities:opportunities.results,receivedCents:projects.results[0].total,commissionsPendingCents:sales.results[0].total});
     }
     if(route==="admin/applications"&&method==="GET"&&allowed(user,"admin")){
       const records=await db.prepare("SELECT * FROM applications ORDER BY created_at DESC LIMIT 250").all();return respond({ok:true,applications:records.results});
@@ -49,6 +49,25 @@ export async function onRequest(context){
       if(existing)return error("Esta identidade já possui conta; revisão administrativa necessária.",409);
       await query(db,"INSERT INTO users(id,email,name,role,status,application_id,created_at) VALUES (?,?,?,?, 'active',?,datetime('now'))",fresh(),a.email,a.name,role,a.id).run();
       await audit(db,user,"user.activate","application",id,role);return respond({ok:true});
+    }
+    if(route==="admin/finance"&&method==="GET"&&allowed(user,"admin")){
+      const [commissions,sales]=await db.batch([
+        db.prepare("SELECT c.*,u.name partner_name FROM commissions c JOIN users u ON u.id=c.partner_id ORDER BY c.created_at DESC LIMIT 200"),
+        db.prepare("SELECT s.id,s.received_cents,s.status,o.company FROM sales s JOIN opportunities o ON o.id=s.opportunity_id WHERE s.status='paid' AND NOT EXISTS(SELECT 1 FROM commissions c WHERE c.sale_id=s.id) ORDER BY s.created_at DESC LIMIT 200")
+      ]);
+      return respond({ok:true,commissions:commissions.results,sales:sales.results});
+    }
+    if(route==="admin/users"&&method==="GET"&&allowed(user,"admin")){
+      const rows=await db.prepare("SELECT id,name,email,role,status FROM users ORDER BY created_at DESC LIMIT 250").all();
+      return respond({ok:true,users:rows.results});
+    }
+    if(route==="admin/goal"&&method==="POST"&&allowed(user,"admin")){
+      const b=await readBody(request),id=str(b.partnerId,60),period=str(b.period,7),value=b.goalCents;
+      if(!/^\\d{4}-\\d{2}$/.test(period)||!positive(value))return error("Meta inválida.");
+      const rep=await query(db,"SELECT id FROM users WHERE id=? AND role='representante' AND status='active'",id).first();
+      if(!rep)return error("Representante não encontrado.");
+      await query(db,"INSERT INTO goals(id,partner_id,period,goal_cents) VALUES (?,?,?,?) ON CONFLICT(partner_id,period) DO UPDATE SET goal_cents=excluded.goal_cents",fresh(),id,period,value).run();
+      await audit(db,user,"goal.update","user",id,period+" "+value);return respond({ok:true});
     }
     if(route==="admin/opportunities"&&method==="GET"&&allowed(user,"admin")){
       const rows=await db.prepare("SELECT o.*,u.name representative FROM opportunities o JOIN users u ON u.id=o.partner_id ORDER BY o.updated_at DESC LIMIT 200").all();return respond({ok:true,opportunities:rows.results});
