@@ -20,7 +20,7 @@ export function checkOrigin(request){
  const origin=request.headers.get("origin");
  return Boolean(origin && origin===new URL(request.url).origin);
 }
-export async function verifiedTurnstile(token,env,request){
+export async function verifiedTurnstile(token,env,request,expectedAction="usbrin_application"){
  if(!env.TURNSTILE_SECRET||typeof token!=="string"||token.length<10||token.length>2048)return false;
  const response=await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify",{
    method:"POST",
@@ -31,5 +31,5 @@ export async function verifiedTurnstile(token,env,request){
  const verification=await response.json();
  return verification.success===true
    && verification.hostname===new URL(request.url).hostname
-   && verification.action==="usbrin_application";
+   && verification.action===expectedAction;
 }
