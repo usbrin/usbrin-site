@@ -11,7 +11,7 @@ import {readBody,checkOrigin} from "../functions/_lib/security.js";
 class TestD1{
  constructor(){
    this.sqlite=new DatabaseSync(":memory:");
-   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql"]){
+   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql"]){
      this.sqlite.exec(readFileSync(new URL("../"+migration,import.meta.url),"utf8"));
    }
  }
@@ -133,6 +133,39 @@ test("developer access remains isolated and project transitions are guarded",asy
  assert.equal((await call(users[0][1],"admin/project-stage",{id,stage:"approved"})).status,200);
  const backwards=await call(users[0][1],"admin/project-stage",{id,stage:"proposed"});assert.equal(backwards.status,409);
  const dev=await call(users[4][1],"desenvolvedor/dashboard");assert.deepEqual(dev.data.projects,[]);
+});
+
+test("partner activation requires an approved application and a traceable signed contract reference",async()=>{
+ const id="app-reviewed-1";
+ db.sqlite.prepare("INSERT INTO applications(id,protocol,type,name,email,phone,city,state,experience,motivation,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,'approved',datetime('now'),datetime('now'))")
+   .run(id,"U-TEST-APPROVED","representante","Parceiro de Teste","novo@usbrin.test","69999999999","Porto Velho","RO","Experiência comercial comprovada","Desejo conhecer e representar a USBRIN.");
+ const attempt=await call(users[0][1],"admin/activate",{applicationId:id,contractVerified:true});
+ assert.equal(attempt.status,400);
+ const done=await call(users[0][1],"admin/activate",{applicationId:id,contractVerified:true,contractReference:"TEST-CONTRACT-SIGNED-2026-01"});
+ assert.equal(done.status,200);
+ const verified=db.sqlite.prepare("SELECT contract_reference,role,status FROM users WHERE email=?").get("novo@usbrin.test");
+ assert.equal(verified.contract_reference,"TEST-CONTRACT-SIGNED-2026-01");
+ assert.equal(verified.status,"active");
+ const again=await call(users[0][1],"admin/activate",{applicationId:id,contractVerified:true,contractReference:"TEST-DUPLICATE"});
+ assert.equal(again.status,409);
+});
+
+test("developer payments cannot exceed the approved contract or be marked paid without reference",async()=>{
+ const project=await call(users[0][1],"admin/project",{title:"Landing demonstrativa",description:"Implementação responsiva acordada e aprovada",developerId:"d1",compensationCents:25000});
+ assert.equal(project.status,201);const id=project.data.id;
+ for(const stage of ["accepted","in_progress","review"]){
+   assert.equal((await call(users[3][1],"desenvolvedor/project",{id,stage})).status,200);
+ }
+ assert.equal((await call(users[0][1],"admin/project-stage",{id,stage:"approved"})).status,200);
+ const one=await call(users[0][1],"admin/developer-payment",{projectId:id,amountCents:20000,status:"pending"});
+ assert.equal(one.status,200);
+ const tooMuch=await call(users[0][1],"admin/developer-payment",{projectId:id,amountCents:10000,status:"pending"});
+ assert.equal(tooMuch.status,400);
+ assert.equal((await call(users[0][1],"admin/developer-payment-status",{id:one.data.id,status:"approved"})).status,200);
+ assert.equal((await call(users[0][1],"admin/developer-payment-status",{id:one.data.id,status:"paid"})).status,400);
+ assert.equal((await call(users[0][1],"admin/developer-payment-status",{id:one.data.id,status:"paid",reference:"TEST-DEV-PAYMENT-001"})).status,200);
+ const receipt=db.sqlite.prepare("SELECT payment_reference FROM developer_payments WHERE id=?").get(one.data.id);
+ assert.equal(receipt.payment_reference,"TEST-DEV-PAYMENT-001");
 });
 
 test("state validation and security helpers reject invalid content",async()=>{
