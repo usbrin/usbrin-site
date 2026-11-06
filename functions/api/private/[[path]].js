@@ -106,12 +106,13 @@ export async function onRequest(context){
       await audit(db,user,"commission.status","commission",id,c.status+" -> "+status);return respond({ok:true});
     }
     if(route==="representante/dashboard"&&method==="GET"&&allowed(user,"representante")){
-      const [leads,commissions,goals]=await db.batch([
+      const [leads,commissions,goals,sales]=await db.batch([
         query(db,"SELECT * FROM opportunities WHERE partner_id=? ORDER BY updated_at DESC LIMIT 200",user.id),
         query(db,"SELECT c.*,s.gross_cents,s.received_cents FROM commissions c JOIN sales s ON s.id=c.sale_id WHERE c.partner_id=? ORDER BY c.created_at DESC LIMIT 100",user.id),
-        query(db,"SELECT period,goal_cents FROM goals WHERE partner_id=? ORDER BY period DESC LIMIT 12",user.id)
+        query(db,"SELECT period,goal_cents FROM goals WHERE partner_id=? ORDER BY period DESC LIMIT 12",user.id),
+        query(db,"SELECT s.received_cents,s.updated_at FROM sales s JOIN opportunities o ON o.id=s.opportunity_id WHERE o.partner_id=? AND s.status IN ('paid','partially_paid') ORDER BY s.updated_at DESC LIMIT 500",user.id)
       ]);
-      return respond({ok:true,leads:leads.results,commissions:commissions.results,goals:goals.results});
+      return respond({ok:true,leads:leads.results,commissions:commissions.results,goals:goals.results,sales:sales.results});
     }
     if(route==="representante/lead"&&method==="POST"&&allowed(user,"representante")){
       const b=await readBody(request),company=str(b.company,160),contact=str(b.contact,160),value=Number(b.estimatedCents||0);
