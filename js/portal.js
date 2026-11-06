@@ -22,23 +22,81 @@ document.addEventListener('DOMContentLoaded',async()=>{
    const body=node('tbody');rows.forEach((r,i)=>{const row=node('tr');r.forEach(x=>row.append(node('td',x)));if(actions){const cell=node('td');actions(cell,i);row.append(cell)}body.append(row)});t.append(body);wrap.append(t);parent.append(wrap);
  };
  const setNavigation=role=>{
-   const allowed=role==='admin'?['overview','leads','applications','projects','commissions']:role==='representante'?['overview','leads','commissions']:['overview','projects','commissions'];
+   const allowed=role==='admin'?['overview','leads','applications','studio','projects','commissions']:role==='representante'?['overview','leads','commissions']:['overview','projects','commissions'];
    document.querySelectorAll('#portal-nav button').forEach(b=>b.classList.toggle('hidden',!allowed.includes(b.dataset.view)));
-   el('lead-create').classList.toggle('hidden',role!=='representante');el('goal-panel').classList.toggle('hidden',role!=='admin');
+   el('lead-create').classList.toggle('hidden',role!=='representante');el('goal-panel').classList.add('hidden');el('action-center').classList.toggle('hidden',role!=='admin');
    el('project-create').classList.toggle('hidden',role!=='admin');
  };
  const open=async(name)=>{
    view=name;document.querySelectorAll('.view').forEach(x=>x.classList.add('hidden'));el('view-'+name).classList.remove('hidden');
    el('developer-payments-admin').classList.toggle('hidden',!(name==='projects'&&user.role==='admin'));
    document.querySelectorAll('#portal-nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===name));
-   el('panel-title').textContent=({overview:'Visão geral',leads:'Oportunidades',applications:'Candidaturas',projects:'Projetos',commissions:'Comissões'})[name];
+   el('panel-title').textContent=({overview:'Visão geral',leads:'Oportunidades',applications:'Candidaturas',studio:'Solicitações Studio',projects:'Projetos',commissions:'Comissões'})[name];
    try{await load(name);message('Dados atualizados a partir do servidor.');}catch(e){message(e.message,true);}
  };
  document.querySelectorAll('#portal-nav button').forEach(x=>x.addEventListener('click',()=>open(x.dataset.view)));
+ for(const id of ['studio-status-filter','studio-search']){
+   el(id).addEventListener(id==='studio-search'?'input':'change',()=>{if(user?.role==='admin'&&view==='studio')load('studio').catch(e=>message(e.message,true));});
+ }
+ const renderActionCenter=tasks=>{
+   const list=el('action-list');list.replaceChildren();
+   const actions=[
+     {name:'Candidaturas aguardando análise',count:tasks.candidates,desc:'Ver etapas de seleção',view:'applications'},
+     {name:'Solicitações do Studio',count:tasks.studioNew,desc:'Avaliar novos briefings',view:'studio'},
+     {name:'Projetos fora do prazo',count:tasks.overdueProjects,desc:'Revisar entregas',view:'projects'},
+     {name:'Vendas com saldo a receber',count:tasks.salesAwaitingPayment,desc:'Conferir conciliação',view:'commissions'},
+     {name:'Oportunidades sem atualização há 7 dias',count:tasks.dormantOpportunities,desc:'Retomar contatos',view:'leads'}
+   ];
+   const pending=actions.filter(a=>a.count>0);
+   if(!pending.length){const empty=node('p','Nenhuma pendência registrada. Acompanhe novos candidatos, briefings e projetos por aqui.','muted');list.append(empty);return;}
+   pending.forEach(a=>{
+     const card=node('div',null,'task-card');
+     const count=node('strong',a.count,'task-count'),description=node('span',a.name,'task-name');
+     const action=btn(a.desc,()=>open(a.view));action.classList.add('task-action');
+     card.append(count,description,action);list.append(card);
+   });
+ };
+ const renderStudio=async data=>{
+   const host=el('studio-list'),filter=el('studio-status-filter').value,search=el('studio-search').value.trim().toLocaleLowerCase('pt-BR');
+   const items=data.inquiries.filter(x=>(!filter||x.status===filter)&&(!search||[x.name,x.company,x.protocol].some(v=>String(v||'').toLocaleLowerCase('pt-BR').includes(search))));
+   const people=(await request('admin/users')).users.filter(x=>x.role==='representante'&&x.status==='active');
+   const nextSteps={new:['review','archived'],review:['qualified','archived'],qualified:['proposal','archived'],proposal:['closed','archived'],closed:[],archived:[]};
+   table(host,['Protocolo','Contato','Tipo','Estimativa','Etapa','Recebido'],items.map(x=>[x.protocol,x.company||x.name,x.product,currency(x.estimate_cents),x.status,String(x.created_at||'').slice(0,10)]),(cell,i)=>{
+     const record=items[i],details=node('details'),summary=node('summary','Ver briefing');
+     const description=node('div',null,'details-content');
+     description.append(node('p','Nome: '+record.name));
+     if(record.email)description.append(node('p','E-mail: '+record.email));
+     if(record.phone)description.append(node('p','WhatsApp: '+record.phone));
+     description.append(node('p','Objetivo: '+record.goal));
+     if(record.notes)description.append(node('p','Observações: '+record.notes));
+     description.append(node('pre',record.briefing,'briefing-text'));
+     details.append(summary,description);cell.append(details);
+     const next=nextSteps[record.status]||[];
+     if(next.length){
+       const selection=node('select');selection.setAttribute('aria-label','Etapa da solicitação '+record.protocol);
+       selection.add(new Option('Selecionar etapa',''));next.forEach(step=>selection.add(new Option(step,step)));
+       const note=node('input');note.maxLength=1200;note.placeholder='Observação interna';note.value=record.reviewer_note||'';
+       cell.append(selection,note,btn('Atualizar',async()=>{
+         if(!selection.value){message('Selecione a próxima etapa.',true);return;}
+         try{await request('admin/studio-status',{id:record.id,status:selection.value,note:note.value});await open('studio')}catch(e){message(e.message,true)}
+       }));
+     }
+     if(record.opportunity_id){cell.append(node('p','Vinculada ao CRM','hint'));return;}
+     if(!['new','review','qualified','proposal'].includes(record.status))return;
+     if(!people.length){cell.append(node('p','Nenhum representante aprovado para atribuição.','hint'));return;}
+     const partner=node('select');partner.setAttribute('aria-label','Atribuir representante');
+     partner.add(new Option('Escolher representante',''));people.forEach(p=>partner.add(new Option(p.name,p.id)));
+     cell.append(partner,btn('Criar oportunidade',async()=>{
+       if(!partner.value){message('Selecione um representante.',true);return;}
+       if(!confirm('Criar oportunidade vinculada a este briefing e ao representante selecionado?'))return;
+       try{await request('admin/studio-assign',{inquiryId:record.id,partnerId:partner.value});await open('studio')}catch(e){message(e.message,true)}
+     }));
+   });
+ };
  const load=async(name)=>{
    if(name==='overview'){
      const info=user.role==='admin'?await request('admin/overview'):user.role==='representante'?await request('representante/dashboard'):await request('desenvolvedor/dashboard');
-     if(user.role==='admin'){const people=await request('admin/users');const target=el('goal-partner');target.replaceChildren(new Option('Selecione um representante',''));people.users.filter(x=>x.role==='representante'&&x.status==='active').forEach(x=>target.add(new Option(x.name+' — '+x.email,x.id)));}
+     if(user.role==='admin'){const people=await request('admin/users');const reps=people.users.filter(x=>x.role==='representante'&&x.status==='active');const target=el('goal-partner');target.replaceChildren(new Option('Selecione um representante',''));reps.forEach(x=>target.add(new Option(x.name+' — '+x.email,x.id)));el('goal-panel').classList.toggle('hidden',reps.length===0);renderActionCenter(info.tasks||{});}
      metrics.replaceChildren();
      if(user.role==='admin'){metric('Candidaturas recebidas',info.applications.reduce((n,x)=>n+x.total,0));metric('Parceiros ativos',info.users.reduce((n,x)=>n+(x.role==='admin'?0:x.total),0));metric('Receita recebida',currency(info.receivedCents));metric('Comissões pendentes',currency(info.commissionsPendingCents));}
      else if(user.role==='representante'){const month=new Date().toISOString().slice(0,7),goal=info.goals.find(x=>x.period===month),collected=info.sales.filter(x=>String(x.received_at).slice(0,7)===month).reduce((n,x)=>n+x.amount_cents,0);
@@ -47,6 +105,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
      else {metric('Projetos atribuídos',info.projects.length);metric('Em desenvolvimento',info.projects.filter(x=>x.stage==='in_progress').length);metric('Para revisão',info.projects.filter(x=>x.stage==='review').length);metric('Remuneração paga',currency(info.payments.filter(x=>x.status==='paid').reduce((n,x)=>n+x.amount_cents,0)));}
      if(user.role!=='representante')el('overview-description').textContent='Esses números correspondem exclusivamente aos registros disponíveis para o seu perfil.';
    }
+   if(name==='studio'&&user.role==='admin'){const entries=await request('admin/studio-inquiries');await renderStudio(entries);}
    if(name==='applications'&&user.role==='admin'){
      const data=await request('admin/applications');table(el('application-list'),['Protocolo','Modalidade','Nome','Cidade/UF','Status'],data.applications.map(a=>[a.protocol,a.type,a.name,a.city+'/'+a.state,a.status]),(cell,i)=>{
        const a=data.applications[i],select=node('select');
