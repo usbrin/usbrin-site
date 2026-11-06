@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS applications (
 );
 CREATE INDEX IF NOT EXISTS idx_app_status ON applications(type,status,created_at);
 CREATE INDEX IF NOT EXISTS idx_app_email ON applications(email,type);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_app_active_unique ON applications(email,type) WHERE status NOT IN ('rejected','withdrawn');
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE COLLATE NOCASE, name TEXT NOT NULL,
   role TEXT NOT NULL CHECK(role IN ('admin','representante','desenvolvedor')),
