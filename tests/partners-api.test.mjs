@@ -95,7 +95,7 @@ test("candidate forms require verified Turnstile, consent, and reject duplicate 
  assert.match(content.protocol,/^U[A-F0-9]{13}$/);
  assert.equal((await apply({request:request(body),env:enabled})).status,409);
  const stored=db.sqlite.prepare("SELECT email,type,status FROM applications WHERE protocol=?").get(content.protocol);
- assert.deepEqual(stored,{email:body.email,type:"representante",status:"received"});
+ assert.equal(stored.email,body.email);assert.equal(stored.type,"representante");assert.equal(stored.status,"received");
 });
 
 test("JWT requires a valid Cloudflare signature, correct audience and active user",async()=>{
