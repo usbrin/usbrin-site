@@ -49,7 +49,10 @@ document.addEventListener('DOMContentLoaded',async()=>{
    }
    if(name==='applications'&&user.role==='admin'){
      const data=await request('admin/applications');table(el('application-list'),['Protocolo','Modalidade','Nome','Cidade/UF','Status'],data.applications.map(a=>[a.protocol,a.type,a.name,a.city+'/'+a.state,a.status]),(cell,i)=>{
-       const a=data.applications[i],select=node('select');['received','review','requested','interview','preapproved','documentation','approved','rejected','withdrawn'].forEach(s=>{const o=new Option(s,s);if(s===a.status)o.selected=true;select.add(o)});
+       const a=data.applications[i],select=node('select');
+       const steps={received:['review','rejected','withdrawn'],review:['requested','interview','preapproved','rejected','withdrawn'],requested:['review','rejected','withdrawn'],interview:['preapproved','rejected','withdrawn'],preapproved:['documentation','rejected','withdrawn'],documentation:['approved','rejected','withdrawn'],approved:[],rejected:[],withdrawn:[]};
+       [a.status,...(steps[a.status]||[])].forEach(v=>{const option=new Option(v,v);select.add(option)});
+       select.disabled=(steps[a.status]||[]).length===0;
        select.setAttribute('aria-label','Situação da candidatura '+a.protocol);
        const note=node('input');note.value=a.reviewer_note||'';note.placeholder='Observação interna';note.maxLength=1200;note.setAttribute('aria-label','Observação');
        cell.append(select,note,btn('Salvar',async()=>{try{await request('admin/review',{id:a.id,status:select.value,note:note.value});await open('applications')}catch(e){message(e.message,true)}}));
