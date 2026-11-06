@@ -88,5 +88,12 @@ Abrir primeiro candidaturas controladas; selecionar até três representantes e 
 - O Pages Preview Access foi ativado para `*.usbrin-site.pages.dev`, limitado à identidade Cloudflare administradora verificada da USBRIN. O domínio principal de produção `usbrin-site.pages.dev` não foi bloqueado.
 - As configurações `ACCESS_TEAM_DOMAIN` e `ACCESS_AUD` foram adicionadas ao ambiente Preview do Pages. A configuração deve ser validada em uma implantação posterior à alteração.
 - A conta administrativa foi provisionada **somente no banco de homologação** com o e-mail verificado de proprietário da Cloudflare. Não há senha hardcoded.
-- `APPLICATIONS_ENABLED=false` permanece obrigatório, ainda não há Turnstile configurado, e candidatos não podem se inscrever.
+- `APPLICATIONS_ENABLED=false` permanece obrigatório. Turnstile de homologação já foi criado via Cloudflare API, com segredos armazenados exclusivamente como `secret_text` no ambiente Preview. Candidatos ainda não podem se inscrever.
 - Não há aplicação privada publicada em produção; tudo deve continuar na branch `feature/usbrin-partners-platform` até testes manuais de login e revisão de segurança.
+
+## Widget Turnstile de homologação (06/11/2026)
+- Foi criado **USBRIN Partners - Homologacao**, modo `managed`, autorizado para o hostname `feature-usbrin-partners-plat.usbrin-site.pages.dev`.
+- Chave pública em `TURNSTILE_SITE_KEY` e chave privada em `TURNSTILE_SECRET` como variável secreta do Cloudflare Pages, **somente Preview**.
+- A chave secreta não foi gravada no GitHub nem no relatório. Nunca copiá-la para arquivos públicos ou mensagens.
+- `APPLICATIONS_ENABLED=false` permanece até aprovação de privacidade/contratos e teste manual do envio completo. O widget não torna as inscrições públicas automaticamente.
+- Para produção, criar um widget com hostname de produção e secret separado; nunca usar o mesmo banco de homologação para candidatos reais.
