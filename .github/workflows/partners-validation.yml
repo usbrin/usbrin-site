@@ -30,7 +30,8 @@ jobs:
           python3 - <<'PY'
           import sqlite3
           c=sqlite3.connect(':memory:')
-          c.executescript(open('migrations/0001_partners.sql').read())
+          for migration in ['0001_partners.sql','0002_financial_integrity.sql','0003_partner_contracts.sql']:
+              c.executescript(open('migrations/'+migration).read())
           expected=['users','applications','opportunities','sales','commissions','goals','projects','developer_payments','audit_events']
           for name in expected:
               assert c.execute("select name from sqlite_master where name=?",(name,)).fetchone(),name
