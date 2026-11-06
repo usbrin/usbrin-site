@@ -84,7 +84,21 @@
         <label class="consent"><input id="consent" type="checkbox" required><span>Quero preparar uma mensagem com estes dados para enviar à USBRIN pelo WhatsApp. Entendo que o envio é opcional e realizado por mim.</span></label>
         <p class="privacy">Não armazenamos seu nome e briefing no site. Só a configuração técnica pode ser salva neste navegador. Abrir o WhatsApp não envia a mensagem automaticamente. <a href="privacidade.html" target="_blank" rel="noopener">Saiba como tratamos informações pessoais ↗</a></p>
         <button type="submit" class="primary main-submit">Revisar mensagem e solicitar proposta ↗</button>
-        <div class="message-result" id="message-result" hidden><div class="message-result-head"><strong>Seu pedido está pronto para revisão</strong><p>Confira o texto antes de abrir o WhatsApp. A contratação só acontecerá mediante proposta e aceite.</p></div><pre id="message-preview"></pre><div class="message-actions"><a id="whatsapp-link" class="primary" href="#" target="_blank" rel="noopener noreferrer">Abrir WhatsApp ↗</a><button type="button" class="secondary" id="copy-message">Copiar mensagem</button><a id="email-link" class="secondary" href="mailto:usbrin.contato@gmail.com">Enviar por e-mail</a></div></div>
+        <div class="message-result" id="message-result" hidden><div class="message-result-head"><strong>Seu pedido está pronto para revisão</strong><p>Confira o texto antes de abrir o WhatsApp. A contratação só acontecerá mediante proposta e aceite.</p></div><pre id="message-preview"></pre><div class="message-actions"><a id="whatsapp-link" class="primary" href="#" target="_blank" rel="noopener noreferrer">Abrir WhatsApp ↗</a><button type="button" class="secondary" id="copy-message">Copiar mensagem</button><a id="email-link" class="secondary" href="mailto:usbrin.contato@gmail.com">Enviar por e-mail</a></div>
+<div id="studio-direct-inquiry" class="direct-inquiry" hidden>
+  <strong>Enviar o briefing diretamente à USBRIN</strong>
+  <p>Esta é uma opção adicional: seu pedido será registrado para análise e contato, sem contratação automática.</p>
+  <div class="field-grid">
+    <div class="field"><label for="studio-contact-email">Seu e-mail</label><input type="email" id="studio-contact-email" maxlength="180" autocomplete="email" placeholder="email@empresa.com.br"></div>
+    <div class="field"><label for="studio-contact-phone">WhatsApp com DDD</label><input type="tel" id="studio-contact-phone" maxlength="40" autocomplete="tel" placeholder="(00) 00000-0000"></div>
+  </div>
+  <p class="privacy">Informe ao menos um meio de contato. Sua estimativa é preliminar; nossa equipe confirmará o valor e o escopo.</p>
+  <label class="consent"><input type="checkbox" id="studio-data-consent"><span>Autorizo a USBRIN a receber e armazenar este briefing para analisá-lo e entrar em contato sobre o projeto. Li o <a href="privacidade-studio.html" target="_blank" rel="noopener">aviso de privacidade desta solicitação</a>.</span></label>
+  <div id="studio-turnstile"></div>
+  <button type="button" class="primary" id="studio-send-direct" disabled>Enviar solicitação</button>
+  <p id="studio-direct-status" role="status" aria-live="polite"></p>
+</div>
+</div>
         <p role="status" id="status" aria-live="polite"></p>
       </section>
     </form>
