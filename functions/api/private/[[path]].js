@@ -19,15 +19,79 @@ export async function onRequest(context){
   try{
     if(route==="me"&&method==="GET")return respond({ok:true,user});
     if(route==="admin/overview"&&method==="GET"&&allowed(user,"admin")){
-      const [applicants,reps,devs,opportunities,projects,sales]=await db.batch([
+      const [applicants,reps,devs,opportunities,received,commissions,inquiries,overdue,receivables,staleLeads]=await db.batch([
         db.prepare("SELECT status,COUNT(*) total FROM applications GROUP BY status"),
         db.prepare("SELECT role,COUNT(*) total FROM users WHERE status='active' GROUP BY role"),
         db.prepare("SELECT stage,COUNT(*) total FROM projects GROUP BY stage"),
         db.prepare("SELECT stage,COUNT(*) total FROM opportunities GROUP BY stage"),
         db.prepare("SELECT COALESCE(SUM(received_cents),0) total FROM sales WHERE status IN ('paid','partially_paid')"),
-        db.prepare("SELECT COALESCE(SUM(amount_cents),0) total FROM commissions WHERE status IN ('due','approved')")
+        db.prepare("SELECT COALESCE(SUM(amount_cents),0) total FROM commissions WHERE status IN ('due','approved')"),
+        db.prepare("SELECT status,COUNT(*) total FROM studio_inquiries GROUP BY status"),
+        db.prepare("SELECT COUNT(*) total FROM projects WHERE due_at IS NOT NULL AND date(due_at)<date('now') AND stage NOT IN ('done','cancelled')"),
+        db.prepare("SELECT COUNT(*) total,COALESCE(SUM(gross_cents-received_cents),0) amount FROM sales WHERE status IN ('pending','partially_paid')"),
+        db.prepare("SELECT COUNT(*) total FROM opportunities WHERE updated_at<datetime('now','-7 days') AND stage NOT IN ('paid','cancelled','lost')")
       ]);
-      return respond({ok:true,applications:applicants.results,users:reps.results,projects:devs.results,opportunities:opportunities.results,receivedCents:projects.results[0].total,commissionsPendingCents:sales.results[0].total});
+      const total=(list,status)=>list.find(x=>x.status===status)?.total||0;
+      return respond({
+        ok:true,applications:applicants.results,users:reps.results,projects:devs.results,
+        opportunities:opportunities.results,receivedCents:received.results[0].total,
+        commissionsPendingCents:commissions.results[0].total,
+        studioInquiries:inquiries.results,
+        tasks:{
+          candidates:applicants.results.filter(x=>['received','review','requested','interview','preapproved','documentation'].includes(x.status)).reduce((n,x)=>n+x.total,0),
+          newCandidates:total(applicants.results,'received'),
+          studioNew:total(inquiries.results,'new'),
+          studioOpen:inquiries.results.filter(x=>['new','review','qualified','proposal'].includes(x.status)).reduce((n,x)=>n+x.total,0),
+          overdueProjects:overdue.results[0].total,
+          salesAwaitingPayment:receivables.results[0].total,
+          accountsReceivableCents:receivables.results[0].amount,
+          dormantOpportunities:staleLeads.results[0].total
+        }
+      });
+    }
+    if(route==="admin/studio-inquiries"&&method==="GET"&&allowed(user,"admin")){
+      const entries=await db.prepare("SELECT i.id,i.protocol,i.name,i.company,i.email,i.phone,i.goal,i.notes,i.briefing,i.product,i.estimate_cents,i.status,i.assigned_partner_id,i.opportunity_id,i.reviewer_note,i.created_at,i.updated_at,u.name partner_name FROM studio_inquiries i LEFT JOIN users u ON u.id=i.assigned_partner_id ORDER BY i.created_at DESC LIMIT 250").all();
+      return respond({ok:true,inquiries:entries.results});
+    }
+    if(route==="admin/studio-status"&&method==="POST"&&allowed(user,"admin")){
+      const b=await readBody(request),id=str(b.id,60),status=str(b.status,20),note=str(b.note,1200);
+      const transitions={
+        new:["review","archived"],
+        review:["qualified","archived"],
+        qualified:["proposal","archived"],
+        proposal:["closed","archived"],
+        closed:[],archived:[]
+      };
+      const item=await query(db,"SELECT id,status FROM studio_inquiries WHERE id=?",id).first();
+      if(!item)return error("Solicitação não encontrada.",404);
+      if(!(transitions[item.status]||[]).includes(status))return error("Etapa de atendimento inválida.",409);
+      const update=await query(db,"UPDATE studio_inquiries SET status=?,reviewer_note=?,updated_at=datetime('now') WHERE id=? AND status=?",status,note,id,item.status).run();
+      if(update.meta?.changes!==1)return error("Solicitação atualizada por outra operação.",409);
+      await audit(db,user,"studio.review","studio_inquiry",id,item.status+" -> "+status);
+      return respond({ok:true,status});
+    }
+    if(route==="admin/studio-assign"&&method==="POST"&&allowed(user,"admin")){
+      const b=await readBody(request),id=str(b.inquiryId,60),partnerId=str(b.partnerId,60);
+      if(!id||!partnerId)return error("Solicitação e representante obrigatórios.");
+      const entry=await query(db,"SELECT * FROM studio_inquiries WHERE id=?",id).first();
+      if(!entry||!["new","review","qualified","proposal"].includes(entry.status))return error("Solicitação indisponível para atribuição.",404);
+      if(entry.opportunity_id)return error("Solicitação já vinculada a uma oportunidade.",409);
+      const partner=await query(db,"SELECT id FROM users WHERE id=? AND role='representante' AND status='active'",partnerId).first();
+      if(!partner)return error("Escolha um representante aprovado e ativo.",400);
+      const oppId=fresh(),contact=entry.email||entry.phone,company=entry.company||entry.name;
+      const note=("USBRIN Studio "+entry.protocol+" | Objetivo: "+entry.goal+" | Briefing em solicitações Studio.").slice(0,1200);
+      try{
+        await db.batch([
+          query(db,"INSERT INTO opportunities(id,partner_id,company,contact,segment,product,estimated_cents,stage,note) VALUES (?,?,?,?,?,?,?,'new',?)",oppId,partnerId,company,contact,"Studio",entry.product,entry.estimate_cents,note),
+          query(db,"INSERT INTO studio_inquiry_assignments(inquiry_id,opportunity_id,partner_id,assigned_by) VALUES (?,?,?,?)",id,oppId,partnerId,user.id),
+          query(db,"UPDATE studio_inquiries SET assigned_partner_id=?,opportunity_id=?,updated_at=datetime('now') WHERE id=? AND opportunity_id IS NULL",partnerId,oppId,id),
+          query(db,"INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at) VALUES (?,?,?,?,?,?,datetime('now'))",fresh(),user.id,"studio.assign","studio_inquiry",id,"opportunity="+oppId+" partner="+partnerId)
+        ]);
+      }catch(e){
+        if(/UNIQUE|constraint/i.test(String(e)))return error("Esta solicitação já foi atribuída. Atualize a página.",409);
+        throw e;
+      }
+      return respond({ok:true,opportunityId:oppId});
     }
     if(route==="admin/applications"&&method==="GET"&&allowed(user,"admin")){
       const records=await db.prepare("SELECT * FROM applications ORDER BY created_at DESC LIMIT 250").all();return respond({ok:true,applications:records.results});
