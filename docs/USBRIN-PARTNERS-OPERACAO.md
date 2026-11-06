@@ -126,3 +126,30 @@ Abrir primeiro candidaturas controladas; selecionar até três representantes e 
 6. Definir etapas jurídicas, critérios de comissão e retenção antes do lançamento nacional.
 
 O site oficial `usbrin-site.pages.dev` permanece com a versão anterior, sem publicação dessas alterações. A branch e o Pull Request devem continuar de homologação até aprovação final.
+
+## Homologação de acesso público e privado — novembro de 2026
+
+### Separação validada por teste externo
+- Foi gerada uma superfície pública isolada em **`/public/*`**, por allowlist no `scripts/build-static.cjs`: páginas de recrutamento/candidatura/consulta, privacidade e apenas CSS, JS e imagens necessários. O pacote não copia `portal.html` nem `js/portal.js` para o diretório público.
+- As APIs públicas em `/public/api/public-config`, `/public/api/applications` e `/public/api/application-status` reutilizam os handlers validados em `functions/api` e permanecem protegidas por Turnstile e feature flag.
+- O Cloudflare Access criou uma **aplicação específica de homologação para `feature-usbrin-partners-plat.usbrin-site.pages.dev/public/*`** com política Bypass Everyone. É uma exceção *apenas para páginas públicas de recrutamento* no alias de preview. A política preexistente `*.usbrin-site.pages.dev` segue protegendo o restante.
+- A exceção Bypass foi usada estritamente para navegação pública; ela desativa os controles Access para essas rotas, conforme alerta da documentação. Nunca adicionar arquivos privados à allowlist `dist/public`.
+- O GitHub Actions `.github/workflows/preview-access-smoke.yml` verificou por HTTP externo: páginas públicas retornam 200, API pública informa inscrições fechadas, POST de candidatura fechada retorna 503, `/portal.html` e `/api/private/me` redirecionam visitantes sem login (HTTP 302).
+- Links para a nova área pública em homologação: `https://feature-usbrin-partners-plat.usbrin-site.pages.dev/public/parceiros.html`.
+
+### Integridade de pagamentos
+- Migração `0007_atomic_receipts.sql` aplicada **somente ao D1 de preview**.
+- Inserir um recibo ativa um trigger SQL que verifica o saldo e atualiza a venda e a oportunidade no mesmo comando. Tentativas acima do valor contratado são rejeitadas mesmo com leituras concorrentes e recibos já registrados não podem ser atualizados ou apagados.
+- O backend não altera manualmente o total recebido fora do trigger. Referências financeiras permanecem obrigatórias.
+- Testes de integração verificam soma dos recibos = total recebido, rejeição de estorno por alteração do histórico e proibição de recebimentos excedentes.
+
+### Experiência do recrutamento
+- No portal privado, a administração dispõe de filtros por modalidade/status, busca por nome/e-mail/protocolo e dossiê detalhado de cada candidatura (experiência, motivação e portfólio).
+- As observações internas podem ser salvas separadamente do avanço de etapa, pelo endpoint protegido `admin/application-note`.
+- Mudanças de status exigem a sequência de seleção prevista; ativação de conta exige contrato referenciado. A mudança de etapa **não envia notificação automática** ao interessado.
+
+### Limites e pendências para produção
+1. Configurar aplicativo Access para **usuários reais convidados** (representantes e desenvolvedores), mantendo validação JWT e papel em D1; a política atual do preview autoriza apenas a identidade administrativa e ainda não é login público para todos os parceiros.
+2. Validar em navegador o visual das páginas públicas, acessibilidade e o fluxo completo de inscrição com Turnstile, sem coletar dados antes da revisão jurídica.
+3. Definir bases legais, prazos de retenção e comunicação de candidaturas; revisar contratos brasileiros de colaboração e comissões.
+4. Criar D1 de produção separado e configurar política Access por caminhos na produção antes de publicar o portal; não alterar a branch de produção até homologação final.
