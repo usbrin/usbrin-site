@@ -36,7 +36,18 @@ export async function onRequest(context){
       const b=await readBody(request),status=str(b.status,30),id=str(b.id,50),note=str(b.note,1200);
       if(!statuses.has(status)||!id)return error("Dados inválidos.");
       const original=await query(db,"SELECT id,status FROM applications WHERE id=?",id).first();if(!original)return error("Candidatura não localizada.",404);
-      await query(db,"UPDATE applications SET status=?,reviewer_note=?,updated_at=datetime('now') WHERE id=?",status,note,id).run();
+      const transitions={
+        received:["review","rejected","withdrawn"],
+        review:["requested","interview","preapproved","rejected","withdrawn"],
+        requested:["review","rejected","withdrawn"],
+        interview:["preapproved","rejected","withdrawn"],
+        preapproved:["documentation","rejected","withdrawn"],
+        documentation:["approved","rejected","withdrawn"],
+        approved:[],rejected:[],withdrawn:[]
+      };
+      if(!(transitions[original.status]||[]).includes(status))return error("Etapa de seleção inválida. Siga o processo de avaliação e formalização.",409);
+      const updated=await query(db,"UPDATE applications SET status=?,reviewer_note=?,updated_at=datetime('now') WHERE id=? AND status=?",status,note,id,original.status).run();
+      if(updated.meta?.changes!==1)return error("Candidatura já foi alterada. Atualize a lista.",409);
       await audit(db,user,"application.review","application",id,original.status+" -> "+status);return respond({ok:true});
     }
     if(route==="admin/activate"&&method==="POST"&&allowed(user,"admin")){
