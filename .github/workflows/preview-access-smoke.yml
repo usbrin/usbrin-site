@@ -27,7 +27,7 @@ jobs:
           done
           test "$public_ok" = '1'
           for route in '/public/candidatura.html?area=representante' '/public/status-candidatura.html' '/public/css/parceiros.css' '/public/js/candidatura.js'; do
-            status=$(curl -sS --max-time 25 -o /tmp/public-asset -w '%{http_code}' "$BASE$route")
+            status=$(curl -sSL --max-time 25 -o /tmp/public-asset -w '%{http_code}' "$BASE$route")
             echo "Public $route => $status"
             test "$status" = '200'
           done
