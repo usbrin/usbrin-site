@@ -135,6 +135,19 @@ test("developer access remains isolated and project transitions are guarded",asy
  const dev=await call(users[4][1],"desenvolvedor/dashboard");assert.deepEqual(dev.data.projects,[]);
 });
 
+test("applications cannot skip assessment and documentation",async()=>{
+ const id="application-reviewed-2";
+ db.sqlite.prepare("INSERT INTO applications(id,protocol,type,name,email,phone,city,state,experience,motivation,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,'received',datetime('now'),datetime('now'))")
+   .run(id,"U-TEST-REVIEW-002","desenvolvedor","Pessoa Candidata","developer-candidate@usbrin.test","69999999999","Porto Velho","RO","Experiência em desenvolvimento","Tenho experiência em projetos e qualidade visual.");
+ assert.equal((await call(users[0][1],"admin/review",{id,status:"approved",note:""}) ).status,409);
+ for(const next of ["review","preapproved","documentation","approved"]){
+   assert.equal((await call(users[0][1],"admin/review",{id,status:next,note:"Documentação examinada."})).status,200);
+ }
+ assert.equal((await call(users[0][1],"admin/review",{id,status:"received",note:""}) ).status,409);
+ const stored=db.sqlite.prepare("SELECT status FROM applications WHERE id=?").get(id);
+ assert.equal(stored.status,"approved");
+});
+
 test("partner activation requires an approved application and a traceable signed contract reference",async()=>{
  const id="app-reviewed-1";
  db.sqlite.prepare("INSERT INTO applications(id,protocol,type,name,email,phone,city,state,experience,motivation,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,'approved',datetime('now'),datetime('now'))")
