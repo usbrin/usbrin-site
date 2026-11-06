@@ -36,6 +36,8 @@ jobs:
               assert c.execute("select name from sqlite_master where name=?",(name,)).fetchone(),name
           print('Schema OK: '+', '.join(expected))
           PY
+      - name: Partners API access and ledger integration tests
+        run: node --test tests/partners-api.test.mjs
       - name: Existing Studio price rules
         run: node --test tests/studio-pricing.test.cjs
       - name: Build static assets
