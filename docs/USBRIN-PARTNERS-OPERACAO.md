@@ -97,3 +97,32 @@ Abrir primeiro candidaturas controladas; selecionar até três representantes e 
 - A chave secreta não foi gravada no GitHub nem no relatório. Nunca copiá-la para arquivos públicos ou mensagens.
 - `APPLICATIONS_ENABLED=false` permanece até aprovação de privacidade/contratos e teste manual do envio completo. O widget não torna as inscrições públicas automaticamente.
 - Para produção, criar um widget com hostname de produção e secret separado; nunca usar o mesmo banco de homologação para candidatos reais.
+
+## Evolução operacional — Studio → CRM → Produção (06/11/2026)
+
+### Funcionalidades entregues em homologação
+- **Central de prioridades** em `portal.html` para administradores: candidaturas, novos briefings Studio, projetos atrasados, vendas em aberto e oportunidades sem atualização há mais de 7 dias. Contagens usam consultas reais ao D1.
+- O formulário de **metas mensais** aparece apenas quando houver representantes ativos cadastrados.
+- Nova opção de **envio direto no USBRIN Studio**, sem remover o WhatsApp/e-mail: coleta nome, empresa opcional, contato, objetivo e briefing apenas após confirmação específica e Turnstile; não existe armazenamento automático durante a configuração.
+- **Fila administrativa do Studio** com busca por nome/empresa/protocolo, revisão, observações internas, filtragem e atribuição a um representante aprovado.
+- **Uma solicitação só pode originar uma oportunidade** de CRM; unicidade assegurada por tabela vinculada em transação.
+- **Uma venda recebida pode originar um projeto técnico**; um índice único impede projeto duplicado para o mesmo contrato. Projetos avulsos continuam permitidos.
+- A remuneração técnica da produção exige aprovação e não pode ultrapassar, sozinha, o valor bruto da venda vinculada. Isso não é cálculo completo de margem.
+
+### Dados e flags
+- Migrações novas e aplicadas somente em D1 de homologação: `0004_studio_inquiries.sql`, `0005_studio_assignments.sql`, `0006_sale_project_links.sql`.
+- Variável **`STUDIO_INQUIRIES_ENABLED`** é opt-in e, se ausente ou diferente de `true`, bloqueia recebimento de qualquer dado pelo endpoint `/api/studio-inquiry`. A configuração atual continua **desativada**.
+- A API exige `TURNSTILE_SECRET`, token válido com ação `usbrin_studio`, origem HTTPS correspondente e confirmação de privacidade, além de chave idempotente por envio.
+- O valor do orçamento é registrado como **estimativa informada pelo navegador**; não constitui preço validado, contrato aceito ou valor recebido. Revisão de preço e tributação continua humana.
+- `privacidade-studio.html` é um aviso preliminar e requer revisão, inclusive política de retenção, antes de coletar dados reais.
+- Na produção, separar **recrutamento/Studio públicos** de **portal e API privados protegidos pelo Cloudflare Access**. O Pages Preview está hoje integralmente protegido por Access; isso é correto para homologação, mas não deve ser usado como canal público de candidatura.
+
+### Testes e critérios de liberação
+1. CI: sintaxe, scripts do Studio, todas as seis migrações, prevenção de candidaturas duplicadas, Turnstile mock, controle de acesso, recibos, comissões, envio consentido do Studio, atribuição única a representante e vínculo único venda→projeto.
+2. Testar manualmente os fluxos em navegador autenticado: alternância entre telas, formulário de metas sem representantes e navegação em celular.
+3. Para testar o Studio direto com servidor e widget reais, habilitar o flag **somente em homologação** depois de confirmar texto de privacidade, realizar cadastro de teste autorizado e verificar apagamento dos dados de teste.
+4. Concluir desenho da política Access **por caminho** antes de publicar formulários públicos; nunca liberar `/api/private/*` sem política e sem verificação de identidade e papel no servidor.
+5. Migrações e segredos **separados** em produção, testes negativos de autenticação e permissões antes do merge.
+6. Definir etapas jurídicas, critérios de comissão e retenção antes do lançamento nacional.
+
+O site oficial `usbrin-site.pages.dev` permanece com a versão anterior, sem publicação dessas alterações. A branch e o Pull Request devem continuar de homologação até aprovação final.
