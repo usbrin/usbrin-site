@@ -82,3 +82,11 @@ Abrir primeiro candidaturas controladas; selecionar até três representantes e 
 6. Crie uma chave Turnstile para o domínio de prévia e configure site key e segredo, mantendo inscrições fechadas até passar nos testes.
 7. Só após verificações e aprovação de privacidade/contratos abra candidaturas; configuração de produção requer banco D1 diferente do ambiente de teste.
 
+
+## Acesso de homologação confirmado em 05/11/2026
+- A organização Zero Trust foi criada e foi identificada na conta como `dry-waterfall-325e.cloudflareaccess.com`.
+- O Pages Preview Access foi ativado para `*.usbrin-site.pages.dev`, limitado à identidade Cloudflare administradora verificada da USBRIN. O domínio principal de produção `usbrin-site.pages.dev` não foi bloqueado.
+- As configurações `ACCESS_TEAM_DOMAIN` e `ACCESS_AUD` foram adicionadas ao ambiente Preview do Pages. A configuração deve ser validada em uma implantação posterior à alteração.
+- A conta administrativa foi provisionada **somente no banco de homologação** com o e-mail verificado de proprietário da Cloudflare. Não há senha hardcoded.
+- `APPLICATIONS_ENABLED=false` permanece obrigatório, ainda não há Turnstile configurado, e candidatos não podem se inscrever.
+- Não há aplicação privada publicada em produção; tudo deve continuar na branch `feature/usbrin-partners-platform` até testes manuais de login e revisão de segurança.
