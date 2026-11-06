@@ -4,6 +4,7 @@ import {readFileSync} from "node:fs";
 import {DatabaseSync} from "node:sqlite";
 import {onRequest as privateAPI} from "../functions/api/private/[[path]].js";
 import {onRequestPost as apply} from "../functions/api/applications.js";
+import {onRequestPost as studioInquiry} from "../functions/api/studio-inquiry.js";
 import {onRequestGet as publicConfig} from "../functions/api/public-config.js";
 import {onRequestPost as statusLookup} from "../functions/api/application-status.js";
 import {authenticatedUser} from "../functions/_lib/auth.js";
@@ -12,7 +13,7 @@ import {readBody,checkOrigin} from "../functions/_lib/security.js";
 class TestD1{
  constructor(){
    this.sqlite=new DatabaseSync(":memory:");
-   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql"]){
+   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql","migrations/0004_studio_inquiries.sql","migrations/0005_studio_assignments.sql"]){
      this.sqlite.exec(readFileSync(new URL("../"+migration,import.meta.url),"utf8"));
    }
  }
@@ -48,7 +49,7 @@ globalThis.fetch=async (url,options={})=>{
  if(String(url)===domain+"/cdn-cgi/access/certs")return new Response(JSON.stringify({keys:[jwk]}),{status:200});
  if(String(url).includes("challenges.cloudflare.com/turnstile/v0/siteverify")){
    const token=options.body?.get?.("response");
-   const action=token==="mock-application-token"?"usbrin_application":"usbrin_status";
+   const action=token==="mock-application-token"?"usbrin_application":token==="mock-studio-token"?"usbrin_studio":"usbrin_status";
    return new Response(JSON.stringify({success:true,hostname:"usbrin-preview.pages.dev",action}),{status:200});
  }
  return new Response("Not found",{status:404});
@@ -96,6 +97,44 @@ test("candidate forms require verified Turnstile, consent, and reject duplicate 
  assert.equal((await apply({request:request(body),env:enabled})).status,409);
  const stored=db.sqlite.prepare("SELECT email,type,status FROM applications WHERE protocol=?").get(content.protocol);
  assert.equal(stored.email,body.email);assert.equal(stored.type,"representante");assert.equal(stored.status,"received");
+});
+
+test("Studio remains opt-in and CRM conversion is unique, authorized and traceable",async()=>{
+ const disabledReq=new Request("https://usbrin-preview.pages.dev/api/studio-inquiry",{
+   method:"POST",headers:{"content-type":"application/json","origin":"https://usbrin-preview.pages.dev"},body:"{}"
+ });
+ assert.equal((await studioInquiry({request:disabledReq,env})).status,503);
+ const cfg=await publicConfig({env});assert.equal((await cfg.json()).studioInquiriesOpen,false);
+ const enabled={...env,STUDIO_INQUIRIES_ENABLED:"true",TURNSTILE_SITE_KEY:"key-test",TURNSTILE_SECRET:"secret-test"};
+ const body={idempotencyKey:crypto.randomUUID(),name:"Cliente demonstrativo",company:"Empresa Demonstrativa",
+   email:"cliente@empresa.test",phone:"",goal:"Criar um site institucional profissional",notes:"Projeto de teste",
+   briefing:"USBRIN Studio - Configuração de demonstração de um site institucional para apresentação de serviços.",product:"business",
+   estimateCents:119000,consent:true,website:"",turnstileToken:"mock-studio-token"};
+ const createReq=(data)=>new Request("https://usbrin-preview.pages.dev/api/studio-inquiry",{
+   method:"POST",headers:{"content-type":"application/json","origin":"https://usbrin-preview.pages.dev"},body:JSON.stringify(data)
+ });
+ assert.equal((await studioInquiry({request:createReq({...body,consent:false}),env:enabled})).status,400);
+ assert.equal((await studioInquiry({request:createReq({...body,turnstileToken:"mock-status-token"}),env:enabled})).status,403);
+ const received=await studioInquiry({request:createReq(body),env:enabled});
+ assert.equal(received.status,201);const saved=await received.json();assert.match(saved.protocol,/^S[A-F0-9]{13}$/);
+ const retry=await studioInquiry({request:createReq(body),env:enabled});
+ assert.equal(retry.status,200);assert.equal((await retry.json()).protocol,saved.protocol);
+ const requests=await call(users[0][1],"admin/studio-inquiries");assert.equal(requests.status,200);
+ const item=requests.data.inquiries.find(x=>x.protocol===saved.protocol);assert.ok(item);
+ assert.equal(item.email,body.email);assert.equal(item.status,"new");
+ assert.equal((await call(users[1][1],"admin/studio-inquiries")).status,404);
+ const before=await call(users[0][1],"admin/overview");
+ assert.ok(before.data.tasks.studioNew>=1);
+ const invalid=await call(users[0][1],"admin/studio-status",{id:item.id,status:"closed",note:""});assert.equal(invalid.status,409);
+ const changed=await call(users[0][1],"admin/studio-status",{id:item.id,status:"review",note:"Em análise"});assert.equal(changed.status,200);
+ const assign=await call(users[0][1],"admin/studio-assign",{inquiryId:item.id,partnerId:"r1"});
+ assert.equal(assign.status,200);
+ const second=await call(users[0][1],"admin/studio-assign",{inquiryId:item.id,partnerId:"r2"});
+ assert.equal(second.status,409);
+ const linked=db.sqlite.prepare("SELECT COUNT(*) total FROM studio_inquiry_assignments WHERE inquiry_id=?").get(item.id);
+ assert.equal(linked.total,1);
+ const rep1=await call(users[1][1],"representante/dashboard");assert.ok(rep1.data.leads.some(x=>x.id===assign.data.opportunityId));
+ const rep2=await call(users[2][1],"representante/dashboard");assert.ok(!rep2.data.leads.some(x=>x.id===assign.data.opportunityId));
 });
 
 test("JWT requires a valid Cloudflare signature, correct audience and active user",async()=>{
