@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
      metrics.replaceChildren();
      if(user.role==='admin'){metric('Candidaturas recebidas',info.applications.reduce((n,x)=>n+x.total,0));metric('Parceiros ativos',info.users.reduce((n,x)=>n+(x.role==='admin'?0:x.total),0));metric('Receita recebida',currency(info.receivedCents));metric('Comissões pendentes',currency(info.commissionsPendingCents));}
      else if(user.role==='representante'){metric('Oportunidades',info.leads.length);metric('Em negociação',info.leads.filter(x=>x.stage==='negotiation').length);metric('Comissões previstas',currency(info.commissions.filter(x=>x.status!=='reversed').reduce((n,x)=>n+x.amount_cents,0)));metric('Comissões pagas',currency(info.commissions.filter(x=>x.status==='paid').reduce((n,x)=>n+x.amount_cents,0)));}
-     else {metric('Projetos atribuídos',info.projects.length);metric('Em desenvolvimento',info.projects.filter(x=>x.stage==='in_progress').length);metric('Para revisão',info.projects.filter(x=>x.stage==='review').length);metric('Aprovados',info.projects.filter(x=>['approved','done'].includes(x.stage)).length);}
+     else {metric('Projetos atribuídos',info.projects.length);metric('Em desenvolvimento',info.projects.filter(x=>x.stage==='in_progress').length);metric('Para revisão',info.projects.filter(x=>x.stage==='review').length);metric('Remuneração paga',currency(info.payments.filter(x=>x.status==='paid').reduce((n,x)=>n+x.amount_cents,0)));}
      el('overview-description').textContent='Esses números correspondem exclusivamente aos registros disponíveis para o seu perfil.';
    }
    if(name==='applications'&&user.role==='admin'){
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
        const select=node('select');d.sales.forEach(s=>select.add(new Option(s.company+' — '+currency(s.received_cents),s.id)));
        const rate=node('input');rate.type='number';rate.min='0';rate.max='50';rate.step='.01';rate.placeholder='Percentual aprovado (%)';
        box.append(select,rate,btn('Calcular e registrar',async()=>{if(!confirm('Percentual confirmado conforme contrato do parceiro?'))return;try{await request('admin/commission',{saleId:select.value,rateBps:Math.round(Number(rate.value)*100)});await open('commissions')}catch(e){message(e.message,true)}}));target.prepend(box);
-     }else target.replaceChildren(node('p','O acompanhamento de pagamentos de desenvolvimento será liberado após a formalização dos projetos.','muted'));
+     }else {const data=await request('desenvolvedor/dashboard');table(target,['Projeto','Valor','Situação','Pagamento'],data.payments.map(x=>[x.project_id,currency(x.amount_cents),x.status,x.paid_at||'Pendente']));}
    }
  };
  el('lead-form').addEventListener('submit',async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));try{await request('representante/lead',{company:d.company,contact:d.contact,city:d.city,segment:d.segment,product:d.product,estimatedCents:Math.round(Number(d.estimated||0)*100),note:d.note});e.target.reset();await open('leads')}catch(err){message(err.message,true)}});
