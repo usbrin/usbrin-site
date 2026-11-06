@@ -5,6 +5,7 @@ import {DatabaseSync} from "node:sqlite";
 import {onRequest as privateAPI} from "../functions/api/private/[[path]].js";
 import {onRequestPost as apply} from "../functions/api/applications.js";
 import {onRequestGet as publicConfig} from "../functions/api/public-config.js";
+import {onRequestPost as statusLookup} from "../functions/api/application-status.js";
 import {authenticatedUser} from "../functions/_lib/auth.js";
 import {readBody,checkOrigin} from "../functions/_lib/security.js";
 
@@ -45,6 +46,7 @@ const jwk=await crypto.subtle.exportKey("jwk",publicKey);jwk.kid="partners-test-
 const priorFetch=globalThis.fetch;
 globalThis.fetch=async url=>{
  if(String(url)===domain+"/cdn-cgi/access/certs")return new Response(JSON.stringify({keys:[jwk]}),{status:200});
+ if(String(url).includes("challenges.cloudflare.com/turnstile/v0/siteverify"))return new Response(JSON.stringify({success:true,hostname:"usbrin-preview.pages.dev",action:"usbrin_status"}),{status:200});
  return new Response("Not found",{status:404});
 };
 async function signed(email,options={}){
@@ -181,6 +183,20 @@ test("developer payments cannot exceed the approved contract or be marked paid w
  assert.equal(receipt.payment_reference,"TEST-DEV-PAYMENT-001");
 });
 
+test("status lookup returns only selection progress after verified request",async()=>{
+ const config={...env,APPLICATIONS_ENABLED:"true",TURNSTILE_SITE_KEY:"test-site",TURNSTILE_SECRET:"test-secret"};
+ const body={protocol:"U-TEST-REVIEW-002",email:"developer-candidate@usbrin.test",turnstileToken:"a-valid-mocked-token"};
+ // Protocols use a secure random hexadecimal identifier, so this fixture must follow the API format.
+ db.sqlite.prepare("UPDATE applications SET protocol=? WHERE id=?").run("U123456789ABCD","application-reviewed-2");
+ body.protocol="U123456789ABCD";
+ const request=new Request("https://usbrin-preview.pages.dev/api/application-status",{method:"POST",headers:{"content-type":"application/json","origin":"https://usbrin-preview.pages.dev"},body:JSON.stringify(body)});
+ const result=await statusLookup({request,env:config});
+ const data=await result.json();
+ assert.equal(result.status,200);assert.equal(data.status,"approved");
+ assert.equal(Object.hasOwn(data,"name"),false);assert.equal(Object.hasOwn(data,"email"),false);
+ const forged=new Request("https://usbrin-preview.pages.dev/api/application-status",{method:"POST",headers:{"content-type":"application/json","origin":"https://usbrin-preview.pages.dev"},body:JSON.stringify({...body,email:"other@usbrin.test"})});
+ assert.equal((await statusLookup({request:forged,env:config})).status,404);
+});
 test("state validation and security helpers reject invalid content",async()=>{
  assert.equal(checkOrigin(new Request("https://usbrin-preview.pages.dev/test")),false);
  await assert.rejects(()=>readBody(new Request("https://usbrin-preview.pages.dev",{method:"POST",headers:{"content-type":"text/plain"},body:"hello"})));
