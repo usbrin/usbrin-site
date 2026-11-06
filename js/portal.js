@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
  };
  const open=async(name)=>{
    view=name;document.querySelectorAll('.view').forEach(x=>x.classList.add('hidden'));el('view-'+name).classList.remove('hidden');
+   el('developer-payments-admin').classList.toggle('hidden',!(name==='projects'&&user.role==='admin'));
    document.querySelectorAll('#portal-nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===name));
    el('panel-title').textContent=({overview:'Visão geral',leads:'Oportunidades',applications:'Candidaturas',projects:'Projetos',commissions:'Comissões'})[name];
    try{await load(name);message('Dados atualizados a partir do servidor.');}catch(e){message(e.message,true);}
@@ -93,6 +94,26 @@ document.addEventListener('DOMContentLoaded',async()=>{
        cell.append(btn('Atualizar',async()=>{try{await request(user.role==='admin'?'admin/project-stage':'desenvolvedor/project',{id:p.id,stage:sel.value,previewUrl:url.value});await open('projects')}catch(e){message(e.message,true)}}));
      });
    }
+   if(name==='projects'&&user.role==='admin'){
+     const payments=await request('admin/developer-payments');
+     const projects=await request('admin/projects');
+     const select=el('developer-payment-project');
+     select.replaceChildren(new Option('Selecione um projeto aprovado',''));
+     projects.projects.filter(p=>['approved','done'].includes(p.stage)).forEach(p=>select.add(new Option(p.title+' — previsto '+currency(p.compensation_cents),p.id)));
+     table(el('developer-payment-list'),['Projeto','Desenvolvedor','Valor','Situação'],payments.payments.map(p=>[p.title,p.developer,currency(p.amount_cents),p.status]),(cell,i)=>{
+       const p=payments.payments[i],next={pending:'approved',approved:'paid'}[p.status];
+       if(next)cell.append(btn('Marcar '+next,async()=>{
+         let reference='';
+         if(next==='paid'){
+           const raw=prompt('Informe a referência bancária do pagamento realizado:');
+           if(raw===null)return;reference=raw.trim();
+           if(reference.length<3){message('Referência bancária obrigatória.',true);return;}
+         }
+         if(!confirm('Confirmar atualização deste pagamento?'))return;
+         try{await request('admin/developer-payment-status',{id:p.id,status:next,reference});await open('projects')}catch(e){message(e.message,true);}
+       }));
+     });
+   }
    if(name==='commissions'){
      const target=el('commission-list');
      if(user.role==='representante'){
@@ -116,6 +137,15 @@ document.addEventListener('DOMContentLoaded',async()=>{
      }else {const data=await request('desenvolvedor/dashboard');table(target,['Projeto','Valor','Situação','Pagamento'],data.payments.map(x=>[x.project_id,currency(x.amount_cents),x.status,x.paid_at||'Pendente']));}
    }
  };
+ el('developer-payment-form').addEventListener('submit',async(e)=>{
+   e.preventDefault();
+   const d=Object.fromEntries(new FormData(e.target));
+   if(!confirm('Valor confirmado para o projeto aprovado?'))return;
+   try{
+     await request('admin/developer-payment',{projectId:d.projectId,amountCents:Math.round(Number(d.amount)*100),status:'pending'});
+     e.target.reset();await open('projects');
+   }catch(err){message(err.message,true)}
+ });
  el('goal-form').addEventListener('submit',async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));try{await request('admin/goal',{partnerId:d.partnerId,period:d.period,goalCents:Math.round(Number(d.amount)*100)});message('Meta comercial atualizada.')}catch(err){message(err.message,true)}});
  el('lead-form').addEventListener('submit',async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));try{await request('representante/lead',{company:d.company,contact:d.contact,city:d.city,segment:d.segment,product:d.product,estimatedCents:Math.round(Number(d.estimated||0)*100),note:d.note});e.target.reset();await open('leads')}catch(err){message(err.message,true)}});
  el('project-form').addEventListener('submit',async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));try{await request('admin/project',{title:d.title,description:d.description,developerId:d.developerId,compensationCents:Math.round(Number(d.compensation)*100),dueAt:d.dueAt});e.target.reset();await open('projects')}catch(err){message(err.message,true)}});
