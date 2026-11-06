@@ -52,7 +52,13 @@ document.addEventListener('DOMContentLoaded',async()=>{
        select.setAttribute('aria-label','Situação da candidatura '+a.protocol);
        const note=node('input');note.value=a.reviewer_note||'';note.placeholder='Observação interna';note.maxLength=1200;note.setAttribute('aria-label','Observação');
        cell.append(select,note,btn('Salvar',async()=>{try{await request('admin/review',{id:a.id,status:select.value,note:note.value});await open('applications')}catch(e){message(e.message,true)}}));
-       if(a.status==='approved')cell.append(btn('Ativar parceiro',async()=>{if(!confirm('Confirma que a documentação e as condições contratuais foram verificadas?'))return;try{await request('admin/activate',{applicationId:a.id,contractVerified:true});message('Parceiro ativado. Configure também o acesso de identidade no Cloudflare Access.')}catch(e){message(e.message,true)}}));
+       if(a.status==='approved')cell.append(btn('Ativar parceiro',async()=>{
+         const reference=prompt('Informe a referência do contrato já assinado e conferido:');
+         if(reference===null)return;
+         if(reference.trim().length<5){message('É necessária uma referência documental válida.',true);return;}
+         if(!confirm('Confirma que o contrato referenciado foi assinado e conferido?'))return;
+         try{await request('admin/activate',{applicationId:a.id,contractVerified:true,contractReference:reference.trim()});message('Parceiro ativado. Configure também o acesso de identidade no Cloudflare Access.');await open('applications')}catch(e){message(e.message,true)}
+       }));
      });
    }
    if(name==='leads'){
