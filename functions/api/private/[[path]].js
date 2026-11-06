@@ -147,9 +147,35 @@ export async function onRequest(context){
       if(!result.meta?.changes)return error("Projeto não encontrado.",404);
       await audit(db,user,"project.stage","project",id,stage);return respond({ok:true});
     }
+    if(route==="admin/developer-payment"&&method==="POST"&&allowed(user,"admin")){
+      const b=await readBody(request),projectId=str(b.projectId,60),value=b.amountCents,status=str(b.status,20);
+      if(!positive(value)||value===0||!["pending","approved"].includes(status))return error("Dados de remuneração inválidos.");
+      const p=await query(db,"SELECT id,developer_id,compensation_cents,stage FROM projects WHERE id=?",projectId).first();
+      if(!p||!p.developer_id||!["approved","done"].includes(p.stage))return error("Projeto precisa estar aprovado ou concluído.");
+      const existing=await query(db,"SELECT COALESCE(SUM(amount_cents),0) total FROM developer_payments WHERE project_id=? AND status!='cancelled'",projectId).first();
+      if(existing.total+value>p.compensation_cents)return error("Remuneração excede o valor contratado.");
+      const id=fresh();
+      await query(db,"INSERT INTO developer_payments(id,project_id,developer_id,amount_cents,status) VALUES (?,?,?,?,?)",id,projectId,p.developer_id,value,status).run();
+      await audit(db,user,"developer.payment.create","developer_payment",id);return respond({ok:true,id});
+    }
+    if(route==="admin/developer-payment-status"&&method==="POST"&&allowed(user,"admin")){
+      const b=await readBody(request),id=str(b.id,60),next=str(b.status,20),reference=str(b.reference,120);
+      const old=await query(db,"SELECT id,status FROM developer_payments WHERE id=?",id).first();
+      if(!old||!({pending:["approved","cancelled"],approved:["paid","cancelled"],paid:[],cancelled:[]}[old.status]||[]).includes(next))return error("Atualização de pagamento não permitida.");
+      if(next==="paid"&&!reference)return error("Referência financeira obrigatória.");
+      await query(db,"UPDATE developer_payments SET status=?,reference=?,paid_at=CASE WHEN ?='paid' THEN datetime('now') ELSE NULL END WHERE id=?",next,reference,next,id).run();
+      await audit(db,user,"developer.payment.status","developer_payment",id,old.status+" -> "+next);return respond({ok:true});
+    }
+    if(route==="admin/developer-payments"&&method==="GET"&&allowed(user,"admin")){
+      const p=await db.prepare("SELECT d.*,p.title,u.name developer FROM developer_payments d JOIN projects p ON p.id=d.project_id JOIN users u ON u.id=d.developer_id ORDER BY d.created_at DESC LIMIT 200").all();
+      return respond({ok:true,payments:p.results});
+    }
     if(route==="desenvolvedor/dashboard"&&method==="GET"&&allowed(user,"desenvolvedor")){
-      const p=await query(db,"SELECT * FROM projects WHERE developer_id=? ORDER BY updated_at DESC LIMIT 200",user.id).all();
-      return respond({ok:true,projects:p.results});
+      const [p,payments]=await db.batch([
+        query(db,"SELECT * FROM projects WHERE developer_id=? ORDER BY updated_at DESC LIMIT 200",user.id),
+        query(db,"SELECT id,project_id,amount_cents,status,paid_at FROM developer_payments WHERE developer_id=? ORDER BY created_at DESC LIMIT 200",user.id)
+      ]);
+      return respond({ok:true,projects:p.results,payments:payments.results});
     }
     if(route==="desenvolvedor/project"&&method==="POST"&&allowed(user,"desenvolvedor")){
       const b=await readBody(request),id=str(b.id,50),stage=str(b.stage,25);
