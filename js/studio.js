@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     'Outro':'Um site que representa seu negócio.'
   };
   let preparedMessage='',started=false;
+  let studioInquiryToken='',studioInquiryKey='',studioInquiryComplete=false;
   function track(name){
     // Eventos agregados, sem dados pessoais ou texto do briefing.
     if(Array.isArray(window.dataLayer))window.dataLayer.push({event:'usbrin_studio_'+name});
@@ -100,6 +101,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     return data;
   }
   function invalidate(){
+    studioInquiryComplete=false;studioInquiryKey='';
+    $('studio-direct-status').textContent='';
     result.hidden=true;preparedMessage='';$('whatsapp-link').removeAttribute('href');
     $('email-link').href='mailto:usbrin.contato@gmail.com';
     messagePreview.textContent='';status.textContent='';
@@ -186,11 +189,13 @@ document.addEventListener('DOMContentLoaded',()=>{
     updatePageOptions(P.PRODUCTS[product()].pages);if(!started){started=true;track('configuration_started');}render();invalidate();
   }));
   form.addEventListener('input',event=>{
+    if(event.target.closest('#studio-direct-inquiry'))return;
     if(event.target.name==='product')return;
     if(!started){started=true;track('configuration_started');}
     render();invalidate();
   });
   form.addEventListener('change',event=>{
+    if(event.target.closest('#studio-direct-inquiry'))return;
     if(event.target.name==='product')return;
     render();invalidate();
   });
@@ -238,5 +243,65 @@ document.addEventListener('DOMContentLoaded',()=>{
   $('copy-message').addEventListener('click',()=>{if(preparedMessage)copyText(preparedMessage,status)});
   $('whatsapp-link').addEventListener('click',()=>track('whatsapp_open_clicked'));
   $('email-link').addEventListener('click',()=>track('email_open_clicked'));
+  // Direct submission is an optional opt-in. The legacy WhatsApp/email flow never writes to D1.
+  async function initializeDirectInquiry(){
+    const section=$('studio-direct-inquiry'),send=$('studio-send-direct'),consent=$('studio-data-consent');
+    const live=$('studio-direct-status');
+    let available=false;
+    try{
+      const resp=await fetch('api/public-config',{cache:'no-store'});
+      if(!resp.ok)throw Error('Configuração indisponível');
+      const config=await resp.json();
+      if(!config.studioInquiriesOpen||!config.turnstileSiteKey)return;
+      available=true;
+      section.hidden=false;
+      const script=document.createElement('script');
+      script.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      script.async=true;
+      script.onload=()=>{
+        window.turnstile.render('#studio-turnstile',{
+          sitekey:config.turnstileSiteKey,
+          action:'usbrin_studio',
+          callback:t=>{studioInquiryToken=t;send.disabled=!consent.checked||studioInquiryComplete;},
+          'expired-callback':()=>{studioInquiryToken='';send.disabled=true;},
+          'error-callback':()=>{studioInquiryToken='';send.disabled=true;}
+        });
+      };
+      script.onerror=()=>{send.disabled=true;live.textContent='Verificação temporariamente indisponível. Você ainda pode usar o WhatsApp ou e-mail.';};
+      document.head.append(script);
+    }catch{if(available)live.textContent='Não foi possível habilitar o envio direto.';}
+    consent.addEventListener('change',()=>{send.disabled=!consent.checked||!studioInquiryToken||studioInquiryComplete;});
+    send.addEventListener('click',async()=>{
+      if(studioInquiryComplete)return;
+      if(!preparedMessage||!consent.checked||!studioInquiryToken){live.textContent='Revise a mensagem, confirme o aviso e conclua a verificação de segurança.';return;}
+      const contactEmail=$('studio-contact-email').value.trim(),contactPhone=$('studio-contact-phone').value.trim();
+      if(!contactEmail&&!contactPhone){live.textContent='Informe ao menos um contato: e-mail ou WhatsApp.';return;}
+      if(contactEmail&&!$('studio-contact-email').checkValidity()){live.textContent='Confira o e-mail informado.';return;}
+      if(!studioInquiryKey)studioInquiryKey=crypto.randomUUID();
+      const d=P.calculate(capture());
+      const payload={
+        idempotencyKey:studioInquiryKey,
+        name:$('name').value.trim(),company:$('company').value.trim(),
+        email:contactEmail,phone:contactPhone,goal:$('goal').value.trim(),notes:$('notes').value.trim(),
+        briefing:configurationText(),product:d.product,estimateCents:Math.round(d.estimate*100),
+        consent:true,website:'',turnstileToken:studioInquiryToken
+      };
+      send.disabled=true;live.textContent='Registrando solicitação...';
+      try{
+        const response=await fetch('api/studio-inquiry',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+        const body=await response.json();
+        if(!response.ok||!body.ok)throw Error(body.error||'Falha no registro.');
+        studioInquiryComplete=true;
+        live.textContent='Sua solicitação foi recebida. Protocolo: '+body.protocol+'. Guarde esse número; a USBRIN avaliará o briefing.';
+        track('direct_inquiry_received');
+      }catch(e){live.textContent=e.message||'Falha de conexão. Você pode usar o WhatsApp ou e-mail.';}
+      finally{
+        studioInquiryToken='';
+        if(window.turnstile)window.turnstile.reset('#studio-turnstile');
+        send.disabled=true;
+      }
+    });
+  }
+  initializeDirectInquiry();
   restoreFromUrl();render();
 });

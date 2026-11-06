@@ -1,0 +1,50 @@
+name: USBRIN Preview — Public and Private Access Smoke
+on:
+  push:
+    branches:
+      - feature/usbrin-partners-platform
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm public recruitment and protected admin
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='https://feature-usbrin-partners-plat.usbrin-site.pages.dev'
+          public_ok=0
+          for retry in 1 2 3 4 5 6; do
+            status=$(curl -sSL --max-time 25 -o /tmp/recruitment.html -w '%{http_code}' "$BASE/public/parceiros.html" || echo '000')
+            if [ "$status" = '200' ] && grep -q 'REDE DE PARCEIROS' /tmp/recruitment.html; then
+              public_ok=1
+              break
+            fi
+            echo "Recruitment not ready (attempt $retry, status $status)"
+            sleep 10
+          done
+          test "$public_ok" = '1'
+          for route in '/public/candidatura.html?area=representante' '/public/status-candidatura.html' '/public/css/parceiros.css' '/public/js/candidatura.js'; do
+            status=$(curl -sSL --max-time 25 -o /tmp/public-asset -w '%{http_code}' "$BASE$route")
+            echo "Public $route => $status"
+            test "$status" = '200'
+          done
+          status=$(curl -sS --max-time 25 -o /tmp/public-config -w '%{http_code}' "$BASE/public/api/public-config")
+          echo "Public config => $status"
+          test "$status" = '200'
+          grep -q '"applicationsOpen":false' /tmp/public-config
+          grep -q '"studioInquiriesOpen":false' /tmp/public-config
+          form_status=$(curl -sS --max-time 25 -o /tmp/candidate-response -w '%{http_code}' -X POST \
+            -H "Origin: $BASE" -H 'Content-Type: application/json' \
+            --data '{}' "$BASE/public/api/applications")
+          echo "Public candidate submission while closed => $form_status"
+          test "$form_status" = '503'
+          grep -q 'Inscrições ainda não estão abertas' /tmp/candidate-response
+          for route in '/portal.html' '/api/private/me'; do
+            status=$(curl -sS --max-time 25 -o /tmp/private-response -w '%{http_code}' "$BASE$route")
+            echo "Private $route without login => $status"
+            test "$status" != '200'
+          done
+          echo 'Safe public/private preview separation verified'
