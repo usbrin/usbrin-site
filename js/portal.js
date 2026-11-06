@@ -62,8 +62,18 @@ document.addEventListener('DOMContentLoaded',async()=>{
        const x=leads[i],s=node('select');['new','contact','interested','qualified','proposal','negotiation','lost'].forEach(v=>{const o=new Option(v,v);if(x.stage===v)o.selected=true;s.add(o)});
        cell.append(s,btn('Atualizar',async()=>{try{await request('representante/lead-stage',{id:x.id,stage:s.value});await open('leads')}catch(e){message(e.message,true)}}));
      }:(cell,i)=>{
-       const x=leads[i],gross=node('input');gross.type='number';gross.min='0';gross.step='.01';gross.placeholder='Contrato R$';gross.style.width='120px';
-       const paid=node('input');paid.type='number';paid.min='0';paid.step='.01';paid.placeholder='Recebido R
+       const x=leads[i],gross=node('input');gross.type='number';gross.min='0';gross.step='.01';gross.placeholder='Contrato (BRL)';gross.style.width='120px';
+       const paid=node('input');paid.type='number';paid.min='0';paid.step='.01';paid.placeholder='Recebido (BRL)';paid.style.width='120px';
+       const reference=node('input');reference.placeholder='Referência bancária';reference.maxLength=120;reference.style.width='155px';
+       cell.append(gross,paid,reference,btn('Registrar venda',async()=>{
+         if(!confirm('Confirma o valor contratado e o recebimento conciliado?'))return;
+         try{
+           const g=Math.round(Number(gross.value)*100),p=Math.round(Number(paid.value)*100);
+           await request('admin/sale',{opportunityId:x.id,grossCents:g,receivedCents:p,reference:reference.value});
+           await open('leads');
+         }catch(e){message(e.message,true);}
+       }));
+
      });
    }
    if(name==='projects'){
