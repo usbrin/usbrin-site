@@ -238,6 +238,11 @@ test("applications cannot skip assessment and documentation",async()=>{
  assert.equal((await call(users[0][1],"admin/review",{id,status:"received",note:""}) ).status,409);
  const stored=db.sqlite.prepare("SELECT status FROM applications WHERE id=?").get(id);
  assert.equal(stored.status,"approved");
+ const updated=await call(users[0][1],"admin/application-note",{id,note:"Avaliação interna: portfólio e referências conferidos."});
+ assert.equal(updated.status,200);
+ assert.equal((await call(users[1][1],"admin/application-note",{id,note:"Tentativa sem permissão"})).status,404);
+ const savedNote=db.sqlite.prepare("SELECT reviewer_note FROM applications WHERE id=?").get(id).reviewer_note;
+ assert.equal(savedNote,"Avaliação interna: portfólio e referências conferidos.");
 });
 
 test("partner activation requires an approved application and a traceable signed contract reference",async()=>{
