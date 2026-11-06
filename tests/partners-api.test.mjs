@@ -145,8 +145,8 @@ test("Studio remains opt-in and CRM conversion is unique, authorized and traceab
  assert.equal(duplicateProject.status,409);
  const dev=await call(users[3][1],"desenvolvedor/dashboard");
  assert.ok(dev.data.projects.some(x=>x.id===linkedProject.data.id));
- const linked=db.sqlite.prepare("SELECT sale_id FROM projects WHERE id=?").get(linkedProject.data.id);
- assert.equal(linked.sale_id,contract.data.saleId);
+ const projectLink=db.sqlite.prepare("SELECT sale_id FROM projects WHERE id=?").get(linkedProject.data.id);
+ assert.equal(projectLink.sale_id,contract.data.saleId);
 });
 
 test("JWT requires a valid Cloudflare signature, correct audience and active user",async()=>{
