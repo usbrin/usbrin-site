@@ -20,6 +20,8 @@ jobs:
         run: |
           node --check js/candidatura.js
           node --check js/portal.js
+          node --check js/status-candidatura.js
+          node --check functions/api/application-status.js
           node --check functions/_lib/security.js
           node --check functions/_lib/auth.js
           node --check functions/api/public-config.js
@@ -49,6 +51,7 @@ jobs:
           test -f dist/studio.html
           test -f dist/parceiros.html
           test -f dist/candidatura.html
+          test -f dist/status-candidatura.html
           test -f dist/portal.html
           test -f dist/privacidade-parceiros.html
           test -f dist/css/parceiros.css
