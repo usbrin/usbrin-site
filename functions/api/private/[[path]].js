@@ -41,14 +41,15 @@ export async function onRequest(context){
     }
     if(route==="admin/activate"&&method==="POST"&&allowed(user,"admin")){
       const b=await readBody(request),id=str(b.applicationId,50);
-      if(b.contractVerified!==true)return error("Confirme a formalização contratual antes da ativação.");
+      const contractReference=str(b.contractReference,120);
+      if(b.contractVerified!==true||contractReference.length<5)return error("Confirme a assinatura e informe a referência documental do contrato.");
       const a=await query(db,"SELECT id,name,email,type,status FROM applications WHERE id=?",id).first();
       if(!a||a.status!=="approved")return error("A candidatura ainda não está aprovada.");
       const role=a.type;
       const existing=await query(db,"SELECT id FROM users WHERE email=?",a.email).first();
       if(existing)return error("Esta identidade já possui conta; revisão administrativa necessária.",409);
-      await query(db,"INSERT INTO users(id,email,name,role,status,application_id,created_at) VALUES (?,?,?,?, 'active',?,datetime('now'))",fresh(),a.email,a.name,role,a.id).run();
-      await audit(db,user,"user.activate","application",id,role);return respond({ok:true});
+      await query(db,"INSERT INTO users(id,email,name,role,status,application_id,contract_reference,contract_verified_at,created_at) VALUES (?,?,?,?, 'active',?,?,datetime('now'),datetime('now'))",fresh(),a.email,a.name,role,a.id,contractReference).run();
+      await audit(db,user,"user.activate","application",id,role+" contract="+contractReference);return respond({ok:true});
     }
     if(route==="admin/finance"&&method==="GET"&&allowed(user,"admin")){
       const [commissions,sales,receivableSales]=await db.batch([
