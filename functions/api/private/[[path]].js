@@ -114,6 +114,14 @@ export async function onRequest(context){
       if(updated.meta?.changes!==1)return error("Candidatura já foi alterada. Atualize a lista.",409);
       await audit(db,user,"application.review","application",id,original.status+" -> "+status);return respond({ok:true});
     }
+    if(route==="admin/application-note"&&method==="POST"&&allowed(user,"admin")){
+      const b=await readBody(request),id=str(b.id,60),note=str(b.note,1200);
+      if(!id)return error("Informe a candidatura.",400);
+      const updated=await query(db,"UPDATE applications SET reviewer_note=?,updated_at=datetime('now') WHERE id=?",note,id).run();
+      if(updated.meta?.changes!==1)return error("Candidatura não localizada.",404);
+      await audit(db,user,"application.note","application",id,"internal note updated");
+      return respond({ok:true});
+    }
     if(route==="admin/activate"&&method==="POST"&&allowed(user,"admin")){
       const b=await readBody(request),id=str(b.applicationId,50);
       const contractReference=str(b.contractReference,120);
