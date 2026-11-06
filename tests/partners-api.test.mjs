@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {DatabaseSync} from "node:sqlite";
 import {onRequest as privateAPI} from "../functions/api/private/[[path]].js";
-import {onRequestPost as apply} from "../functions/api/applications.js";
+import {onRequestPost as apply} from "../functions/public/api/applications.js";
 import {onRequestPost as studioInquiry} from "../functions/api/studio-inquiry.js";
 import {onRequestGet as publicConfig} from "../functions/api/public-config.js";
 import {onRequestPost as statusLookup} from "../functions/api/application-status.js";
@@ -49,6 +49,12 @@ globalThis.fetch=async (url,options={})=>{
  if(String(url)===domain+"/cdn-cgi/access/certs")return new Response(JSON.stringify({keys:[jwk]}),{status:200});
  if(String(url).includes("challenges.cloudflare.com/turnstile/v0/siteverify")){
    const token=options.body?.get?.("response");
+   if(token==="mock-replayed-token"){
+     return Response.json({success:false,"error-codes":["timeout-or-duplicate"]});
+   }
+   if(token==="mock-other-host-token"){
+     return Response.json({success:true,hostname:"other.example.test",action:"usbrin_application"});
+   }
    const action=token==="mock-application-token"?"usbrin_application":token==="mock-studio-token"?"usbrin_studio":"usbrin_status";
    return new Response(JSON.stringify({success:true,hostname:"usbrin-preview.pages.dev",action}),{status:200});
  }
@@ -80,16 +86,19 @@ async function call(email,route,data){
 
 test("public registration defaults to disabled, even with database",async()=>{
  const r=publicConfig({env});assert.equal((await r.json()).applicationsOpen,false);
- const req=new Request("https://usbrin-preview.pages.dev/api/applications",{method:"POST",headers:{"content-type":"application/json","origin":"https://usbrin-preview.pages.dev"},body:JSON.stringify({})});
+ const req=new Request("https://usbrin-preview.pages.dev/public/api/applications",{method:"POST",headers:{"content-type":"application/json","origin":"https://usbrin-preview.pages.dev"},body:JSON.stringify({})});
  assert.equal((await apply({request:req,env})).status,503);
 });
 
 test("candidate forms require verified Turnstile, consent, and reject duplicate active applications",async()=>{
  const enabled={...env,APPLICATIONS_ENABLED:"true",TURNSTILE_SITE_KEY:"site-key-test",TURNSTILE_SECRET:"secret-test"};
  const body={type:"representante",name:"Profissional Exemplo",email:"candidato.teste@usbrin.test",phone:"69999999999",city:"Porto Velho",state:"RO",experience:"Atendimento comercial profissional e relacionamento com empresas",motivation:"Desejo contribuir com prospecção nacional e crescimento sustentável",availability:"Tardes",privacy:true,website:"",turnstileToken:"mock-application-token"};
- const request=(payload)=>new Request("https://usbrin-preview.pages.dev/api/applications",{method:"POST",headers:{"content-type":"application/json","origin":"https://usbrin-preview.pages.dev"},body:JSON.stringify(payload)});
+ const request=(payload)=>new Request("https://usbrin-preview.pages.dev/public/api/applications",{method:"POST",headers:{"content-type":"application/json","origin":"https://usbrin-preview.pages.dev"},body:JSON.stringify(payload)});
  assert.equal((await apply({request:request({...body,privacy:false}),env:enabled})).status,400);
- assert.equal((await apply({request:request({...body,turnstileToken:"mock-status-token"}),env:enabled})).status,403);
+ for(const turnstileToken of ["","mock-status-token","mock-replayed-token","mock-other-host-token"]){
+   assert.equal((await apply({request:request({...body,turnstileToken}),env:enabled})).status,403);
+ }
+ assert.equal(db.sqlite.prepare("SELECT COUNT(*) AS total FROM applications WHERE email=?").get(body.email).total,0);
  const created=await apply({request:request(body),env:enabled});
  assert.equal(created.status,201);
  const content=await created.json();

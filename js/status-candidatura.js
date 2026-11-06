@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
    const cfg=await resp.json();
    if(!cfg.applicationsOpen||!cfg.turnstileSiteKey){info.textContent='Acompanhamento indisponível enquanto o programa não recebe candidaturas.';return;}
    const script=document.createElement('script');script.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';script.async=true;
-   script.onload=()=>window.turnstile.render('#status-turnstile',{sitekey:cfg.turnstileSiteKey,action:'usbrin_status',callback:t=>{token=t;button.disabled=false;},'expired-callback':()=>{token='';button.disabled=true;},'error-callback':()=>{token='';button.disabled=true;}});
+   script.onload=()=>window.turnstile.render('#status-turnstile',{size:document.getElementById('status-turnstile').clientWidth<300?'compact':'flexible',sitekey:cfg.turnstileSiteKey,action:'usbrin_status',callback:t=>{token=t;button.disabled=false;},'expired-callback':()=>{token='';button.disabled=true;},'error-callback':()=>{token='';button.disabled=true;}});
    script.onerror=()=>{info.textContent='Verificação de segurança temporariamente indisponível.';form.classList.add('hidden');};
    document.head.append(script);form.classList.remove('hidden');info.textContent='Consulte o andamento de sua candidatura.';
  }catch{info.textContent='Não foi possível carregar a consulta.';}
