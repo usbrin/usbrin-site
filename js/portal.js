@@ -35,8 +35,11 @@ document.addEventListener('DOMContentLoaded',async()=>{
    try{await load(name);message('Dados atualizados a partir do servidor.');}catch(e){message(e.message,true);}
  };
  document.querySelectorAll('#portal-nav button').forEach(x=>x.addEventListener('click',()=>open(x.dataset.view)));
- for(const id of ['studio-status-filter','studio-search']){
-   el(id).addEventListener(id==='studio-search'?'input':'change',()=>{if(user?.role==='admin'&&view==='studio')load('studio').catch(e=>message(e.message,true));});
+ for(const id of ['studio-status-filter','studio-search','app-type-filter','app-status-filter','app-search']){
+   el(id).addEventListener(id==='studio-search'||id==='app-search'?'input':'change',()=>{
+     const section=id.startsWith('app-')?'applications':'studio';
+     if(user?.role==='admin'&&view===section)load(section).catch(e=>message(e.message,true));
+   });
  }
  const renderActionCenter=tasks=>{
    const list=el('action-list');list.replaceChildren();
@@ -107,20 +110,53 @@ document.addEventListener('DOMContentLoaded',async()=>{
    }
    if(name==='studio'&&user.role==='admin'){const entries=await request('admin/studio-inquiries');await renderStudio(entries);}
    if(name==='applications'&&user.role==='admin'){
-     const data=await request('admin/applications');table(el('application-list'),['Protocolo','Modalidade','Nome','Cidade/UF','Status'],data.applications.map(a=>[a.protocol,a.type,a.name,a.city+'/'+a.state,a.status]),(cell,i)=>{
-       const a=data.applications[i],select=node('select');
-       const steps={received:['review','rejected','withdrawn'],review:['requested','interview','preapproved','rejected','withdrawn'],requested:['review','rejected','withdrawn'],interview:['preapproved','rejected','withdrawn'],preapproved:['documentation','rejected','withdrawn'],documentation:['approved','rejected','withdrawn'],approved:[],rejected:[],withdrawn:[]};
-       [a.status,...(steps[a.status]||[])].forEach(v=>{const option=new Option(v,v);select.add(option)});
-       select.disabled=(steps[a.status]||[]).length===0;
-       select.setAttribute('aria-label','Situação da candidatura '+a.protocol);
-       const note=node('input');note.value=a.reviewer_note||'';note.placeholder='Observação interna';note.maxLength=1200;note.setAttribute('aria-label','Observação');
-       cell.append(select,note,btn('Salvar',async()=>{try{await request('admin/review',{id:a.id,status:select.value,note:note.value});await open('applications')}catch(e){message(e.message,true)}}));
+     const data=await request('admin/applications');
+     const type=el('app-type-filter').value,statusFilter=el('app-status-filter').value,search=el('app-search').value.trim().toLocaleLowerCase('pt-BR');
+     const applicants=data.applications.filter(x=>
+       (!type||x.type===type)&&(!statusFilter||x.status===statusFilter)&&
+       (!search||[x.name,x.email,x.protocol,x.city].some(v=>String(v||'').toLocaleLowerCase('pt-BR').includes(search)))
+     );
+     const statuses={received:'Recebida',review:'Em análise',requested:'Informações solicitadas',interview:'Entrevista',preapproved:'Pré-aprovada',documentation:'Documentação',approved:'Aprovada',rejected:'Não selecionada',withdrawn:'Encerrada'};
+     const transitions={received:['review','rejected','withdrawn'],review:['requested','interview','preapproved','rejected','withdrawn'],requested:['review','rejected','withdrawn'],interview:['preapproved','rejected','withdrawn'],preapproved:['documentation','rejected','withdrawn'],documentation:['approved','rejected','withdrawn'],approved:[],rejected:[],withdrawn:[]};
+     table(el('application-list'),['Protocolo','Modalidade','Candidato','Cidade/UF','Etapa'],applicants.map(x=>[
+       x.protocol,x.type==='representante'?'Comercial':'Desenvolvimento',x.name,x.city+'/'+x.state,statuses[x.status]||x.status
+     ]),(cell,i)=>{
+       const a=applicants[i];
+       const details=node('details'),summary=node('summary','Ver candidatura');
+       const content=node('div',null,'details-content');
+       content.append(node('p','Nome: '+a.name),node('p','E-mail: '+a.email),node('p','WhatsApp: '+a.phone));
+       content.append(node('p','Disponibilidade: '+(a.availability||'Não informada')));
+       content.append(node('p','Experiência:'),node('pre',a.experience,'briefing-text'));
+       content.append(node('p','Apresentação:'),node('pre',a.motivation,'briefing-text'));
+       if(a.portfolio){
+         try{const url=new URL(a.portfolio);
+           if(url.protocol==='https:'){
+             const link=node('a','Ver portfólio');link.href=url.href;link.target='_blank';link.rel='noopener noreferrer';content.append(link);
+           }
+         }catch{}
+       }
+       details.append(summary,content);
+       cell.append(details);
+       const note=node('input');note.value=a.reviewer_note||'';note.placeholder='Nota interna da avaliação';note.maxLength=1200;note.setAttribute('aria-label','Nota interna de '+a.protocol);
+       cell.append(note,btn('Salvar observação',async()=>{
+         try{await request('admin/application-note',{id:a.id,note:note.value});message('Observação interna salva.')}catch(e){message(e.message,true)}
+       }));
+       const choices=transitions[a.status]||[];
+       if(choices.length){
+         const select=node('select');select.setAttribute('aria-label','Próxima etapa de '+a.protocol);select.add(new Option('Próxima etapa',''));
+         choices.forEach(v=>select.add(new Option(statuses[v]||v,v)));
+         cell.append(select,btn('Atualizar etapa',async()=>{
+           if(!select.value){message('Escolha uma etapa para avançar.',true);return;}
+           if(!confirm('Confirmar mudança na etapa de seleção? Esta ação não envia notificações automáticas.'))return;
+           try{await request('admin/review',{id:a.id,status:select.value,note:note.value});await open('applications')}catch(e){message(e.message,true)}
+         }));
+       }
        if(a.status==='approved')cell.append(btn('Ativar parceiro',async()=>{
          const reference=prompt('Informe a referência do contrato já assinado e conferido:');
          if(reference===null)return;
          if(reference.trim().length<5){message('É necessária uma referência documental válida.',true);return;}
          if(!confirm('Confirma que o contrato referenciado foi assinado e conferido?'))return;
-         try{await request('admin/activate',{applicationId:a.id,contractVerified:true,contractReference:reference.trim()});message('Parceiro ativado. Configure também o acesso de identidade no Cloudflare Access.');await open('applications')}catch(e){message(e.message,true)}
+         try{await request('admin/activate',{applicationId:a.id,contractVerified:true,contractReference:reference.trim()});await open('applications')}catch(e){message(e.message,true)}
        }));
      });
    }
