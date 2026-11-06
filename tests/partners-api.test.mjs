@@ -44,9 +44,13 @@ const domain="https://usbrin-tests.cloudflareaccess.com",audience="usbrin-partne
 const {publicKey,privateKey}=await crypto.subtle.generateKey({name:"RSASSA-PKCS1-v1_5",modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:"SHA-256"},true,["sign","verify"]);
 const jwk=await crypto.subtle.exportKey("jwk",publicKey);jwk.kid="partners-test-key";
 const priorFetch=globalThis.fetch;
-globalThis.fetch=async url=>{
+globalThis.fetch=async (url,options={})=>{
  if(String(url)===domain+"/cdn-cgi/access/certs")return new Response(JSON.stringify({keys:[jwk]}),{status:200});
- if(String(url).includes("challenges.cloudflare.com/turnstile/v0/siteverify"))return new Response(JSON.stringify({success:true,hostname:"usbrin-preview.pages.dev",action:"usbrin_status"}),{status:200});
+ if(String(url).includes("challenges.cloudflare.com/turnstile/v0/siteverify")){
+   const token=options.body?.get?.("response");
+   const action=token==="mock-application-token"?"usbrin_application":"usbrin_status";
+   return new Response(JSON.stringify({success:true,hostname:"usbrin-preview.pages.dev",action}),{status:200});
+ }
  return new Response("Not found",{status:404});
 };
 async function signed(email,options={}){
@@ -77,6 +81,21 @@ test("public registration defaults to disabled, even with database",async()=>{
  const r=publicConfig({env});assert.equal((await r.json()).applicationsOpen,false);
  const req=new Request("https://usbrin-preview.pages.dev/api/applications",{method:"POST",headers:{"content-type":"application/json","origin":"https://usbrin-preview.pages.dev"},body:JSON.stringify({})});
  assert.equal((await apply({request:req,env})).status,503);
+});
+
+test("candidate forms require verified Turnstile, consent, and reject duplicate active applications",async()=>{
+ const enabled={...env,APPLICATIONS_ENABLED:"true",TURNSTILE_SITE_KEY:"site-key-test",TURNSTILE_SECRET:"secret-test"};
+ const body={type:"representante",name:"Profissional Exemplo",email:"candidato.teste@usbrin.test",phone:"69999999999",city:"Porto Velho",state:"RO",experience:"Atendimento comercial profissional e relacionamento com empresas",motivation:"Desejo contribuir com prospecção nacional e crescimento sustentável",availability:"Tardes",privacy:true,website:"",turnstileToken:"mock-application-token"};
+ const request=(payload)=>new Request("https://usbrin-preview.pages.dev/api/applications",{method:"POST",headers:{"content-type":"application/json","origin":"https://usbrin-preview.pages.dev"},body:JSON.stringify(payload)});
+ assert.equal((await apply({request:request({...body,privacy:false}),env:enabled})).status,400);
+ assert.equal((await apply({request:request({...body,turnstileToken:"mock-status-token"}),env:enabled})).status,403);
+ const created=await apply({request:request(body),env:enabled});
+ assert.equal(created.status,201);
+ const content=await created.json();
+ assert.match(content.protocol,/^U[A-F0-9]{13}$/);
+ assert.equal((await apply({request:request(body),env:enabled})).status,409);
+ const stored=db.sqlite.prepare("SELECT email,type,status FROM applications WHERE protocol=?").get(content.protocol);
+ assert.deepEqual(stored,{email:body.email,type:"representante",status:"received"});
 });
 
 test("JWT requires a valid Cloudflare signature, correct audience and active user",async()=>{
