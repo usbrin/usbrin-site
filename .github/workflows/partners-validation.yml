@@ -60,6 +60,8 @@ jobs:
           test -f dist/css/parceiros.css
           test -f dist/js/portal.js
           grep -q 'id="studio-form"' dist/studio.html
+          grep -q 'id="studio-direct-inquiry"' dist/studio.html
+          grep -q 'id="view-studio"' dist/portal.html
           grep -q 'href="studio.html"' dist/index.html
           grep -q 'parceiros.html' dist/index.html
           echo 'Static build checks passed'
