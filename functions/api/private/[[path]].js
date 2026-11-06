@@ -53,7 +53,7 @@ export async function onRequest(context){
     if(route==="admin/finance"&&method==="GET"&&allowed(user,"admin")){
       const [commissions,sales]=await db.batch([
         db.prepare("SELECT c.*,u.name partner_name FROM commissions c JOIN users u ON u.id=c.partner_id ORDER BY c.created_at DESC LIMIT 200"),
-        db.prepare("SELECT s.id,s.received_cents,s.status,o.company FROM sales s JOIN opportunities o ON o.id=s.opportunity_id WHERE s.status='paid' AND NOT EXISTS(SELECT 1 FROM commissions c WHERE c.sale_id=s.id) ORDER BY s.created_at DESC LIMIT 200")
+        db.prepare("SELECT s.id,s.received_cents,s.status,s.gross_cents,o.company FROM sales s JOIN opportunities o ON o.id=s.opportunity_id WHERE s.status='paid' AND NOT EXISTS(SELECT 1 FROM commissions c WHERE c.sale_id=s.id) ORDER BY s.created_at DESC LIMIT 200")
       ]);
       return respond({ok:true,commissions:commissions.results,sales:sales.results});
     }
@@ -73,17 +73,45 @@ export async function onRequest(context){
       const rows=await db.prepare("SELECT o.*,u.name representative FROM opportunities o JOIN users u ON u.id=o.partner_id ORDER BY o.updated_at DESC LIMIT 200").all();return respond({ok:true,opportunities:rows.results});
     }
     if(route==="admin/sale"&&method==="POST"&&allowed(user,"admin")){
-      const b=await readBody(request),id=str(b.opportunityId,50),gross=b.grossCents,received=b.receivedCents;
-      if(!positive(gross)||gross===0||!positive(received)||received>gross)return error("Valores inválidos: envie valores em centavos.");
-      const lead=await query(db,"SELECT id,partner_id FROM opportunities WHERE id=?",id).first();
-      if(!lead)return error("Oportunidade não localizada.",404);
-      const existing=await query(db,"SELECT id FROM sales WHERE opportunity_id=?",id).first();if(existing)return error("Venda já registrada. Não duplique recebimentos.",409);
+      const b=await readBody(request),id=str(b.opportunityId,50),gross=b.grossCents,received=b.receivedCents,reference=str(b.reference,120);
+      if(!positive(gross)||gross===0||!positive(received)||received>gross)return error("Valores inválidos: envie centavos inteiros.");
+      if(received>0&&reference.length<3)return error("Informe a referência do recebimento conciliado.");
+      const lead=await query(db,"SELECT id,stage FROM opportunities WHERE id=?",id).first();
+      if(!lead||["lost","cancelled"].includes(lead.stage))return error("Oportunidade não encontrada ou encerrada.",404);
       const saleId=fresh(),status=received===gross?"paid":received>0?"partially_paid":"pending";
-      await db.batch([
-        query(db,"INSERT INTO sales(id,opportunity_id,gross_cents,received_cents,receipt_reference,status) VALUES (?,?,?,?,?,?)",saleId,id,gross,received,str(b.reference,120),status),
-        query(db,"UPDATE opportunities SET stage=?,updated_at=datetime('now') WHERE id=?",received===gross?"paid":"contracted",id)
-      ]);
-      await audit(db,user,"sale.record","sale",saleId,"recebido "+received);return respond({ok:true,saleId});
+      try{
+        const statements=[
+          query(db,"INSERT INTO sales(id,opportunity_id,gross_cents,received_cents,receipt_reference,status) VALUES (?,?,?,?,?,?)",saleId,id,gross,received,reference||null,status),
+          query(db,"UPDATE opportunities SET stage=?,updated_at=datetime('now') WHERE id=?",received===gross?"paid":"contracted",id)
+        ];
+        if(received>0)statements.push(query(db,"INSERT INTO sale_receipts (id,sale_id,amount_cents,reference,actor_id) VALUES (?,?,?,?,?)",fresh(),saleId,received,reference,user.id));
+        statements.push(query(db,"INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at) VALUES (?,?,?,?,?,?,datetime('now'))",fresh(),user.id,"sale.create","sale",saleId,"received="+received));
+        await db.batch(statements);
+      }catch(e){
+        if(/UNIQUE|constraint/i.test(String(e)))return error("Venda ou referência já registrada. Verifique os lançamentos.",409);
+        throw e;
+      }
+      return respond({ok:true,saleId,status});
+    }
+    if(route==="admin/sale-receipt"&&method==="POST"&&allowed(user,"admin")){
+      const b=await readBody(request),saleId=str(b.saleId,60),amount=b.amountCents,reference=str(b.reference,120);
+      if(!positive(amount)||amount===0||reference.length<3)return error("Recebimento ou referência inválida.");
+      const sale=await query(db,"SELECT id,gross_cents,received_cents,status,opportunity_id FROM sales WHERE id=?",saleId).first();
+      if(!sale||!["pending","partially_paid"].includes(sale.status)||sale.received_cents+amount>sale.gross_cents)return error("Recebimento excede o saldo ou venda não permite novos lançamentos.");
+      const newTotal=sale.received_cents+amount,final=newTotal===sale.gross_cents?"paid":"partially_paid";
+      try{
+        const results=await db.batch([
+          query(db,"INSERT INTO sale_receipts(id,sale_id,amount_cents,reference,actor_id) VALUES (?,?,?,?,?)",fresh(),saleId,amount,reference,user.id),
+          query(db,"UPDATE sales SET received_cents=?,status=?,updated_at=datetime('now') WHERE id=? AND received_cents=? AND status=?",newTotal,final,saleId,sale.received_cents,sale.status),
+          query(db,"UPDATE opportunities SET stage=?,updated_at=datetime('now') WHERE id=?",final==="paid"?"paid":"contracted",sale.opportunity_id),
+          query(db,"INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at) VALUES (?,?,?,?,?,?,datetime('now'))",fresh(),user.id,"sale.receipt","sale",saleId,"amount="+amount+" reference="+reference)
+        ]);
+        if(results[1]?.meta?.changes!==1)throw Error("Conflito de atualização, revise o saldo da venda.");
+      }catch(e){
+        if(/UNIQUE|constraint/i.test(String(e)))return error("Referência duplicada ou falha de integridade.",409);
+        throw e;
+      }
+      return respond({ok:true,saleId,receivedCents:newTotal,status:final});
     }
     if(route==="admin/commission"&&method==="POST"&&allowed(user,"admin")){
       const b=await readBody(request),saleId=str(b.saleId,50),rate=b.rateBps;
@@ -92,25 +120,30 @@ export async function onRequest(context){
       if(!s||s.status!=="paid")return error("A venda precisa estar integralmente recebida.");
       const existing=await query(db,"SELECT id FROM commissions WHERE sale_id=?",saleId).first();if(existing)return error("Comissão existente, revise o registro.",409);
       const cents=Math.round(s.received_cents*rate/10000),id=fresh();
-      await query(db,"INSERT INTO commissions(id,sale_id,partner_id,basis_cents,rate_bps,amount_cents,status) VALUES (?,?,?,?,?,?,'estimated')",id,saleId,s.partner_id,s.received_cents,rate,cents).run();
+      try{await query(db,"INSERT INTO commissions(id,sale_id,partner_id,basis_cents,rate_bps,amount_cents,status) VALUES (?,?,?,?,?,?,'estimated')",id,saleId,s.partner_id,s.received_cents,rate,cents).run();}catch(e){if(/UNIQUE|constraint/i.test(String(e)))return error("Comissão já registrada.",409);throw e;}
       await audit(db,user,"commission.create","commission",id,"bps="+rate);
       return respond({ok:true,id,amountCents:cents});
     }
     if(route==="admin/commission-status"&&method==="POST"&&allowed(user,"admin")){
-      const b=await readBody(request),id=str(b.id,50),status=str(b.status,20);
+      const b=await readBody(request),id=str(b.id,50),status=str(b.status,20),reference=str(b.reference,120);
       if(!["approved","due","paid","reversed"].includes(status))return error("Estado inválido.");
       const c=await query(db,"SELECT id,status FROM commissions WHERE id=?",id).first();
       if(!c)return error("Comissão não encontrada.",404);
       if(!({estimated:["approved","reversed"],approved:["due","reversed"],due:["paid","reversed"],paid:[],reversed:[]}[c.status]||[]).includes(status))return error("Transição de comissão não permitida.");
-      await query(db,"UPDATE commissions SET status=?,paid_at=CASE WHEN ?='paid' THEN datetime('now') ELSE NULL END WHERE id=?",status,status,id).run();
-      await audit(db,user,"commission.status","commission",id,c.status+" -> "+status);return respond({ok:true});
+      if(status==="paid"&&reference.length<3)return error("Informe a referência bancária do pagamento.");
+      const results=await db.batch([
+        query(db,"UPDATE commissions SET status=?,payment_reference=CASE WHEN ?='paid' THEN ? ELSE payment_reference END,paid_at=CASE WHEN ?='paid' THEN datetime('now') ELSE paid_at END WHERE id=? AND status=?",status,status,reference,status,id,c.status),
+        query(db,"INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at) VALUES (?,?,?,?,?,?,datetime('now'))",fresh(),user.id,"commission.status","commission",id,c.status+" -> "+status+" "+(status==="paid"?reference:""))
+      ]);
+      if(results[0]?.meta?.changes!==1)return error("Comissão alterada por outra operação. Atualize a página.",409);
+      return respond({ok:true});
     }
     if(route==="representante/dashboard"&&method==="GET"&&allowed(user,"representante")){
       const [leads,commissions,goals,sales]=await db.batch([
         query(db,"SELECT * FROM opportunities WHERE partner_id=? ORDER BY updated_at DESC LIMIT 200",user.id),
         query(db,"SELECT c.*,s.gross_cents,s.received_cents FROM commissions c JOIN sales s ON s.id=c.sale_id WHERE c.partner_id=? ORDER BY c.created_at DESC LIMIT 100",user.id),
         query(db,"SELECT period,goal_cents FROM goals WHERE partner_id=? ORDER BY period DESC LIMIT 12",user.id),
-        query(db,"SELECT s.received_cents,s.updated_at FROM sales s JOIN opportunities o ON o.id=s.opportunity_id WHERE o.partner_id=? AND s.status IN ('paid','partially_paid') ORDER BY s.updated_at DESC LIMIT 500",user.id)
+        query(db,"SELECT r.amount_cents,r.received_at FROM sale_receipts r JOIN sales s ON s.id=r.sale_id JOIN opportunities o ON o.id=s.opportunity_id WHERE o.partner_id=? AND s.status!='reversed' ORDER BY r.received_at DESC LIMIT 500",user.id)
       ]);
       return respond({ok:true,leads:leads.results,commissions:commissions.results,goals:goals.results,sales:sales.results});
     }
@@ -164,7 +197,7 @@ export async function onRequest(context){
       const old=await query(db,"SELECT id,status FROM developer_payments WHERE id=?",id).first();
       if(!old||!({pending:["approved","cancelled"],approved:["paid","cancelled"],paid:[],cancelled:[]}[old.status]||[]).includes(next))return error("Atualização de pagamento não permitida.");
       if(next==="paid"&&!reference)return error("Referência financeira obrigatória.");
-      await query(db,"UPDATE developer_payments SET status=?,reference=?,paid_at=CASE WHEN ?='paid' THEN datetime('now') ELSE NULL END WHERE id=?",next,reference,next,id).run();
+      const update=await query(db,"UPDATE developer_payments SET status=?,payment_reference=CASE WHEN ?='paid' THEN ? ELSE payment_reference END,paid_at=CASE WHEN ?='paid' THEN datetime('now') ELSE paid_at END WHERE id=? AND status=?",next,next,reference,next,id,old.status).run();if(update.meta?.changes!==1)return error("Pagamento alterado por outra operação.",409);
       await audit(db,user,"developer.payment.status","developer_payment",id,old.status+" -> "+next);return respond({ok:true});
     }
     if(route==="admin/developer-payments"&&method==="GET"&&allowed(user,"admin")){
