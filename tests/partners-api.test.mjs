@@ -13,7 +13,7 @@ import {readBody,checkOrigin} from "../functions/_lib/security.js";
 class TestD1{
  constructor(){
    this.sqlite=new DatabaseSync(":memory:");
-   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql","migrations/0004_studio_inquiries.sql","migrations/0005_studio_assignments.sql"]){
+   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql","migrations/0004_studio_inquiries.sql","migrations/0005_studio_assignments.sql","migrations/0006_sale_project_links.sql"]){
      this.sqlite.exec(readFileSync(new URL("../"+migration,import.meta.url),"utf8"));
    }
  }
@@ -135,6 +135,18 @@ test("Studio remains opt-in and CRM conversion is unique, authorized and traceab
  assert.equal(linked.total,1);
  const rep1=await call(users[1][1],"representante/dashboard");assert.ok(rep1.data.leads.some(x=>x.id===assign.data.opportunityId));
  const rep2=await call(users[2][1],"representante/dashboard");assert.ok(!rep2.data.leads.some(x=>x.id===assign.data.opportunityId));
+ const contract=await call(users[0][1],"admin/sale",{opportunityId:assign.data.opportunityId,grossCents:119000,receivedCents:50000,reference:"TEST-STUDIO-DEPOSIT-001"});
+ assert.equal(contract.status,200);
+ const available=await call(users[0][1],"admin/sales");assert.equal(available.status,200);
+ assert.ok(available.data.sales.some(x=>x.id===contract.data.saleId));
+ const linkedProject=await call(users[0][1],"admin/project",{title:"Site Empresa Demonstrativa",description:"Projeto vinculado à solicitação de cliente e ao contrato recebido.",developerId:"d1",compensationCents:35000,saleId:contract.data.saleId,dueAt:"2026-12-20"});
+ assert.equal(linkedProject.status,201);assert.equal(linkedProject.data.saleId,contract.data.saleId);
+ const duplicateProject=await call(users[0][1],"admin/project",{title:"Site duplicado",description:"Tentativa de duplicar o projeto de contrato.",developerId:"d2",compensationCents:20000,saleId:contract.data.saleId});
+ assert.equal(duplicateProject.status,409);
+ const dev=await call(users[3][1],"desenvolvedor/dashboard");
+ assert.ok(dev.data.projects.some(x=>x.id===linkedProject.data.id));
+ const linked=db.sqlite.prepare("SELECT sale_id FROM projects WHERE id=?").get(linkedProject.data.id);
+ assert.equal(linked.sale_id,contract.data.saleId);
 });
 
 test("JWT requires a valid Cloudflare signature, correct audience and active user",async()=>{
