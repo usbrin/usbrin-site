@@ -19,3 +19,7 @@
 
 /parceiros.html
   X-Robots-Tag: noindex, follow
+
+/status-candidatura.html
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store, private
