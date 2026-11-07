@@ -153,3 +153,19 @@ O site oficial `usbrin-site.pages.dev` permanece com a versão anterior, sem pub
 2. Validar em navegador o visual das páginas públicas, acessibilidade e o fluxo completo de inscrição com Turnstile, sem coletar dados antes da revisão jurídica.
 3. Definir bases legais, prazos de retenção e comunicação de candidaturas; revisar contratos brasileiros de colaboração e comissões.
 4. Criar D1 de produção separado e configurar política Access por caminhos na produção antes de publicar o portal; não alterar a branch de produção até homologação final.
+
+## Segurança operacional — suspensão e reativação de parceiros (07/11/2026)
+
+- A aba **Parceiros** do portal administrativo lista contas de representantes e desenvolvedores, com papel, e-mail, situação e indicador de contrato previamente verificado.
+- O administrador pode **suspender** a conta de um parceiro ativo, mediante justificativa de pelo menos oito caracteres. A mudança é auditada no D1; o backend consulta o estado do usuário a cada requisição e recusa operações se não estiver `active`, mesmo quando existe JWT Access válido.
+- O administrador não pode suspender contas de administração nessa tela e os parceiros não podem administrar acessos. A reativação é permitida apenas a parceiro suspenso com referência contratual e data de verificação já registradas. Antes da reativação, conferir manualmente a vigência real do contrato, identidade e pendências do relacionamento.
+- **Limitação essencial:** suspender no D1 bloqueia o uso das APIs da USBRIN, mas não exclui automaticamente a identidade da política Cloudflare Access. Para encerramento definitivo da parceria, também revogar o acesso na política da Cloudflare e documentar o procedimento.
+- Testes automatizados usam contas fictícias e JWTs RSA assinados apenas em memória para confirmar: usuário ativo acessa rota de seu papel, suspenso recebe HTTP 403, usuários de outros papéis não administram, admin não suspende admin, e reativação exige contrato previamente verificado.
+- Não criar contas reais ou ampliar a lista de e-mails da aplicação Access de homologação sem necessidade operacional e avaliação dos controles de identidade.
+
+### Homologação manual ainda necessária
+1. Criar dois parceiros fictícios **somente quando as identidades de teste estiverem sob controle** e a política de acesso estiver configurada para eles, sem abrir a autenticação para todos indiscriminadamente.
+2. Conferir painel e isolamento por papéis em navegador real e no celular; dados de representante A não devem aparecer para representante B ou desenvolvedor.
+3. Suspender cada conta e verificar que solicitações ao backend passam a retornar 403; remover identidades da política Access quando houver encerramento permanente.
+4. Verificar manualmente os avisos de privacidade, a base legal e o período de retenção antes da abertura pública de candidaturas reais.
+5. Manter o PR como rascunho e a produção intacta até liberação expressa.
