@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
    const body=node('tbody');rows.forEach((r,i)=>{const row=node('tr');r.forEach(x=>row.append(node('td',x)));if(actions){const cell=node('td');actions(cell,i);row.append(cell)}body.append(row)});t.append(body);wrap.append(t);parent.append(wrap);
  };
  const setNavigation=role=>{
-   const allowed=role==='admin'?['overview','leads','applications','studio','projects','commissions']:role==='representante'?['overview','leads','commissions']:['overview','projects','commissions'];
+   const allowed=role==='admin'?['overview','leads','applications','studio','partners','projects','commissions']:role==='representante'?['overview','leads','commissions']:['overview','projects','commissions'];
    document.querySelectorAll('#portal-nav button').forEach(b=>b.classList.toggle('hidden',!allowed.includes(b.dataset.view)));
    el('lead-create').classList.toggle('hidden',role!=='representante');el('goal-panel').classList.add('hidden');el('action-center').classList.toggle('hidden',role!=='admin');
    el('project-create').classList.toggle('hidden',role!=='admin');
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
    view=name;document.querySelectorAll('.view').forEach(x=>x.classList.add('hidden'));el('view-'+name).classList.remove('hidden');
    el('developer-payments-admin').classList.toggle('hidden',!(name==='projects'&&user.role==='admin'));
    document.querySelectorAll('#portal-nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===name));
-   el('panel-title').textContent=({overview:'Visão geral',leads:'Oportunidades',applications:'Candidaturas',studio:'Solicitações Studio',projects:'Projetos',commissions:'Comissões'})[name];
+   el('panel-title').textContent=({overview:'Visão geral',leads:'Oportunidades',applications:'Candidaturas',studio:'Solicitações Studio',partners:'Parceiros',projects:'Projetos',commissions:'Comissões'})[name];
    try{await load(name);message('Dados atualizados a partir do servidor.');}catch(e){message(e.message,true);}
  };
  document.querySelectorAll('#portal-nav button').forEach(x=>x.addEventListener('click',()=>open(x.dataset.view)));
@@ -109,6 +109,29 @@ document.addEventListener('DOMContentLoaded',async()=>{
      if(user.role!=='representante')el('overview-description').textContent='Esses números correspondem exclusivamente aos registros disponíveis para o seu perfil.';
    }
    if(name==='studio'&&user.role==='admin'){const entries=await request('admin/studio-inquiries');await renderStudio(entries);}
+   if(name==='partners'&&user.role==='admin'){
+     const people=(await request('admin/users')).users.filter(x=>['representante','desenvolvedor'].includes(x.role));
+     table(el('partner-list'),['Profissional','E-mail','Papel','Acesso','Contrato verificado'],
+       people.map(x=>[x.name,x.email,x.role==='representante'?'Comercial':'Desenvolvimento',x.status,x.contract_ready?'Sim':'Não']),
+       (cell,i)=>{
+         const partner=people[i],next=partner.status==='active'?'suspended':partner.status==='suspended'?'active':null;
+         if(!next)return;
+         const reason=node('input');reason.maxLength=500;reason.placeholder='Justificativa obrigatória';reason.setAttribute('aria-label','Justificativa para alterar acesso de '+partner.name);
+         const action=btn(next==='suspended'?'Suspender acesso':'Reativar acesso',async()=>{
+           if(reason.value.trim().length<8){message('Informe uma justificativa com pelo menos 8 caracteres.',true);return;}
+           if(next==='active'&&!partner.contract_ready){message('A reativação exige contrato assinado e verificado.',true);return;}
+           if(!confirm((next==='suspended'?'Bloquear o acesso às APIs de ':'Reativar o acesso às APIs de ')+partner.name+'?'))return;
+           try{
+             await request('admin/partner-access',{userId:partner.id,status:next,reason:reason.value.trim()});
+             await open('partners');
+             message(next==='suspended'?'Acesso bloqueado no servidor. Confirme também a política Cloudflare Access.':'Acesso reativado no servidor. Confirme a autorização de identidade no Cloudflare Access.');
+           }catch(e){message(e.message,true)}
+         });
+         action.disabled=next==='active'&&!partner.contract_ready;
+         cell.append(reason,action);
+         if(next==='active'&&!partner.contract_ready)cell.append(node('p','Reativação bloqueada: documentação não verificada.','hint'));
+       });
+   }
    if(name==='applications'&&user.role==='admin'){
      const data=await request('admin/applications');
      const type=el('app-type-filter').value,statusFilter=el('app-status-filter').value,search=el('app-search').value.trim().toLocaleLowerCase('pt-BR');
