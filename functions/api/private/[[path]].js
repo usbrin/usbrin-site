@@ -143,8 +143,21 @@ export async function onRequest(context){
       return respond({ok:true,commissions:commissions.results,sales:sales.results,receivableSales:receivableSales.results});
     }
     if(route==="admin/users"&&method==="GET"&&allowed(user,"admin")){
-      const rows=await db.prepare("SELECT id,name,email,role,status FROM users ORDER BY created_at DESC LIMIT 250").all();
+      const rows=await db.prepare("SELECT id,name,email,role,status, CASE WHEN contract_verified_at IS NOT NULL AND length(contract_reference)>=5 THEN 1 ELSE 0 END contract_ready FROM users ORDER BY created_at DESC LIMIT 250").all();
       return respond({ok:true,users:rows.results});
+    }
+    if(route==="admin/partner-access"&&method==="POST"&&allowed(user,"admin")){
+      const b=await readBody(request),id=str(b.userId,60),next=str(b.status,15),reason=str(b.reason,500);
+      if(!id||!["active","suspended"].includes(next)||reason.length<8)return error("Informe o parceiro, a ação e uma justificativa de pelo menos 8 caracteres.",400);
+      const partner=await query(db,"SELECT id,role,status,contract_reference,contract_verified_at FROM users WHERE id=?",id).first();
+      if(!partner||!["representante","desenvolvedor"].includes(partner.role))return error("Somente acessos de parceiros podem ser alterados por esta função.",404);
+      if(partner.status===next||!["active","suspended"].includes(partner.status))return error("Mudança de acesso não permitida no estado atual.",409);
+      if(next==="active"&&(!partner.contract_verified_at||String(partner.contract_reference||"").length<5))
+        return error("Reativação exige um contrato previamente assinado e verificado.",409);
+      const result=await query(db,"UPDATE users SET status=? WHERE id=? AND status=? AND role IN ('representante','desenvolvedor')",next,id,partner.status).run();
+      if(result.meta?.changes!==1)return error("O acesso foi alterado por outra operação; atualize a lista.",409);
+      await audit(db,user,"partner.access","user",id,partner.status+" -> "+next+" | motivo: "+reason);
+      return respond({ok:true,id,status:next});
     }
     if(route==="admin/goal"&&method==="POST"&&allowed(user,"admin")){
       const b=await readBody(request),id=str(b.partnerId,60),period=str(b.period,7),value=b.goalCents;
