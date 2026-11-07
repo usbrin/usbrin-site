@@ -305,3 +305,34 @@ test("state validation and security helpers reject invalid content",async()=>{
  assert.equal(checkOrigin(new Request("https://usbrin-preview.pages.dev/test")),false);
  await assert.rejects(()=>readBody(new Request("https://usbrin-preview.pages.dev",{method:"POST",headers:{"content-type":"text/plain"},body:"hello"})));
 });
+
+test("admin can immediately revoke a partner session; only signed-contract partners may be reactivated",async()=>{
+ const rep=users[2][1],dev=users[4][1],admin=users[0][1];
+ assert.equal((await call(rep,"admin/partner-access",{userId:"r2",status:"suspended",reason:"Tentativa indevida"})).status,404);
+ assert.equal((await call(admin,"admin/partner-access",{userId:"a1",status:"suspended",reason:"Administracao"})).status,404);
+ assert.equal((await call(admin,"admin/partner-access",{userId:"r2",status:"suspended",reason:"curto"})).status,400);
+ const revoked=await call(admin,"admin/partner-access",{userId:"r2",status:"suspended",reason:"Revisão da colaboração e acesso preventivo"});
+ assert.equal(revoked.status,200);
+ assert.equal((await call(rep,"representante/dashboard")).status,403);
+ assert.equal((await call(rep,"representante/lead",{company:"Empresa X",contact:"Contato Y"})).status,403);
+ assert.equal((await call(users[1][1],"representante/dashboard")).status,200);
+ assert.equal((await call(dev,"desenvolvedor/dashboard")).status,200);
+ const noContract=await call(admin,"admin/partner-access",{userId:"r2",status:"active",reason:"Retorno solicitado sem contrato"});
+ assert.equal(noContract.status,409);
+ db.sqlite.prepare("UPDATE users SET contract_reference=?,contract_verified_at=datetime('now') WHERE id='r2'").run("CONTRACT-REVIEWED-2026");
+ const restored=await call(admin,"admin/partner-access",{userId:"r2",status:"active",reason:"Contrato e identidade reconfirmados"});
+ assert.equal(restored.status,200);
+ assert.equal((await call(rep,"representante/dashboard")).status,200);
+ const suspendDev=await call(admin,"admin/partner-access",{userId:"d2",status:"suspended",reason:"Projeto finalizado e acesso encerrado"});
+ assert.equal(suspendDev.status,200);
+ assert.equal((await call(dev,"desenvolvedor/dashboard")).status,403);
+ db.sqlite.prepare("UPDATE users SET contract_reference=?,contract_verified_at=datetime('now') WHERE id='d2'").run("DEVELOPER-CONTRACT-2026");
+ assert.equal((await call(admin,"admin/partner-access",{userId:"d2",status:"active",reason:"Contrato de desenvolvedor verificado"})).status,200);
+ assert.equal((await call(dev,"desenvolvedor/dashboard")).status,200);
+ const data=await call(admin,"admin/users");assert.equal(data.status,200);
+ assert.equal(data.data.users.find(x=>x.id==="r2").contract_ready,1);
+ const history=db.sqlite.prepare("SELECT action,details FROM audit_events WHERE entity='user' AND entity_id='r2' AND action='partner.access' ORDER BY created_at").all();
+ assert.equal(history.length,2);
+ assert.ok(history.some(x=>x.details.includes("active -> suspended")));
+ assert.ok(history.some(x=>x.details.includes("suspended -> active")));
+});
