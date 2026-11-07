@@ -18,3 +18,26 @@
 .details-content{white-space:normal;color:var(--text);font-size:12px;line-height:1.4;max-width:330px}
 .briefing-text{white-space:pre-wrap;word-break:break-word;max-height:180px;overflow:auto;font-size:11px;color:var(--muted)}
 @media(max-width:620px){.task-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.task-card{min-height:165px;padding:14px}}
+
+/* Partner access management and small-screen usability */
+#partner-list td:last-child{min-width:260px}
+#partner-list td:last-child input{display:block;width:100%;max-width:300px;background:#100f16;border:1px solid #554d60;color:var(--text);padding:10px;border-radius:9px;margin:4px 0 9px}
+#partner-list td:last-child button{min-height:40px}
+@media(max-width:850px){
+  .sidebar{padding:14px 16px 9px}
+  .sidebar .logo{margin:0 5px 10px}
+  .sidebar p{margin:5px 5px 10px!important}
+  #portal-nav{display:flex;gap:5px;overflow-x:auto;overscroll-behavior-inline:contain;white-space:nowrap;padding:4px 0 9px;scrollbar-width:thin}
+  #portal-nav button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;flex:0 0 auto;width:auto;padding:10px 13px;margin:0}
+  .mainarea{min-width:0}
+  .panel{padding:20px}
+}
+@media(max-width:620px){
+  .mainarea{padding:16px}
+  .mainarea h1{font-size:29px}
+  .panel{padding:16px}
+  .metric{padding:14px}
+  .metric strong{font-size:22px}
+  .task-grid{grid-template-columns:1fr}
+  #partner-list td:last-child{min-width:240px}
+}
