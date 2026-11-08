@@ -675,7 +675,7 @@ test("records real partial receipts, refuses duplicates and creates commission o
  const receipts=db.sqlite.prepare("SELECT sum(amount_cents) amount,count(*) n FROM sale_receipts WHERE sale_id=?").get(start.data.saleId);
  assert.equal(receipts.amount,119000);assert.equal(receipts.n,2);
  const rep=await call(users[1][1],"representante/dashboard");
- assert.equal(rep.data.commissions[0].status,"paid");
+ assert.equal(rep.data.commissions.find(x=>x.sale_id===start.data.saleId)?.status,"paid");
  assert.ok(rep.data.sales.reduce((n,x)=>n+x.amount_cents,0)>=119000); // A representative may have receipts from other tests/clients.
 });
 
