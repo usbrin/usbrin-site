@@ -13,7 +13,7 @@ import {readBody,checkOrigin} from "../functions/_lib/security.js";
 class TestD1{
  constructor(){
    this.sqlite=new DatabaseSync(":memory:");
-   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql","migrations/0004_studio_inquiries.sql","migrations/0005_studio_assignments.sql","migrations/0006_sale_project_links.sql","migrations/0007_atomic_receipts.sql","migrations/0008_crm_followups.sql","migrations/0009_proposal_drafts.sql","migrations/0010_project_proposal_handoff.sql","migrations/0011_optional_services.sql","migrations/0012_recurring_billing_controls.sql"]){
+   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql","migrations/0004_studio_inquiries.sql","migrations/0005_studio_assignments.sql","migrations/0006_sale_project_links.sql","migrations/0007_atomic_receipts.sql","migrations/0008_crm_followups.sql","migrations/0009_proposal_drafts.sql","migrations/0010_project_proposal_handoff.sql","migrations/0011_optional_services.sql","migrations/0012_recurring_billing_controls.sql","migrations/0013_bank_evidence_and_refunds.sql"]){
      this.sqlite.exec(readFileSync(new URL("../"+migration,import.meta.url),"utf8"));
    }
  }
