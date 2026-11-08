@@ -67,9 +67,10 @@ export async function onRequest(context){
     if(route==="admin/proposal-review"&&method==="POST"&&allowed(user,"admin")){
       const b=await readBody(request),id=str(b.id,60),decision=str(b.decision,15),note=str(b.note,1000);
       if(!["approved","rejected"].includes(decision))return error("Decisão de aprovação inválida.",400);
-      const current=await query(db,"SELECT id,status,price_cents,valid_until FROM proposals WHERE id=?",id).first();
+      const current=await query(db,"SELECT p.id,p.status,p.price_cents,p.valid_until,o.stage lead_stage FROM proposals p JOIN opportunities o ON o.id=p.opportunity_id WHERE p.id=?",id).first();
       if(!current)return error("Proposta não encontrada.",404);
       if(current.status!=="draft")return error("Esta proposta já foi analisada.",409);
+      if(decision==="approved"&&["lost","paid","cancelled"].includes(current.lead_stage))return error("A oportunidade está encerrada. Não é possível aprovar nova proposta.",409);
       if(decision==="rejected"&&note.length<8)return error("Informe o motivo da devolução.",400);
       if(decision==="approved"&&current.valid_until<new Date().toISOString().slice(0,10))return error("A proposta expirou; elabore uma nova versão.",409);
       const costs=decision==="approved"?[b.developerCents,b.commissionCents,b.taxCents,b.otherCents]:[null,null,null,null];
