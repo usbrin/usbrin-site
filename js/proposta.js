@@ -22,6 +22,17 @@ document.addEventListener('DOMContentLoaded',async()=>{
   set('proposal-price',fmt.format(p.price_cents/100));
   set('proposal-duration',p.duration_days+' dias (estimativa)');
   set('proposal-terms',p.terms||'Condições comerciais e forma de pagamento sujeitas à confirmação por escrito pela USBRIN.');
+  const optional=[];
+  if(p.hosting_requested)optional.push(['Domínio USBRIN / hospedagem gerenciada','Serviço solicitado, preço e condições a definir diretamente com a administração. Registro e renovação de domínio próprio, quando aplicáveis, não estão automaticamente incluídos.']);
+  if(p.support_requested)optional.push(['Suporte USBRIN','R$ 250 por mês — valor de referência, ainda não contratado. Cobertura, prazo de atendimento, limites de alterações e condições serão definidos em instrumento próprio.']);
+  if(optional.length){
+    const list=el('proposal-optional-list');
+    for(const [name,description] of optional){
+      const item=document.createElement('div'),title=document.createElement('strong'),info=document.createElement('p');
+      title.textContent=name;info.textContent=description;item.append(title,info);list.append(item);
+    }
+    el('proposal-optional-services').hidden=false;
+  }
   feedback.textContent='Documento aprovado. Revise o conteúdo antes de compartilhar.';
   doc.hidden=false;button.disabled=false;
   button.addEventListener('click',()=>window.print());
