@@ -74,11 +74,3 @@ BEGIN
  VALUES(lower(hex(randomblob(16))),NEW.created_by,'expense.create','expense_obligation',NEW.id,
    'supplier='||NEW.supplier||' category='||NEW.category||' amount='||NEW.amount_cents,datetime('now'));
 END;
-CREATE TRIGGER IF NOT EXISTS trg_expense_cancel_audit
-AFTER UPDATE OF status ON expense_obligations
-WHEN NEW.status='cancelled'
-BEGIN
- INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at)
- VALUES(lower(hex(randomblob(16))),NEW.created_by,'expense.cancel','expense_obligation',NEW.id,
-   'cancelled without payment; reference='||NEW.document_reference,datetime('now'));
-END;
