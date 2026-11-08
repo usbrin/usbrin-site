@@ -342,13 +342,15 @@ test("optional hosting and R$250 support remain outside setup revenue; only USBR
  assert.equal(lead.status,201);
  const payload={opportunityId:lead.data.id,product:"business",scope:"Site institucional com cinco páginas, formulário e materiais aprovados. Hospedagem e suporte à parte.",priceCents:119000,durationDays:15,validUntil:"2027-03-30",hostingRequested:true,supportRequested:true};
  assert.equal((await call(rep,"crm/proposal-draft",{...payload,hostingRequested:"true"})).status,400);
- const draft=await call(rep,"crm/proposal-draft",{...payload,supportMonthlyCents:999999});
+ const draft=await call(rep,"crm/proposal-draft",{...payload,supportMonthlyCents:999999,terms:"Pague por Pix no telefone particular do representante."});
  assert.equal(draft.status,201);
- const p=db.sqlite.prepare("SELECT price_cents,hosting_requested,support_requested,support_reference_monthly_cents,status FROM proposals WHERE id=?").get(draft.data.id);
+ const p=db.sqlite.prepare("SELECT price_cents,hosting_requested,support_requested,support_reference_monthly_cents,status,terms FROM proposals WHERE id=?").get(draft.data.id);
  assert.equal(p.price_cents,119000);
  assert.equal(p.hosting_requested,1);assert.equal(p.support_requested,1);
  assert.equal(p.support_reference_monthly_cents,25000);
  assert.equal(p.status,"draft");
+ assert.ok(p.terms.includes("administração da USBRIN"),"representatives cannot set payment instructions");
+ assert.ok(!p.terms.includes("telefone particular"),"unauthorized Pix instructions must not be persisted as payment terms");
  const visible=await call(rep,"crm/proposals?id="+lead.data.id);
  assert.equal(visible.status,200);
  assert.equal(visible.data.proposals[0].support_reference_monthly_cents,25000);
