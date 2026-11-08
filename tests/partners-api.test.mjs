@@ -158,6 +158,54 @@ test("Studio remains opt-in and CRM conversion is unique, authorized and traceab
  assert.equal(projectLink.sale_id,contract.data.saleId);
 });
 
+test("authorization matrix isolates representatives, developers, and customer data",async()=>{
+ const admin=users[0][1],rep1=users[1][1],rep2=users[2][1],dev1=users[3][1],dev2=users[4][1];
+ // Each role is denied private endpoints outside its assigned duties.
+ for(const target of ["admin/users","admin/applications","admin/finance","admin/overview","admin/studio-inquiries","admin/projects"]){
+   assert.equal((await call(rep1,target)).status,404,"representative must not read "+target);
+   assert.equal((await call(dev1,target)).status,404,"developer must not read "+target);
+ }
+ for(const target of ["representante/dashboard","desenvolvedor/dashboard"]){
+   assert.equal((await call(admin,target)).status,404,"admin must not use partner-only "+target);
+ }
+ assert.equal((await call(dev1,"representante/dashboard")).status,404);
+ assert.equal((await call(rep1,"desenvolvedor/dashboard")).status,404);
+ const l1=await call(rep1,"representante/lead",{company:"Lead privado de Rep 1",contact:"Contato privado 1",estimatedCents:10000});
+ const l2=await call(rep2,"representante/lead",{company:"Lead privado de Rep 2",contact:"Contato privado 2",estimatedCents:12000});
+ assert.equal(l1.status,201);assert.equal(l2.status,201);
+ const r1=await call(rep1,"representante/dashboard"),r2=await call(rep2,"representante/dashboard");
+ assert.equal(r1.status,200);assert.equal(r2.status,200);
+ assert.ok(r1.data.leads.some(x=>x.id===l1.data.id));
+ assert.ok(!r1.data.leads.some(x=>x.id===l2.data.id));
+ assert.ok(r2.data.leads.some(x=>x.id===l2.data.id));
+ assert.ok(!r2.data.leads.some(x=>x.id===l1.data.id));
+ assert.equal((await call(rep1,"representante/lead-stage",{id:l2.data.id,stage:"qualified"})).status,404);
+ assert.equal((await call(dev1,"representante/lead-stage",{id:l1.data.id,stage:"qualified"})).status,404);
+ const p1=await call(admin,"admin/project",{title:"Projeto privado Dev 1",description:"Entregas e dados de cliente exclusivos ao primeiro desenvolvedor.",developerId:"d1",compensationCents:9000});
+ const p2=await call(admin,"admin/project",{title:"Projeto privado Dev 2",description:"Entregas e dados de cliente exclusivos ao segundo desenvolvedor.",developerId:"d2",compensationCents:9500});
+ assert.equal(p1.status,201);assert.equal(p2.status,201);
+ const d1=await call(dev1,"desenvolvedor/dashboard"),d2=await call(dev2,"desenvolvedor/dashboard");
+ assert.ok(d1.data.projects.some(x=>x.id===p1.data.id));
+ assert.ok(!d1.data.projects.some(x=>x.id===p2.data.id));
+ assert.ok(d2.data.projects.some(x=>x.id===p2.data.id));
+ assert.ok(!d2.data.projects.some(x=>x.id===p1.data.id));
+ assert.equal((await call(dev1,"desenvolvedor/project",{id:p2.data.id,stage:"accepted"})).status,400);
+ assert.equal((await call(rep1,"desenvolvedor/project",{id:p1.data.id,stage:"accepted"})).status,404);
+ assert.equal((await call(dev1,"representante/lead",{company:"Empreendimento indevido",contact:"Contato indevido"})).status,404);
+ assert.equal((await call(rep1,"admin/project",{title:"Projeto indevido",description:"Tentativa indevida de criação técnica",developerId:"d1",compensationCents:9000})).status,404);
+ // CSRF protection applies even when a valid JWT is present.
+ const withoutOrigin=new Request("https://usbrin-preview.pages.dev/api/private/representante/lead",{
+   method:"POST",headers:{"Cf-Access-Jwt-Assertion":await signed(rep1),"content-type":"application/json"},
+   body:JSON.stringify({company:"CSRF Teste",contact:"Contato Teste",estimatedCents:10000})
+ });
+ assert.equal((await privateAPI({request:withoutOrigin,env})).status,403);
+ const foreignOrigin=new Request("https://usbrin-preview.pages.dev/api/private/representante/lead",{
+   method:"POST",headers:{"Cf-Access-Jwt-Assertion":await signed(rep1),"content-type":"application/json","origin":"https://evil.example"},
+   body:JSON.stringify({company:"CSRF Teste",contact:"Contato Teste",estimatedCents:10000})
+ });
+ assert.equal((await privateAPI({request:foreignOrigin,env})).status,403);
+});
+
 test("JWT requires a valid Cloudflare signature, correct audience and active user",async()=>{
  const missing=new Request("https://usbrin-preview.pages.dev/api/private/me");
  const response=await privateAPI({request:missing,env});
