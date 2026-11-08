@@ -21,17 +21,37 @@ document.addEventListener('DOMContentLoaded',async()=>{
    headers.forEach(h=>tr.append(node('th',h)));if(actions)tr.append(node('th','Ações'));thead.append(tr);t.append(thead);
    const body=node('tbody');rows.forEach((r,i)=>{const row=node('tr');r.forEach(x=>row.append(node('td',x)));if(actions){const cell=node('td');actions(cell,i);row.append(cell)}body.append(row)});t.append(body);wrap.append(t);parent.append(wrap);
  };
+ let repFocusLeadId=null,repStageGroup=null;
+ const openRepLead=async id=>{
+   repFocusLeadId=id;repStageGroup=null;
+   for(const key of ['lead-search','lead-filter-stage','lead-filter-due'])el(key).value='';
+   await open('leads');
+ };
+ const openRepStages=async stages=>{
+   repFocusLeadId=null;repStageGroup=stages;
+   for(const key of ['lead-search','lead-filter-stage','lead-filter-due'])el(key).value='';
+   await open('leads');
+ };
+ const openRepSection=async(name,create=false)=>{
+   if(name==='leads'){repFocusLeadId=null;repStageGroup=null;for(const key of ['lead-search','lead-filter-stage','lead-filter-due'])el(key).value='';}
+   await open(name);
+   if(create&&name==='leads')el('lead-form').querySelector('input[name="company"]')?.focus();
+ };
  const setNavigation=role=>{
    const allowed=role==='admin'?['overview','leads','guide','applications','studio','partners','projects','commissions','billing','bank']:role==='representante'?['overview','leads','guide','commissions']:['overview','projects','commissions'];
    document.querySelectorAll('#portal-nav button').forEach(b=>b.classList.toggle('hidden',!allowed.includes(b.dataset.view)));
    el('lead-create').classList.toggle('hidden',role!=='representante');el('goal-panel').classList.add('hidden');el('action-center').classList.toggle('hidden',role!=='admin');
    el('project-create').classList.toggle('hidden',role!=='admin');
+   el('rep-command').hidden=role!=='representante';
+   metrics.classList.toggle('hidden',role==='representante');
+   el('overview-description').closest('.panel').classList.toggle('hidden',role==='representante');
+   if(role==='representante')el('panel-title').textContent='Command';
  };
  const open=async(name)=>{
    view=name;document.querySelectorAll('.view').forEach(x=>x.classList.add('hidden'));el('view-'+name).classList.remove('hidden');
    el('developer-payments-admin').classList.toggle('hidden',!(name==='projects'&&user.role==='admin'));
    document.querySelectorAll('#portal-nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===name));
-   el('panel-title').textContent=({overview:'Visão geral',leads:'Oportunidades',guide:'Guia comercial',applications:'Candidaturas',studio:'Solicitações Studio',partners:'Parceiros',projects:'Projetos',commissions:'Comissões',billing:'Financeiro',bank:'Conciliação'})[name];
+   el('panel-title').textContent=({overview:user?.role==='representante'?'Command':'Visão geral',leads:'Oportunidades',guide:'Guia comercial',applications:'Candidaturas',studio:'Solicitações Studio',partners:'Parceiros',projects:'Projetos',commissions:'Comissões',billing:'Financeiro',bank:'Conciliação'})[name];
    try{await load(name);message('Dados atualizados a partir do servidor.');}catch(e){message(e.message,true);}
  };
  document.querySelectorAll('#portal-nav button').forEach(x=>x.addEventListener('click',()=>open(x.dataset.view)));
@@ -181,7 +201,10 @@ document.addEventListener('DOMContentLoaded',async()=>{
    }finally{button.disabled=false}
  });
 
- for(const id of ['lead-search','lead-filter-stage','lead-filter-due'])el(id).addEventListener(id==='lead-search'?'input':'change',()=>{if(user&&view==='leads')load('leads').catch(e=>message(e.message,true))});
+ for(const id of ['lead-search','lead-filter-stage','lead-filter-due'])el(id).addEventListener(id==='lead-search'?'input':'change',()=>{
+   repStageGroup=null;repFocusLeadId=null;
+   if(user&&view==='leads')load('leads').catch(e=>message(e.message,true));
+ });
  for(const id of ['studio-status-filter','studio-search','app-type-filter','app-status-filter','app-search']){
    el(id).addEventListener(id==='studio-search'||id==='app-search'?'input':'change',()=>{
      const section=id.startsWith('app-')?'applications':'studio';
@@ -648,9 +671,11 @@ document.addEventListener('DOMContentLoaded',async()=>{
      if(user.role==='admin'){const people=await request('admin/users');const reps=people.users.filter(x=>x.role==='representante'&&x.status==='active');const target=el('goal-partner');target.replaceChildren(new Option('Selecione um representante',''));reps.forEach(x=>target.add(new Option(x.name+' — '+x.email,x.id)));el('goal-panel').classList.toggle('hidden',reps.length===0);renderActionCenter(info.tasks||{});}
      metrics.replaceChildren();
      if(user.role==='admin'){metric('Candidaturas recebidas',info.applications.reduce((n,x)=>n+x.total,0));metric('Parceiros ativos',info.users.reduce((n,x)=>n+(x.role==='admin'?0:x.total),0));metric('Receita recebida',currency(info.receivedCents));metric('Comissões pendentes',currency(info.commissionsPendingCents));}
-     else if(user.role==='representante'){const month=new Date().toISOString().slice(0,7),goal=info.goals.find(x=>x.period===month),collected=info.sales.filter(x=>String(x.received_at).slice(0,7)===month).reduce((n,x)=>n+x.amount_cents,0);
-       metric('Oportunidades',info.leads.length);metric('Vendas recebidas no mês',currency(collected));metric('Meta mensal',goal?currency(goal.goal_cents):'Não definida');metric('Progresso da meta',goal&&goal.goal_cents>0?(100*collected/goal.goal_cents).toFixed(1)+'%':'—');
-       const details=el('overview-description');details.textContent='Comissões em aberto: '+currency(info.commissions.filter(x=>['estimated','approved','due'].includes(x.status)).reduce((n,x)=>n+x.amount_cents,0))+'. Comissões pagas: '+currency(info.commissions.filter(x=>x.status==='paid').reduce((n,x)=>n+x.amount_cents,0))+'.';}
+     else if(user.role==='representante'){
+       if(!window.USBRIN_REP_COMMAND?.render)throw Error('Painel Command indisponível. Atualize a página.');
+       window.USBRIN_REP_COMMAND.render({root:el('rep-command'),data:info,user,request,currency,
+         openLead:openRepLead,openStage:openRepStages,openSection:openRepSection,refresh:()=>open('overview'),notify:message});
+     }
      else {metric('Projetos atribuídos',info.projects.length);metric('Em desenvolvimento',info.projects.filter(x=>x.stage==='in_progress').length);metric('Para revisão',info.projects.filter(x=>x.stage==='review').length);metric('Remuneração paga',currency(info.payments.filter(x=>x.status==='paid').reduce((n,x)=>n+x.amount_cents,0)));}
      if(user.role!=='representante')el('overview-description').textContent='Esses números correspondem exclusivamente aos registros disponíveis para o seu perfil.';
    }
@@ -747,6 +772,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
      const search=el('lead-search').value.trim().toLocaleLowerCase('pt-BR'),
        stageFilter=el('lead-filter-stage').value,dueFilter=el('lead-filter-due').value;
      const filtered=leads.filter(x=>
+       (!repStageGroup||repStageGroup.includes(x.stage))&&
        (!stageFilter||x.stage===stageFilter)&&
        (!search||[x.company,x.contact,x.segment,x.product].some(v=>String(v||'').toLocaleLowerCase('pt-BR').includes(search)))&&
        (!dueFilter||(dueFilter==='due'&&x.next_action_at&&x.next_action_at<=today&&!isClosed(x))||(dueFilter==='no-date'&&!x.next_action_at&&!isClosed(x)))
@@ -766,6 +792,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
        x.next_action_at?(x.next_action_at<=today&&!isClosed(x)?'Vencido/hoje: ':'')+x.next_action_at+' · '+(x.next_action||'Ação não definida'):'Não agendado'
      ]),(cell,i)=>{
        const x=filtered[i],details=node('details',null,'crm-details'),summary=node('summary','Acompanhar');
+       details.dataset.leadId=x.id;
        const form=node('div',null,'crm-action-grid'),activity=node('textarea');
        activity.placeholder='Registre a conversa com o cliente ou uma observação interna';activity.maxLength=1200;activity.rows=3;
        const history=node('div',null,'crm-history');
@@ -913,6 +940,11 @@ document.addEventListener('DOMContentLoaded',async()=>{
        }});
        details.append(summary,form,node('strong','Propostas comerciais','crm-label'),proposalsArea,node('strong','Histórico de acompanhamento','crm-label'),history);cell.append(details);
      });
+     if(repFocusLeadId){
+       const panel=[...el('lead-list').querySelectorAll('details[data-lead-id]')].find(x=>x.dataset.leadId===repFocusLeadId);
+       if(panel){panel.open=true;panel.scrollIntoView({block:'center',behavior:'smooth'});}
+       repFocusLeadId=null;
+     }
    }
    if(name==='projects'){
      if(user.role==='admin'){
@@ -982,7 +1014,16 @@ document.addEventListener('DOMContentLoaded',async()=>{
    if(name==='commissions'){
      const target=el('commission-list');
      if(user.role==='representante'){
-       const d=await request('representante/dashboard');table(target,['Venda','Base','Taxa','Comissão','Status'],d.commissions.map(c=>[c.sale_id,currency(c.basis_cents),(c.rate_bps/100).toFixed(2)+'%',currency(c.amount_cents),c.status]));
+       const d=await request('representante/dashboard');
+       const label={estimated:'Apurada, em análise',approved:'Aprovada',due:'Liberada para pagamento',paid:'Registrada como paga',reversed:'Revertida'};
+       const info=node('p','Comissão comercial: 15% do valor final da criação do site. Apuração após recebimento integral e conforme contrato. Proposta não é comissão liberada; suporte e hospedagem não são incluídos.','muted');
+       target.replaceChildren(info);
+       const rows=node('div');
+       table(rows,['Cliente','Base','Taxa aplicada','Comissão','Situação'],d.commissions.map(c=>[
+         c.customer_company||'Venda vinculada',currency(c.basis_cents),(c.rate_bps/100).toFixed(2)+'%',
+         currency(c.amount_cents),label[c.status]||c.status
+       ]));
+       target.append(rows);
      }else if(user.role==='admin'){
        const d=await request('admin/finance');
        table(target,['Venda','Parceiro','Comissão','Status'],d.commissions.map(c=>[c.sale_id,c.partner_name,currency(c.amount_cents),c.status]),(cell,i)=>{
