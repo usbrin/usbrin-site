@@ -14,7 +14,7 @@ import {parseBankCSV,bankCents,bankDate} from "../functions/_lib/bank-csv.js";
 class TestD1{
  constructor(){
    this.sqlite=new DatabaseSync(":memory:");
-   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql","migrations/0004_studio_inquiries.sql","migrations/0005_studio_assignments.sql","migrations/0006_sale_project_links.sql","migrations/0007_atomic_receipts.sql","migrations/0008_crm_followups.sql","migrations/0009_proposal_drafts.sql","migrations/0010_project_proposal_handoff.sql","migrations/0011_optional_services.sql","migrations/0012_recurring_billing_controls.sql","migrations/0013_bank_evidence_and_refunds.sql","migrations/0014_expense_obligations.sql"]){
+   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql","migrations/0004_studio_inquiries.sql","migrations/0005_studio_assignments.sql","migrations/0006_sale_project_links.sql","migrations/0007_atomic_receipts.sql","migrations/0008_crm_followups.sql","migrations/0009_proposal_drafts.sql","migrations/0010_project_proposal_handoff.sql","migrations/0011_optional_services.sql","migrations/0012_recurring_billing_controls.sql","migrations/0013_bank_evidence_and_refunds.sql","migrations/0014_expense_obligations.sql","migrations/0015_fiscal_evidence.sql"]){
      this.sqlite.exec(readFileSync(new URL("../"+migration,import.meta.url),"utf8"));
    }
  }
@@ -566,6 +566,34 @@ test("admin accounts payable preserves invoice history and requires classified b
  assert.throws(()=>db.sqlite.prepare("DELETE FROM expense_payments WHERE expense_id=?").run(expenseId),/immutable/);
  assert.throws(()=>db.sqlite.prepare("UPDATE expense_obligations SET amount_cents=1 WHERE id=?").run(expenseId),/immutable/);
  assert.throws(()=>db.sqlite.prepare("UPDATE expense_obligations SET status='cancelled' WHERE id=?").run(expenseId),/cancellation requires/);
+});
+
+
+test("fiscal reference register links to real contract or expense but never issues tax documents",async()=>{
+ const admin=users[0][1],rep=users[1][1],dev=users[3][1];
+ assert.equal((await call(rep,"admin/control/fiscal")).status,404);
+ assert.equal((await call(dev,"admin/control/fiscal")).status,404);
+ const lead=await call(rep,"representante/lead",{company:"CLIENTE DOCUMENTO FISCAL QA",contact:"Contato Financeiro",estimatedCents:69000});
+ const sale=await call(admin,"admin/sale",{opportunityId:lead.data.id,grossCents:69000,receivedCents:0,reference:""});
+ assert.equal(sale.status,200);
+ const evidence={sourceKind:"sale",sourceId:sale.data.saleId,documentType:"nfse",issuerName:"USBRIN HOMOLOGACAO",
+   documentNumber:"NFS-QA-2026-0001",verificationCode:"QA-VERIFICATION-2026-001",issuedOn:"2026-11-07",amountCents:69000,confirmedExternalDocument:true};
+ assert.equal((await call(rep,"admin/control/fiscal-record",evidence)).status,404);
+ assert.equal((await call(admin,"admin/control/fiscal-record",{...evidence,confirmedExternalDocument:false})).status,400);
+ assert.equal((await call(admin,"admin/control/fiscal-record",{...evidence,amountCents:70000})).status,409);
+ assert.equal((await call(admin,"admin/control/fiscal-record",{...evidence,documentType:"supplier_invoice"})).status,409);
+ const recorded=await call(admin,"admin/control/fiscal-record",evidence);
+ assert.equal(recorded.status,201);
+ assert.equal((await call(admin,"admin/control/fiscal-record",evidence)).status,409);
+ const listing=await call(admin,"admin/control/fiscal");
+ assert.ok(listing.data.documents.some(x=>x.id===recorded.data.id&&x.document_number==="NFS-QA-2026-0001"));
+ assert.equal(db.sqlite.prepare("SELECT COUNT(*) n FROM sale_receipts WHERE sale_id=?").get(sale.data.saleId).n,0,"recording fiscal reference cannot fabricate money");
+ assert.equal((await call(admin,"admin/control/fiscal-cancel",{id:recorded.data.id,reason:"Tentativa sem confirmação oficial",confirmedExternalCancellation:false})).status,400);
+ assert.equal((await call(admin,"admin/control/fiscal-cancel",{id:recorded.data.id,reason:"Nota cancelada no emissor oficial após revisão",confirmedExternalCancellation:true})).status,200);
+ assert.equal((await call(admin,"admin/control/fiscal-cancel",{id:recorded.data.id,reason:"Repetindo cancelamento da nota fiscal",confirmedExternalCancellation:true})).status,409);
+ assert.throws(()=>db.sqlite.prepare("DELETE FROM fiscal_documents WHERE id=?").run(recorded.data.id),/immutable/);
+ assert.throws(()=>db.sqlite.prepare("UPDATE fiscal_documents SET amount_cents=1 WHERE id=?").run(recorded.data.id),/immutable/);
+ assert.ok(db.sqlite.prepare("SELECT COUNT(*) n FROM audit_events WHERE entity='fiscal_document' AND entity_id=?").get(recorded.data.id).n>=2);
 });
 
 test("JWT requires a valid Cloudflare signature, correct audience and active user",async()=>{
