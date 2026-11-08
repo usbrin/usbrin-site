@@ -134,7 +134,28 @@ try{
        }else if(role==='representante'){
          await page.locator('#rep-command').waitFor({state:'visible'});
          assert.equal(await page.locator('#cmd-priority-title').textContent(),'Cliente Homologação UX');
-         assert.ok((await page.locator('#cmd-kpi-potential').textContent()).includes('R
+         assert.ok((await page.locator('#cmd-kpi-potential').textContent()).includes('R'));
+         assert.ok((await page.locator('#cmd-comm-due').textContent()).includes('178,50'));
+         assert.equal(await page.locator('.cmd-agenda-row').count(),3);
+         await assertFits(page,'USBRIN Command representative '+width);
+         await page.screenshot({path:resolve(outDir,'usbrin-command-'+width+'.png'),fullPage:true});
+         await page.locator('#cmd-priority-actions').getByRole('button',{name:'Registrar contato'}).click();
+         await page.locator('#cmd-quick-action textarea').fill('Conversamos sobre o projeto da empresa e seus materiais.');
+         await page.locator('#cmd-quick-action').getByRole('button',{name:'Salvar'}).click();
+         await page.waitForFunction(()=>Boolean(window.__commandActivity),{timeout:15000});
+         const activity=await page.evaluate(()=>window.__commandActivity);
+         assert.equal(activity.opportunityId,'op-briefing-demo-001');
+         assert.equal(activity.kind,'contact');
+         await page.locator('#cmd-priority-actions').getByRole('button',{name:'Agendar retorno'}).click();
+         await page.locator('#cmd-quick-action input[type="text"]').fill('Enviar proposta aprovada');
+         await page.locator('#cmd-quick-action input[type="date"]').fill('2027-02-10');
+         await page.locator('#cmd-quick-action').getByRole('button',{name:'Salvar'}).click();
+         await page.waitForFunction(()=>Boolean(window.__commandFollowup),{timeout:15000});
+         const followup=await page.evaluate(()=>window.__commandFollowup);
+         assert.equal(followup.date,'2027-02-10');
+         await page.locator('#cmd-funnel .cmd-funnel-step').first().click();
+         await page.locator('#view-leads').waitFor({state:'visible'});
+       }else{
          await page.locator('#portal-nav [data-view="projects"]').click();
        }
        if(role==='admin'||role==='representante'){
