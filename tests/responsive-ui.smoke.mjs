@@ -61,7 +61,15 @@ const fixture={
   },
   representante:{
     me:{ok:true,user:{name:'HOMOLOGAÇÃO Representante',role:'representante'}},
-    'representante/dashboard':{ok:true,leads:[{id:'op-briefing-demo-001',company:'Cliente Homologação UX',contact:'Contato Exemplo',stage:'new',product:'Business',estimated_cents:119000}],commissions:[],goals:[],sales:[]}
+    'representante/dashboard':{ok:true,
+      leads:[
+        {id:'op-briefing-demo-001',company:'Cliente Homologação UX',contact:'Contato Exemplo',stage:'new',product:'Business',estimated_cents:119000,next_action:'Enviar demonstração do projeto',next_action_at:'2026-01-15',updated_at:'2026-11-01'},
+        {id:'op-briefing-demo-002',company:'Studio Criativo QA',contact:'Responsável Estúdio',stage:'proposal',product:'Landing',estimated_cents:69000,next_action:null,next_action_at:null,updated_at:'2026-11-01'},
+        {id:'op-briefing-demo-003',company:'Empresa de Referência',contact:'Gestor',stage:'negotiation',product:'Catálogo',estimated_cents:179000,next_action:'Conferir materiais',next_action_at:'2027-01-15',updated_at:'2026-11-07'}],
+      commissions:[{id:'commission-qa-001',sale_id:'sale-qa-001',customer_company:'Cliente que contratou',basis_cents:119000,rate_bps:1500,amount_cents:17850,status:'due'}],
+      proposals:[{id:'quote-qa-001',opportunity_id:'op-briefing-demo-002',status:'sent',price_cents:69000,valid_until:'2026-01-20',created_at:'2026-11-01'}],
+      contracts:[{id:'sale-qa-001',opportunity_id:'op-briefing-demo-001',status:'paid',gross_cents:119000,received_cents:119000}],
+      commissionRateBps:1500,leadCount:3,leadsTruncated:false,goals:[],sales:[]}
   },
   desenvolvedor:{
     me:{ok:true,user:{name:'HOMOLOGAÇÃO Desenvolvedor',role:'desenvolvedor'}},
@@ -87,6 +95,10 @@ async function pageFor(role,width,url){
        if(endpoint==='crm/proposal-draft'&&options.method==='POST'){
          window.__guideSubmitted=JSON.parse(options.body);
          result={ok:true,code:'QTESTGUIDED001',status:'draft'};
+       }else if(endpoint==='crm/activity'&&options.method==='POST'){
+         window.__commandActivity=JSON.parse(options.body);result={ok:true,id:'activity-qa-001'};
+       }else if(endpoint==='crm/followup'&&options.method==='POST'){
+         window.__commandFollowup=JSON.parse(options.body);result={ok:true};
        }else result=fixture[role]?.[endpoint]||{ok:false,error:'Endpoint não simulado'};
      }
      if(result)return new Response(JSON.stringify(result),{status:result.ok?200:404,headers:{'content-type':'application/json'}});
@@ -120,7 +132,175 @@ try{
          await page.locator('#portal-nav [data-view="partners"]').click();
          await page.locator('#partner-list').getByText('Nenhum registro disponível.',{exact:true}).waitFor({timeout:15000});
        }else if(role==='representante'){
-         await page.locator('#portal-nav [data-view="leads"]').click();
+         await page.locator('#rep-command').waitFor({state:'visible'});
+         assert.equal(await page.locator('#cmd-priority-title').textContent(),'Cliente Homologação UX');
+         assert.ok((await page.locator('#cmd-kpi-potential').textContent()).includes('R
+         await page.locator('#portal-nav [data-view="projects"]').click();
+       }
+       if(role==='admin'||role==='representante'){
+         await page.locator('#portal-nav [data-view="guide"]').click();
+         await page.locator('#view-guide').waitFor({state:'visible'});
+         const cards=page.locator('.sales-plan');
+         assert.equal(await cards.count(),3,'Three official plans required');
+         const prices=await page.locator('.sales-price').allTextContents();
+         assert.deepEqual(prices.map(x=>x.replaceAll(String.fromCharCode(160),' ')),['A partir de R$ 690','A partir de R$ 1.190','A partir de R$ 1.790']);
+         assert.equal(await page.locator('#sales-checklist input[type="checkbox"]').count(),6);
+         assert.equal(await page.locator('#guide-addon-list .sales-addon-row').count(),5);
+         assert.ok((await page.locator('[data-guide-feature="blog"]').innerText()).includes('450'));
+         assert.ok((await page.locator('[data-guide-feature="formulario"]').innerText()).includes('150'));
+         assert.ok((await page.locator('[data-guide-feature="galeria"]').innerText()).includes('180'));
+         assert.ok((await page.locator('#guide-extra-page-price').innerText()).includes('120'));
+         const total=page.locator('#guide-estimate-total');
+         assert.ok((await total.innerText()).includes('1.190'),'Business base price should be sourced from Studio');
+         await page.locator('#guide-estimate-features input[value="blog"]').check();
+         assert.ok((await total.innerText()).includes('1.640'),'Business + blog should total 1640');
+         await page.locator('#guide-estimate-features input[value="formulario"]').check();
+         assert.ok((await total.innerText()).includes('1.790'),'Business + blog + form should total 1790');
+         await page.locator('#guide-estimate-pages').fill('7');
+         assert.ok((await total.innerText()).includes('2.030'),'Adding 2 pages should add 240');
+         await page.locator('#guide-estimate-product').selectOption('landing');
+         assert.ok((await total.innerText()).includes('1.290'),'Landing + blog + form should total 1290');
+         assert.equal(await page.locator('#guide-estimate-pages').isDisabled(),true);
+         await page.locator('#guide-estimate-product').selectOption('catalogo');
+         assert.ok((await total.innerText()).includes('2.390'),'Catalog + blog + form should total 2390');
+         await page.locator('#guide-service-hosting').check();
+         await page.locator('#guide-service-support').check();
+         assert.ok((await page.locator('#guide-service-summary').innerText()).includes('R$ 250/mês'));
+         assert.ok((await total.innerText()).includes('2.390'),'Monthly support cannot be added to the one-time quote');
+         assert.ok((await page.locator('.guide-payments-policy').innerText()).includes('Pix'));
+
+         await page.locator('#guide-brief-lead option').nth(1).waitFor({state:'attached'});
+         await page.locator('#guide-brief-lead').selectOption('op-briefing-demo-001');
+         await page.locator('#guide-brief-objective').fill('Apresentar os serviços e permitir orçamentos online.');
+         await page.locator('#guide-brief-sections').fill('Página inicial, empresa, serviços, blog e contato.');
+         await page.locator('#guide-brief-materials').fill('Cliente enviará logotipo e fotografias.');
+         await page.locator('#guide-brief-duration').fill('21');
+         await page.locator('#guide-brief-submit').click();
+         await page.waitForFunction(()=>Boolean(window.__guideSubmitted),{timeout:15000});
+         const draft=await page.evaluate(()=>window.__guideSubmitted);
+         assert.equal(draft.opportunityId,'op-briefing-demo-001');
+         assert.equal(draft.product,'catalogo');
+         assert.equal(draft.priceCents,239000);
+         assert.equal(draft.hostingRequested,true);
+         assert.equal(draft.supportRequested,true);
+         assert.ok(draft.scope.includes('hospedagem gerenciada'));
+         assert.ok(draft.scope.includes('Suporte USBRIN mensal'));
+         assert.ok(draft.terms.includes('representantes não estão autorizados a receber valores'));
+         assert.ok(draft.scope.includes('Cliente enviará logotipo e fotografias.'));
+         assert.ok(draft.scope.includes('Blog gerenciável'));
+         await page.waitForFunction(()=>document.querySelector('#guide-brief-feedback')?.textContent?.includes('QTESTGUIDED001'),{timeout:15000});
+         await page.locator('#sales-checklist input[type="checkbox"]').first().check();
+         assert.ok((await page.locator('#sales-guide-progress').innerText()).includes('1 de 6'));
+         await assertFits(page,role+' guide '+width);
+         await page.locator('#guide-goto-leads').click();
+         await page.locator('#view-leads').waitFor({state:'visible'});
+         if(role==='representante'){
+           await page.locator('#lead-open-guide').click();
+           await page.locator('#view-guide').waitFor({state:'visible'});
+           await page.locator('#portal-nav [data-view="leads"]').click();
+         }
+       }else{
+         assert.equal(await page.locator('#portal-nav [data-view="guide"]').isVisible(),false);
+       }
+       if(role==='admin'){
+         await page.locator('#portal-nav [data-view="projects"]').click();
+         await page.locator('#project-sale option').nth(1).waitFor({state:'attached'});
+         await page.locator('#project-sale').selectOption('sale-handoff-demo-001');
+         assert.equal(await page.locator('#project-proposal-id').inputValue(),'proposal-approved-demo-001');
+         assert.equal(await page.locator('#project-form textarea[name="description"]').isEditable(),false);
+         assert.ok((await page.locator('#project-form textarea[name="description"]').inputValue()).includes('BRIEFING APROVADO'));
+       }
+       if(role==='admin'){
+         await page.locator('#portal-nav [data-view="billing"]').click();
+         await page.locator('#view-billing').waitFor({state:'visible'});
+         await page.locator('#billing-agreements').getByText('Cliente Homologação UX',{exact:true}).first().waitFor();
+         assert.ok((await page.locator('#billing-metrics').innerText()).includes('250,00'));
+         assert.equal(await page.locator('#billing-sale option').count(),2);
+         assert.equal(await page.locator('#billing-active-agreement option').count(),2);
+         assert.equal(await page.locator('#billing-open-charge option').count(),2);
+         assert.ok((await page.locator('#billing-receipts').innerText()).includes('BANK-MOCK-001'));
+         assert.equal(await page.locator('#billing-agreement-form').isVisible(),true);
+         assert.ok((await page.locator('#finance-main-metrics').innerText()).includes('1.190,00'));
+         assert.ok((await page.locator('#finance-exceptions').innerText()).includes('Sem pendências identificadas'));
+         assert.ok((await page.locator('#finance-expense-list').innerText()).includes('Software Exemplo'));
+         assert.ok((await page.locator('#finance-project-margin').innerText()).includes('Cliente Homologação UX'));
+         assert.ok((await page.locator('#finance-fiscal-list').innerText()).includes('NFS-QA-2026-01'));
+         assert.equal(await page.locator('#finance-fiscal-source option').count(),2);
+         await page.locator('#finance-fiscal-kind').selectOption('expense');
+         assert.ok((await page.locator('#finance-fiscal-source').innerText()).includes('Software Exemplo'));
+         await assertFits(page,'admin finance ledger '+width);
+         await page.locator('#portal-nav [data-view="bank"]').click();
+         await page.locator('#view-bank').waitFor({state:'visible'});
+         await page.locator('#bank-entries').getByText('BANK-CREDIT-QA-001',{exact:true}).waitFor({timeout:15000});
+         assert.ok((await page.locator('#bank-imports').innerText()).includes('sample.csv'));
+         await assertFits(page,'admin reconciliation '+width);
+       }else{
+         assert.equal(await page.locator('#portal-nav [data-view="billing"]').isVisible(),false);
+         assert.equal(await page.locator('#view-billing').isVisible(),false);
+         assert.equal(await page.locator('#portal-nav [data-view="bank"]').isVisible(),false);
+         assert.equal(await page.locator('#view-bank').isVisible(),false);
+       }
+       await assertFits(page,role+' '+width);
+       assert.deepEqual(errors,[],'Page errors '+role+' '+width);
+       await page.screenshot({path:resolve(outDir,role+'-'+width+'.png'),fullPage:true});
+       console.log('PASS portal',role,width);
+     }finally{await context.close();}
+   }
+   const printed=await pageFor('admin',width,proposalUrl);
+   try{
+     await printed.page.locator('#proposal-document').waitFor({state:'visible',timeout:15000});
+     assert.ok((await printed.page.locator('#proposal-customer').innerText()).includes('Empresa Demonstrativa'));
+     assert.ok((await printed.page.locator('#proposal-price').innerText()).includes('1.190,00'));
+     await printed.page.locator('#proposal-optional-services').waitFor({state:'visible'});
+     assert.ok((await printed.page.locator('#proposal-optional-services').innerText()).includes('R$ 250 por mês'));
+     assert.ok((await printed.page.locator('#proposal-optional-services').innerText()).includes('preço e condições a definir'));
+     assert.ok((await printed.page.locator('.payment-policy').innerText()).includes('Representantes comerciais não estão autorizados'));
+     assert.equal(await printed.page.locator('#print-proposal').isEnabled(),true);
+     await assertFits(printed.page,'approved-proposal '+width);
+     assert.deepEqual(printed.errors,[],'Proposal page errors '+width);
+     await printed.page.screenshot({path:resolve(outDir,'approved-proposal-'+width+'.png'),fullPage:true});
+     if(width===1440){
+       const pdf=await printed.page.pdf({path:resolve(outDir,'approved-proposal-print.pdf'),format:'A4',printBackground:true});
+       assert.ok(pdf.length>12000,'Browser must generate a nonempty PDF');
+       assert.equal(pdf.subarray(0,4).toString(),'%PDF');
+     }
+     console.log('PASS approved proposal / PDF',width);
+   }finally{await printed.context.close();}
+   for(const [name,url] of [['recruitment',recruitmentUrl],['candidate-closed',applyUrl]]){
+     const {context,page,errors}=await pageFor('admin',width,url);
+     try{
+       if(name==='candidate-closed')await page.waitForFunction(()=>document.querySelector('#availability')?.textContent?.includes('ainda não estão abertas'),{timeout:15000});
+       await assertFits(page,name+' '+width);
+       assert.deepEqual(errors,[],'Page errors '+name+' '+width);
+       await page.screenshot({path:resolve(outDir,name+'-'+width+'.png'),fullPage:true});
+       console.log('PASS',name,width);
+     }finally{await context.close();}
+   }
+ }
+}finally{await browser.close();}
+));
+         assert.ok((await page.locator('#cmd-comm-due').textContent()).includes('178,50'));
+         assert.equal(await page.locator('.cmd-agenda-row').count(),3);
+         await assertFits(page,'USBRIN Command representative dashboard '+width);
+         await page.screenshot({path:resolve(outDir,'usbrin-command-'+width+'.png'),fullPage:true});
+         await page.locator('#cmd-priority-actions').getByRole('button',{name:'Registrar contato'}).click();
+         await page.locator('#cmd-quick-action textarea').fill('Conversamos sobre o projeto e materiais da empresa.');
+         await page.locator('#cmd-quick-action').getByRole('button',{name:'Salvar'}).click();
+         await page.waitForFunction(()=>Boolean(window.__commandActivity),{timeout:15000});
+         const activity=await page.evaluate(()=>window.__commandActivity);
+         assert.equal(activity.opportunityId,'op-briefing-demo-001');
+         assert.equal(activity.kind,'contact');
+         await page.locator('#cmd-priority-actions').getByRole('button',{name:'Agendar retorno'}).click();
+         await page.locator('#cmd-quick-action input[type="text"]').fill('Enviar proposta aprovada');
+         await page.locator('#cmd-quick-action input[type="date"]').fill('2027-02-10');
+         await page.locator('#cmd-quick-action').getByRole('button',{name:'Salvar'}).click();
+         await page.waitForFunction(()=>Boolean(window.__commandFollowup),{timeout:15000});
+         const followup=await page.evaluate(()=>window.__commandFollowup);
+         assert.equal(followup.date,'2027-02-10');
+         assert.equal(followup.opportunityId,'op-briefing-demo-001');
+         await page.locator('#cmd-funnel .cmd-funnel-step').first().click();
+         await page.locator('#view-leads').waitFor({state:'visible'});
+         assert.ok((await page.locator('#lead-list').innerText()).includes('Cliente Homologação UX'));
        }else{
          await page.locator('#portal-nav [data-view="projects"]').click();
        }
