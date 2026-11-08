@@ -28,6 +28,7 @@ export async function handleFinanceControl({request,db,user,route}){
      db.prepare("SELECT s.id,o.company,s.gross_cents,s.received_cents,COALESCE((SELECT SUM(c.amount_cents) FROM commissions c WHERE c.sale_id=s.id AND c.status<>'reversed'),0) commission_allocated_cents,COALESCE((SELECT SUM(dp.amount_cents) FROM projects p JOIN developer_payments dp ON dp.project_id=p.id WHERE p.sale_id=s.id AND dp.status<>'cancelled'),0) developer_allocated_cents,COALESCE((SELECT SUM(e.amount_cents) FROM expense_obligations e WHERE e.sale_id=s.id AND e.status<>'cancelled'),0) direct_expense_cents FROM sales s JOIN opportunities o ON o.id=s.opportunity_id ORDER BY s.created_at DESC LIMIT 70")
    ]);
    const b=bank.results[0],m=monthly.results[0];
+   const risk=await q(db,"SELECT (SELECT COUNT(*) FROM bank_refunds f JOIN sale_receipts sr ON sr.id=f.receipt_id AND f.receipt_kind='sale' JOIN commissions c ON c.sale_id=sr.sale_id WHERE f.status='settled' AND c.status<>'reversed') commissionsWithRefunds,(SELECT COUNT(*) FROM bank_refunds WHERE status IN ('requested','approved')) refundReviewsPending,(SELECT COUNT(*) FROM bank_entries b WHERE b.amount_cents>0 AND NOT EXISTS(SELECT 1 FROM bank_receipt_matches m WHERE m.entry_id=b.id)) unmatchedBankCredits").first();
    const metrics={
      grossContractedCents:sales.results[0].contracted_cents,
      siteRecordedCents:sales.results[0].recorded_receipts_cents,
@@ -53,7 +54,7 @@ export async function handleFinanceControl({request,db,user,route}){
      estimatedContributionCents:x.gross_cents-x.commission_allocated_cents-x.developer_allocated_cents-x.direct_expense_cents,
      disclaimer:"Projeção parcial: tributos, despesas fixas e pagamentos não vinculados podem estar ausentes."
    }));
-   return respond({ok:true,month,metrics,monthly:{
+   return respond({ok:true,month,metrics,exceptions:risk,monthly:{
      bankMatchedInCents:m.receipt_cents,
      bankMatchedExpenseOutCents:m.expense_cents,
      bankMatchedRefundOutCents:m.refund_cents,
@@ -65,7 +66,8 @@ export async function handleFinanceControl({request,db,user,route}){
     "Não é saldo bancário nem demonstração contábil: apenas movimentos classificados no sistema e vinculados a arquivos externos ainda não autenticados pelo banco.",
     "Pagamentos de comissões e desenvolvedores informados em outras áreas ainda não possuem conciliação bancária independente.",
     "Custo alocado e margem parcial não constituem lucro líquido.",
-    "O cadastro de contas a pagar não efetua transferências ou boletos."
+    "O cadastro de contas a pagar não efetua transferências ou boletos.",
+    "Estornos não revertem automaticamente comissões, obrigações técnicas ou contratos: revisar e registrar ajuste compensatório antes do fechamento."
    ]});
  }
  if(route==="admin/control/fiscal"&&method==="GET"){
