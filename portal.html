@@ -1,5 +1,5 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><title>Portal de Parceiros — USBRIN</title><link rel="icon" href="assets/favicon-small.png"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;600;700;800&display=swap" rel="stylesheet"><link href="css/parceiros.css" rel="stylesheet"></head><body><div class="portal">
-<aside class="sidebar"><a class="logo" href="index.html"><img src="assets/usbrin-logo-sem-fundo.svg" alt="USBRIN"></a><p class="muted" style="font-size:12px;margin:0 14px 15px">PORTAL DE PARCEIROS</p><nav id="portal-nav" aria-label="Navegação do portal"><button class="active" type="button" data-view="overview">Visão geral</button><button type="button" data-view="leads" class="hidden">Oportunidades</button><button type="button" data-view="guide" class="hidden">Guia comercial</button><button type="button" data-view="applications" class="hidden">Candidaturas</button><button type="button" data-view="studio" class="hidden">Solicitações Studio</button><button type="button" data-view="partners" class="hidden">Parceiros</button><button type="button" data-view="projects" class="hidden">Projetos</button><button type="button" data-view="commissions" class="hidden">Comissões</button><button type="button" data-view="billing" class="hidden">Financeiro</button></nav><p class="muted" style="font-size:12px;margin:25px 14px"><a href="parceiros.html" style="color:var(--purple)">Voltar ao site</a></p></aside>
+<aside class="sidebar"><a class="logo" href="index.html"><img src="assets/usbrin-logo-sem-fundo.svg" alt="USBRIN"></a><p class="muted" style="font-size:12px;margin:0 14px 15px">PORTAL DE PARCEIROS</p><nav id="portal-nav" aria-label="Navegação do portal"><button class="active" type="button" data-view="overview">Visão geral</button><button type="button" data-view="leads" class="hidden">Oportunidades</button><button type="button" data-view="guide" class="hidden">Guia comercial</button><button type="button" data-view="applications" class="hidden">Candidaturas</button><button type="button" data-view="studio" class="hidden">Solicitações Studio</button><button type="button" data-view="partners" class="hidden">Parceiros</button><button type="button" data-view="projects" class="hidden">Projetos</button><button type="button" data-view="commissions" class="hidden">Comissões</button><button type="button" data-view="billing" class="hidden">Financeiro</button><button type="button" data-view="bank" class="hidden">Conciliação</button></nav><p class="muted" style="font-size:12px;margin:25px 14px"><a href="parceiros.html" style="color:var(--purple)">Voltar ao site</a></p></aside>
 <main class="mainarea"><p class="kicker">USBRIN / ÁREA RESTRITA</p><h1 id="panel-title">Visão geral</h1><p id="identity" class="muted">Verificando sessão e permissões...</p><div role="alert" id="portal-status" class="status">O acesso exige uma conta de parceiro ou administrador aprovada e autenticação segura.</div>
 <section id="view-overview" class="view"><div class="metrics" id="metrics"></div>
 <div class="panel hidden" id="action-center"><div class="section-heading"><div><span class="kicker">OPERAÇÃO</span><h2>Central de prioridades</h2><p class="muted">O que precisa da sua atenção agora, com base nos dados registrados.</p></div></div><div class="task-grid" id="action-list"></div></div>
@@ -155,6 +155,56 @@
   <div class="panel"><h2>Contratos de serviço</h2><p class="muted">Pausar ou cancelar exige justificativa. Contratos cancelados não podem ser reativados por esta tela.</p><div id="billing-agreements"></div></div>
   <div class="panel"><h2>Cobranças previstas e recebidas</h2><div id="billing-charges"></div></div>
   <div class="panel"><h2>Histórico de recebimentos conciliados</h2><div id="billing-receipts"></div></div>
+</section>
+<section id="view-bank" class="view hidden">
+  <div class="panel">
+    <span class="kicker">AUDITORIA DE ENTRADAS E SAÍDAS · SOMENTE ADMIN</span>
+    <h2>Conciliação bancária</h2>
+    <p>Compare o histórico de recibos da USBRIN com transações de um extrato importado. A correspondência exige <strong>identificador e valor exatamente iguais</strong>. Nenhuma importação cria um recebimento ou transfere dinheiro.</p>
+    <p class="notice" id="bank-source-warning"><strong>Atenção:</strong> arquivos CSV importados manualmente não têm autenticidade bancária comprovada. Confirme sempre o extrato dentro do banco antes de aprovar devoluções; a integração bancária somente de leitura continua pendente.</p>
+    <div id="bank-metrics" class="billing-metrics"></div>
+  </div>
+  <div class="panel">
+    <h2>1. Importar extrato CSV</h2>
+    <p class="muted">Formato controlado, codificação UTF-8, até 150 transações e 110 mil caracteres por arquivo. Colunas: <code>data;valor;descricao;identificador</code>. Use valor positivo para crédito e negativo para débito; o identificador bancário deve ser único por conta.</p>
+    <form id="bank-import-form" class="billing-form">
+      <label>Identificação interna da conta (sem número da conta)
+        <input type="text" name="accountAlias" pattern="[a-zA-Z0-9][a-zA-Z0-9_-]{3,59}" value="USBRIN-PRINCIPAL" required maxlength="60">
+      </label>
+      <label>Arquivo do extrato
+        <input id="bank-import-file" name="statement" type="file" accept=".csv,text/csv" required>
+      </label>
+      <label class="billing-wide billing-confirm"><input name="confirmedSource" type="checkbox" required><span>Conferi a origem deste arquivo no ambiente do banco. Sei que a importação não comprova autenticidade nem realiza conciliação automaticamente.</span></label>
+      <button type="submit" class="btn primary">Importar para conferência</button>
+    </form>
+    <p id="bank-import-feedback" class="muted" role="status" aria-live="polite"></p>
+  </div>
+  <div class="panel">
+    <h2>2. Confrontar transações e recibos</h2>
+    <p class="muted">Cada crédito do extrato pode confirmar no máximo um recibo já registrado na USBRIN. Crédito sem recibo e recibo sem crédito continuam pendentes de análise.</p>
+    <div id="bank-entries"></div>
+    <h3>Recibos sem correspondência</h3>
+    <div id="bank-unmatched-receipts"></div>
+  </div>
+  <div class="panel">
+    <h2>3. Solicitar devolução / estorno</h2>
+    <p class="muted">Este registro não envia Pix, transferência nem ordem ao banco. Indique a origem e o motivo. A aprovação exige que o recebimento original esteja associado ao extrato.</p>
+    <form id="bank-refund-form" class="billing-form">
+      <label class="billing-wide">Recibo original associado ao extrato
+        <select id="bank-refund-receipt" name="source" required><option value="">Selecione um recebimento conciliado</option></select>
+      </label>
+      <label>Valor da devolução (R$) <input name="amount" type="number" min="0.01" step="0.01" required></label>
+      <label class="billing-wide">Motivo documentado <textarea name="reason" minlength="15" maxlength="800" rows="3" required placeholder="Explique por que o valor deve ser devolvido ao cliente."></textarea></label>
+      <label class="billing-wide billing-confirm"><input type="checkbox" name="confirmedCase" required><span>Conferi o pedido e sei que nenhum dinheiro será movimentado por este sistema.</span></label>
+      <button type="submit" class="btn primary">Registrar pedido sem movimentar dinheiro</button>
+    </form>
+    <h3>Decisões e devoluções</h3>
+    <div id="bank-refunds"></div>
+  </div>
+  <div class="panel">
+    <h2>Histórico de extratos importados</h2>
+    <div id="bank-imports"></div>
+  </div>
 </section>
 <section id="view-commissions" class="view hidden"><div class="panel"><h2>Remuneração e pagamentos</h2><p class="muted">Valores estimados, aprovados e efetivamente pagos são apresentados separadamente.</p><div id="commission-list"></div></div></section>
 </main></div><script defer src="js/studio-pricing.js"></script><script defer src="js/portal.js"></script></body></html>
