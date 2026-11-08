@@ -120,7 +120,9 @@ document.addEventListener('DOMContentLoaded',async()=>{
          const action=btn(next==='suspended'?'Suspender acesso':'Reativar acesso',async()=>{
            if(reason.value.trim().length<8){message('Informe uma justificativa com pelo menos 8 caracteres.',true);return;}
            if(next==='active'&&!partner.contract_ready){message('A reativação exige contrato assinado e verificado.',true);return;}
-           if(!confirm((next==='suspended'?'Bloquear o acesso às APIs de ':'Reativar o acesso às APIs de ')+partner.name+'?'))return;
+           const warning=next==='suspended'&&!partner.contract_ready?
+             '\n\nATENÇÃO: esta conta não tem contrato verificado; após a suspensão, a interface não permitirá reativá-la. Contas de homologação exigem restauração administrativa controlada.':'';
+           if(!confirm((next==='suspended'?'Bloquear o acesso às APIs de ':'Reativar o acesso às APIs de ')+partner.name+'?'+warning))return;
            try{
              await request('admin/partner-access',{userId:partner.id,status:next,reason:reason.value.trim()});
              await open('partners');
@@ -130,6 +132,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
          action.disabled=next==='active'&&!partner.contract_ready;
          cell.append(reason,action);
          if(next==='active'&&!partner.contract_ready)cell.append(node('p','Reativação bloqueada: documentação não verificada.','hint'));
+         if(next==='suspended'&&!partner.contract_ready)cell.append(node('p','Conta sem contrato verificado: a suspensão não poderá ser revertida por esta tela.','hint'));
        });
    }
    if(name==='applications'&&user.role==='admin'){
