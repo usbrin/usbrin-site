@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
    try{await load(name);message('Dados atualizados a partir do servidor.');}catch(e){message(e.message,true);}
  };
  document.querySelectorAll('#portal-nav button').forEach(x=>x.addEventListener('click',()=>open(x.dataset.view)));
+ for(const id of ['lead-search','lead-filter-stage','lead-filter-due'])el(id).addEventListener(id==='lead-search'?'input':'change',()=>{if(user&&view==='leads')load('leads').catch(e=>message(e.message,true))});
  for(const id of ['studio-status-filter','studio-search','app-type-filter','app-status-filter','app-search']){
    el(id).addEventListener(id==='studio-search'||id==='app-search'?'input':'change',()=>{
      const section=id.startsWith('app-')?'applications':'studio';
@@ -48,6 +49,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
      {name:'Solicitações do Studio',count:tasks.studioNew,desc:'Avaliar novos briefings',view:'studio'},
      {name:'Projetos fora do prazo',count:tasks.overdueProjects,desc:'Revisar entregas',view:'projects'},
      {name:'Vendas com saldo a receber',count:tasks.salesAwaitingPayment,desc:'Conferir conciliação',view:'commissions'},
+     {name:'Retornos vencidos ou para hoje',count:tasks.dueFollowups,desc:'Atender contatos agendados',view:'leads'},
      {name:'Oportunidades sem atualização há 7 dias',count:tasks.dormantOpportunities,desc:'Retomar contatos',view:'leads'}
    ];
    const pending=actions.filter(a=>a.count>0);
@@ -189,22 +191,84 @@ document.addEventListener('DOMContentLoaded',async()=>{
    if(name==='leads'){
      const data=user.role==='admin'?await request('admin/opportunities'):await request('representante/dashboard');
      const leads=user.role==='admin'?data.opportunities:data.leads;
-     table(el('lead-list'),['Empresa','Contato','Serviço','Valor estimado','Etapa'],leads.map(x=>[x.company,x.contact,x.product||'-',currency(x.estimated_cents),x.stage]),user.role==='representante'?(cell,i)=>{
-       const x=leads[i],s=node('select');['new','contact','interested','qualified','proposal','negotiation','lost'].forEach(v=>{const o=new Option(v,v);if(x.stage===v)o.selected=true;s.add(o)});
-       cell.append(s,btn('Atualizar',async()=>{try{await request('representante/lead-stage',{id:x.id,stage:s.value});await open('leads')}catch(e){message(e.message,true)}}));
-     }:(cell,i)=>{
-       const x=leads[i],gross=node('input');gross.type='number';gross.min='0';gross.step='.01';gross.placeholder='Contrato (BRL)';gross.style.width='120px';
-       const paid=node('input');paid.type='number';paid.min='0';paid.step='.01';paid.placeholder='Recebido (BRL)';paid.style.width='120px';
-       const reference=node('input');reference.placeholder='Referência bancária';reference.maxLength=120;reference.style.width='155px';
-       cell.append(gross,paid,reference,btn('Registrar venda',async()=>{
-         if(!confirm('Confirma o valor contratado e o recebimento conciliado?'))return;
-         try{
+     const today=(()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())})();
+     const isClosed=x=>['lost','paid','cancelled'].includes(x.stage);
+     const due=leads.filter(x=>x.next_action_at&&!isClosed(x)&&x.next_action_at<=today);
+     const noDate=leads.filter(x=>!x.next_action_at&&!isClosed(x));
+     const sum=el('crm-summary');sum.replaceChildren();
+     [
+       ['Oportunidades',leads.length],['Retornos vencidos / hoje',due.length],
+       ['Sem próximo contato',noDate.length],['Em negociação',leads.filter(x=>['proposal','negotiation'].includes(x.stage)).length]
+     ].forEach(([label,value])=>{const item=node('div',null,'crm-stat');item.append(node('strong',value),node('span',label));sum.append(item)});
+     const search=el('lead-search').value.trim().toLocaleLowerCase('pt-BR'),
+       stageFilter=el('lead-filter-stage').value,dueFilter=el('lead-filter-due').value;
+     const filtered=leads.filter(x=>
+       (!stageFilter||x.stage===stageFilter)&&
+       (!search||[x.company,x.contact,x.segment,x.product].some(v=>String(v||'').toLocaleLowerCase('pt-BR').includes(search)))&&
+       (!dueFilter||(dueFilter==='due'&&x.next_action_at&&x.next_action_at<=today&&!isClosed(x))||(dueFilter==='no-date'&&!x.next_action_at&&!isClosed(x)))
+     );
+     const loadHistory=async(host,id)=>{
+       const result=await request('crm/history?id='+encodeURIComponent(id));
+       host.replaceChildren();
+       if(!result.activities.length){host.append(node('p','Nenhum contato ou observação registrado.','muted'));return;}
+       result.activities.forEach(item=>{
+         const row=node('p',null,'crm-history-item');
+         row.append(node('strong',item.actor_name||'Usuário'),node('span',' · '+item.kind+' · '+String(item.created_at||'').slice(0,16)),node('span',item.note));
+         host.append(row);
+       });
+     };
+     table(el('lead-list'),['Empresa','Contato','Serviço','Valor estimado','Etapa','Próximo contato'],filtered.map(x=>[
+       x.company,x.contact,x.product||'-',currency(x.estimated_cents),x.stage,
+       x.next_action_at?(x.next_action_at<=today&&!isClosed(x)?'Vencido/hoje: ':'')+x.next_action_at+' · '+(x.next_action||'Ação não definida'):'Não agendado'
+     ]),(cell,i)=>{
+       const x=filtered[i],details=node('details',null,'crm-details'),summary=node('summary','Acompanhar');
+       const form=node('div',null,'crm-action-grid'),activity=node('textarea');
+       activity.placeholder='Registre a conversa com o cliente ou uma observação interna';activity.maxLength=1200;activity.rows=3;
+       const history=node('div',null,'crm-history');
+       const addActivity=kind=>btn(kind==='contact'?'Registrar contato':'Adicionar observação',async()=>{
+         if(activity.value.trim().length<3){message('Descreva o contato ou a observação.',true);return;}
+         try{await request('crm/activity',{opportunityId:x.id,kind,note:activity.value.trim()});activity.value='';await loadHistory(history,x.id);message('Histórico atualizado.');}
+         catch(e){message(e.message,true)}
+       });
+       form.append(activity,addActivity('contact'),addActivity('note'));
+       if(!isClosed(x)){
+         const action=node('input');action.value=x.next_action||'';action.maxLength=160;action.placeholder='Próxima ação (ex.: enviar proposta)';
+         const day=node('input');day.type='date';day.value=x.next_action_at||'';day.setAttribute('aria-label','Data do próximo retorno');
+         const save=btn('Salvar retorno',async()=>{
+           try{await request('crm/followup',{opportunityId:x.id,action:action.value.trim(),date:day.value});await open('leads');message('Próximo contato agendado.');}
+           catch(e){message(e.message,true)}
+         });
+         form.append(node('strong','Próximo acompanhamento','crm-label'),action,day,save);
+       }
+       if(user.role==='representante'&&!['contracted','paid','cancelled','lost'].includes(x.stage)){
+         const stageSelect=node('select');
+         for(const v of ['new','contact','interested','qualified','proposal','negotiation','lost'])stageSelect.add(new Option(v,v));
+         stageSelect.value=x.stage;
+         const reason=node('textarea');reason.rows=2;reason.maxLength=350;reason.placeholder='Por que esta oportunidade foi perdida?';reason.hidden=true;
+         stageSelect.addEventListener('change',()=>reason.hidden=stageSelect.value!=='lost');
+         form.append(node('strong','Etapa comercial','crm-label'),stageSelect,reason,btn('Atualizar etapa',async()=>{
+           if(stageSelect.value===x.stage)return message('Escolha uma nova etapa.',true);
+           if(stageSelect.value==='lost'&&reason.value.trim().length<5)return message('Informe o motivo da perda.',true);
+           try{await request('representante/lead-stage',{id:x.id,stage:stageSelect.value,lostReason:reason.value.trim()});await open('leads');}
+           catch(e){message(e.message,true)}
+         }));
+       }
+       if(user.role==='admin'&&!['lost','paid','contracted','cancelled'].includes(x.stage)){
+         const gross=node('input');gross.type='number';gross.min='0';gross.step='.01';gross.placeholder='Contrato (R$)';
+         const paid=node('input');paid.type='number';paid.min='0';paid.step='.01';paid.placeholder='Recebido (R$)';
+         const reference=node('input');reference.maxLength=120;reference.placeholder='Referência de recebimento (se houver)';
+         const sell=btn('Registrar contrato / recebimento',async()=>{
            const g=Math.round(Number(gross.value)*100),p=Math.round(Number(paid.value)*100);
-           await request('admin/sale',{opportunityId:x.id,grossCents:g,receivedCents:p,reference:reference.value});
-           await open('leads');
-         }catch(e){message(e.message,true);}
-       }));
-
+           if(!Number.isSafeInteger(g)||g<=0||!Number.isSafeInteger(p)||p<0||p>g)return message('Confira os valores informados.',true);
+           if(p>0&&reference.value.trim().length<3)return message('Informe a referência bancária conciliada.',true);
+           if(!confirm('Confirma o contrato e que qualquer recebimento informado foi conciliado de verdade?'))return;
+           try{await request('admin/sale',{opportunityId:x.id,grossCents:g,receivedCents:p,reference:reference.value});await open('leads');}
+           catch(e){message(e.message,true)}
+         });
+         form.append(node('strong','Formalização pela administração','crm-label'),gross,paid,reference,sell);
+       }
+       details.addEventListener('toggle',()=>{if(details.open)loadHistory(history,x.id).catch(e=>{history.replaceChildren(node('p',e.message,'error'))})});
+       details.append(summary,form,node('strong','Histórico de acompanhamento','crm-label'),history);cell.append(details);
      });
    }
    if(name==='projects'){
@@ -278,7 +342,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
    }catch(err){message(err.message,true)}
  });
  el('goal-form').addEventListener('submit',async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));try{await request('admin/goal',{partnerId:d.partnerId,period:d.period,goalCents:Math.round(Number(d.amount)*100)});message('Meta comercial atualizada.')}catch(err){message(err.message,true)}});
- el('lead-form').addEventListener('submit',async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));try{await request('representante/lead',{company:d.company,contact:d.contact,city:d.city,segment:d.segment,product:d.product,estimatedCents:Math.round(Number(d.estimated||0)*100),note:d.note});e.target.reset();await open('leads')}catch(err){message(err.message,true)}});
+ el('lead-form').addEventListener('submit',async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));try{await request('representante/lead',{company:d.company,contact:d.contact,city:d.city,segment:d.segment,product:d.product,estimatedCents:Math.round(Number(d.estimated||0)*100),note:d.note,nextAction:d.nextAction||'',nextActionAt:d.nextActionAt||''});e.target.reset();await open('leads')}catch(err){message(err.message,true)}});
  el('project-form').addEventListener('submit',async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));try{await request('admin/project',{title:d.title,description:d.description,developerId:d.developerId,compensationCents:Math.round(Number(d.compensation)*100),dueAt:d.dueAt,saleId:d.saleId||''});e.target.reset();await open('projects')}catch(err){message(err.message,true)}});
  try{const res=await request('me');user=res.user;el('identity').textContent='Conta: '+user.name+' · '+user.role;setNavigation(user.role);await open('overview');}catch(e){message('Portal indisponível: '+e.message+' O acesso é liberado somente após aprovação e configuração do Cloudflare Access.',true);document.querySelectorAll('#portal-nav button').forEach(x=>x.disabled=true)}
 });
