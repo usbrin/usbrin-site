@@ -37,6 +37,61 @@ export async function onRequest(context){
       const records=await query(db,"SELECT a.id,a.kind,a.note,a.created_at,u.name actor_name FROM crm_activities a LEFT JOIN users u ON u.id=a.actor_id WHERE a.opportunity_id=? ORDER BY a.created_at DESC,a.rowid DESC LIMIT 100",id).all();
       return respond({ok:true,activities:records.results});
     }
+    if(route==="crm/proposals"&&method==="GET"&&allowed(user,"admin","representante")){
+      const id=str(new URL(request.url).searchParams.get("id"),60);
+      const lead=await permittedOpportunity(db,user,id);
+      if(!lead)return error("Oportunidade inexistente ou sem permissão.",404);
+      const select=user.role==="admin"
+        ?"SELECT p.*,u.name author_name FROM proposals p LEFT JOIN users u ON u.id=p.created_by WHERE p.opportunity_id=? ORDER BY p.created_at DESC,p.rowid DESC LIMIT 60"
+        :"SELECT p.id,p.code,p.opportunity_id,p.product,p.scope,p.price_cents,p.duration_days,p.valid_until,p.terms,p.status,p.approved_at,p.sent_at,p.created_at,u.name author_name FROM proposals p LEFT JOIN users u ON u.id=p.created_by WHERE p.opportunity_id=? ORDER BY p.created_at DESC,p.rowid DESC LIMIT 60";
+      const rows=await query(db,select,id).all();
+      return respond({ok:true,proposals:rows.results});
+    }
+    if(route==="crm/proposal-draft"&&method==="POST"&&allowed(user,"admin","representante")){
+      const b=await readBody(request),opportunityId=str(b.opportunityId,60),product=str(b.product,30).toLowerCase(),
+        scope=str(b.scope,4000),price=b.priceCents,days=b.durationDays,
+        validUntil=str(b.validUntil,10),terms=str(b.terms,500);
+      if(!["landing","business","catalogo","personalizado"].includes(product)||scope.length<30||!Number.isSafeInteger(price)||price<=0||price>100000000||
+        !Number.isSafeInteger(days)||days<1||days>180||!isoDate(validUntil)||validUntil<new Date().toISOString().slice(0,10))
+          return error("Revise escopo, preço, prazo e validade da proposta.",400);
+      const lead=await permittedOpportunity(db,user,opportunityId);
+      if(!lead)return error("Oportunidade não encontrada ou sem permissão.",404);
+      if(["lost","cancelled","paid"].includes(lead.stage))return error("Oportunidade encerrada: não é possível criar proposta.",409);
+      const id=fresh(),code="Q"+id.replace(/-/g,"").slice(0,13).toUpperCase();
+      await db.batch([
+        query(db,"INSERT INTO proposals(id,code,opportunity_id,created_by,product,scope,price_cents,duration_days,valid_until,terms,status) VALUES (?,?,?,?,?,?,?,?,?,?,'draft')",id,code,opportunityId,user.id,product,scope,price,days,validUntil,terms||null),
+        query(db,"INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at) VALUES (?,?,?,?,?,?,datetime('now'))",fresh(),user.id,"proposal.draft","proposal",id,"draft "+code)
+      ]);
+      return respond({ok:true,id,code,status:"draft"},201);
+    }
+    if(route==="admin/proposal-review"&&method==="POST"&&allowed(user,"admin")){
+      const b=await readBody(request),id=str(b.id,60),decision=str(b.decision,15),note=str(b.note,1000);
+      if(!["approved","rejected"].includes(decision))return error("Decisão de aprovação inválida.",400);
+      const current=await query(db,"SELECT id,status,price_cents,valid_until FROM proposals WHERE id=?",id).first();
+      if(!current)return error("Proposta não encontrada.",404);
+      if(current.status!=="draft")return error("Esta proposta já foi analisada.",409);
+      if(decision==="rejected"&&note.length<8)return error("Informe o motivo da devolução.",400);
+      if(decision==="approved"&&current.valid_until<new Date().toISOString().slice(0,10))return error("A proposta expirou; elabore uma nova versão.",409);
+      const costs=decision==="approved"?[b.developerCents,b.commissionCents,b.taxCents,b.otherCents]:[null,null,null,null];
+      if(decision==="approved"&&costs.some(v=>!Number.isSafeInteger(v)||v<0||v>100000000))
+        return error("Confirme todas as estimativas de custos em centavos inteiros.",400);
+      const total=decision==="approved"?costs.reduce((n,v)=>n+v,0):0;
+      if(decision==="approved"&&total>current.price_cents)
+        return error("Os custos estimados superam o preço de venda. Revise os valores antes de aprovar.",409);
+      const updated=await query(db,"UPDATE proposals SET status=?,cost_dev_cents=?,cost_commission_cents=?,cost_tax_cents=?,cost_other_cents=?,review_note=?,approved_by=CASE WHEN ?='approved' THEN ? ELSE NULL END,approved_at=CASE WHEN ?='approved' THEN datetime('now') ELSE NULL END,updated_at=datetime('now') WHERE id=? AND status='draft'",
+        decision,...costs,note||null,decision,user.id,decision,id).run();
+      if(updated.meta?.changes!==1)return error("A proposta foi atualizada em outra sessão.",409);
+      await audit(db,user,"proposal.review","proposal",id,decision+" | custo_estimado="+total);
+      return respond({ok:true,id,status:decision,marginCents:decision==="approved"?current.price_cents-total:null,marginBps:decision==="approved"?Math.round((current.price_cents-total)*10000/current.price_cents):null});
+    }
+    if(route==="admin/proposal-mark-sent"&&method==="POST"&&allowed(user,"admin")){
+      const b=await readBody(request),id=str(b.id,60);
+      if(b.confirmedExternally!==true)return error("Confirme que enviou a proposta ao cliente fora do sistema.",400);
+      const updated=await query(db,"UPDATE proposals SET status='sent',sent_at=datetime('now'),updated_at=datetime('now') WHERE id=? AND status='approved' AND valid_until>=date('now')",id).run();
+      if(updated.meta?.changes!==1)return error("Proposta não aprovada, vencida ou já marcada como enviada.",409);
+      await audit(db,user,"proposal.sent","proposal",id,"external delivery confirmed");
+      return respond({ok:true,status:"sent"});
+    }
     if(route==="crm/activity"&&method==="POST"&&allowed(user,"admin","representante")){
       const b=await readBody(request),id=str(b.opportunityId,60),kind=str(b.kind,15),note=str(b.note,1200);
       if(!["contact","note"].includes(kind)||note.length<3)return error("Registre um contato ou uma observação válida.",400);
