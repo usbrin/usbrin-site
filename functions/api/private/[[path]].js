@@ -157,7 +157,9 @@ export async function onRequest(context){
           salesAwaitingPayment:receivables.results[0].total,
           accountsReceivableCents:receivables.results[0].amount,
           dormantOpportunities:staleLeads.results[0].total,
-          dueFollowups:(await db.prepare("SELECT COUNT(*) total FROM opportunities WHERE next_action_at IS NOT NULL AND date(next_action_at)<=date('now') AND stage NOT IN ('paid','lost','cancelled')").first()).total
+          dueFollowups:(await db.prepare("SELECT COUNT(*) total FROM opportunities WHERE next_action_at IS NOT NULL AND date(next_action_at)<=date('now') AND stage NOT IN ('paid','lost','cancelled')").first()).total,
+          servicesOverdue:(await db.prepare("SELECT COUNT(*) total FROM service_charges WHERE status<>'paid' AND due_on<date('now','-4 hours')").first()).total,
+          servicesDueToday:(await db.prepare("SELECT COUNT(*) total FROM service_charges WHERE status<>'paid' AND due_on=date('now','-4 hours')").first()).total
         }
       });
     }
