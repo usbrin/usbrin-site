@@ -115,8 +115,13 @@ async function assertFits(page,label){
    const offenders=Array.from(document.querySelectorAll('body *'))
      .filter(x=>{const r=x.getBoundingClientRect();return r.right>width+2||r.left< -2})
      .slice(0,6).map(x=>({tag:x.tagName,cls:String(x.className||'').slice(0,70),right:Math.round(x.getBoundingClientRect().right),text:x.textContent?.slice(0,36)}));
+   const spills=Array.from(document.querySelectorAll('body *'))
+     .filter(x=>x.scrollWidth>x.clientWidth+2)
+     .slice(0,12)
+     .map(x=>({tag:x.tagName,cls:String(x.className||'').slice(0,60),
+       id:x.id,sw:x.scrollWidth,cw:x.clientWidth,overflow:getComputedStyle(x).overflowX}));
    return {body:document.body.scrollWidth,document:document.documentElement.scrollWidth,
-     width,main:document.querySelector('main')?.getBoundingClientRect().right,offenders};
+     width,main:document.querySelector('main')?.getBoundingClientRect().right,offenders,spills};
  });
  assert.ok(dims.document<=dims.width+2,label+' viewport overflow: '+JSON.stringify(dims));
 }
