@@ -43,6 +43,25 @@
     </div>
     <p class="muted"><strong>Orçamento sob análise:</strong> mais de 20 itens no catálogo, loja com checkout, área restrita, agendamentos, sistemas externos ou recursos personalizados. Não atribua um preço fechado sem aprovação.</p>
   </section>
+  <section id="guide-brief-workspace" class="sales-brief-workspace" aria-labelledby="guide-brief-title">
+    <div class="section-heading"><div><span class="kicker">PRÉ-ORÇAMENTO</span><h3 id="guide-brief-title">Registrar o pedido do cliente</h3><p class="muted">O guia vira um briefing comercial. Use o plano e os adicionais selecionados acima; descreva o que o cliente espera receber. O rascunho exige revisão administrativa.</p></div></div>
+    <form id="guide-brief-form" class="sales-brief-form">
+      <label>Oportunidade do CRM <select id="guide-brief-lead" required><option value="">Carregando oportunidades...</option></select></label>
+      <p id="guide-brief-empty" class="muted" hidden>Cadastre primeiro uma oportunidade. Depois, volte ao Guia comercial para preparar o pré-orçamento.</p>
+      <label>Objetivo do site e público do cliente * <textarea id="guide-brief-objective" required minlength="15" maxlength="650" rows="3" placeholder="Ex.: apresentar a empresa, receber pedidos de orçamento e mostrar os serviços..."></textarea></label>
+      <label>O que precisa aparecer no site? * <textarea id="guide-brief-sections" required minlength="15" maxlength="700" rows="3" placeholder="Ex.: início, sobre, serviços, galeria, depoimentos, contato..."></textarea></label>
+      <label>Identidade visual e referências <textarea id="guide-brief-visual" maxlength="450" rows="2" placeholder="Ex.: usar cores da marca, estilo minimalista, referências de sites..."></textarea></label>
+      <label>Materiais que o cliente fornecerá <textarea id="guide-brief-materials" maxlength="450" rows="2" placeholder="Ex.: logo, textos, fotos, catálogo, imagens; o que ainda está pendente..."></textarea></label>
+      <label>Outros pedidos ou observações <textarea id="guide-brief-notes" maxlength="550" rows="2" placeholder="Ex.: requisitos de navegação, formulário, responsividade, integrações ou dúvidas..."></textarea></label>
+      <label class="sales-special-check"><input type="checkbox" id="guide-brief-special"> <span>O cliente pediu algo fora dos planos (ex.: checkout, login, integração, catálogo acima de 20 itens). Será necessário orçamento personalizado.</span></label>
+      <label>Prazo de execução estimado em dias * <input id="guide-brief-duration" type="number" required min="1" max="180" step="1" value="14"></label>
+      <label>Validade do orçamento * <input id="guide-brief-validity" type="date" required></label>
+      <p class="muted">Não informe senhas, dados sensíveis ou valores financeiros internos nos campos do briefing. Se houver funcionalidade especial, o valor indicado será apenas referência inicial, sem precificar o extra.</p>
+      <div class="sales-brief-result"><div><small>Base + adicionais do configurador</small><strong id="guide-brief-total">—</strong></div><span>Rascunho interno — não enviado ao cliente</span></div>
+      <button id="guide-brief-submit" class="btn primary" type="submit">Gerar rascunho para aprovação</button>
+      <p id="guide-brief-feedback" class="muted" role="status" aria-live="polite"></p>
+    </form>
+  </section>
   <p class="notice"><strong>Não prometa sem aprovação:</strong> funcionalidades extras, descontos, hospedagem ou domínio incluídos, posição no Google, número de vendas, prazo de entrega ou suporte contínuo. Pedidos fora do escopo exigem orçamento da USBRIN.</p>
 </div>
 <div class="panel">
