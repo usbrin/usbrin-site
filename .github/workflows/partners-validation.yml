@@ -20,6 +20,7 @@ jobs:
         run: |
           node --check js/candidatura.js
           node --check js/portal.js
+          node --check js/proposta.js
           node --check js/studio.js
           node --check functions/api/studio-inquiry.js
           node --check js/status-candidatura.js
@@ -37,7 +38,7 @@ jobs:
           python3 - <<'PY'
           import sqlite3
           c=sqlite3.connect(':memory:')
-          for migration in ['0001_partners.sql','0002_financial_integrity.sql','0003_partner_contracts.sql','0004_studio_inquiries.sql','0005_studio_assignments.sql','0006_sale_project_links.sql','0007_atomic_receipts.sql','0008_crm_followups.sql']:
+          for migration in ['0001_partners.sql','0002_financial_integrity.sql','0003_partner_contracts.sql','0004_studio_inquiries.sql','0005_studio_assignments.sql','0006_sale_project_links.sql','0007_atomic_receipts.sql','0008_crm_followups.sql','0009_proposal_drafts.sql']:
               c.executescript(open('migrations/'+migration).read())
           expected=['users','applications','opportunities','sales','commissions','goals','projects','developer_payments','audit_events']
           for name in expected:
@@ -59,6 +60,10 @@ jobs:
           test -f dist/candidatura.html
           test -f dist/status-candidatura.html
           test -f dist/portal.html
+          test -f dist/proposta.html
+          test -f dist/js/proposta.js
+          test -f dist/css/proposta.css
+          test ! -e dist/public/proposta.html
           test -f dist/privacidade-parceiros.html
           test -f dist/public/index.html
           test -f dist/public/parceiros.html
