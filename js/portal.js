@@ -267,8 +267,95 @@ document.addEventListener('DOMContentLoaded',async()=>{
          });
          form.append(node('strong','Formalização pela administração','crm-label'),gross,paid,reference,sell);
        }
-       details.addEventListener('toggle',()=>{if(details.open)loadHistory(history,x.id).catch(e=>{history.replaceChildren(node('p',e.message,'error'))})});
-       details.append(summary,form,node('strong','Histórico de acompanhamento','crm-label'),history);cell.append(details);
+       const proposalsArea=node('div',null,'crm-proposals');
+       const refreshProposals=async()=>{
+         proposalsArea.replaceChildren();
+         const list=(await request('crm/proposals?id='+encodeURIComponent(x.id))).proposals;
+         if(!list.length){proposalsArea.append(node('p','Nenhuma proposta preparada para este cliente.','muted'));return;}
+         list.forEach(p=>{
+           const card=node('div',null,'crm-proposal-card');
+           card.append(node('strong',p.code+' · '+currency(p.price_cents)+' · '+p.status),
+             node('p','Serviço: '+p.product+' · Prazo: '+p.duration_days+' dias · Válida até '+p.valid_until),
+             node('p',p.scope.slice(0,160)+(p.scope.length>160?'…':'')));
+           if(user.role==='admin'&&p.status==='draft'){
+             const costs=node('div',null,'crm-proposal-costs');
+             const inputs=[
+               ['developerCents','Produção técnica (R$)'],['commissionCents','Comissões (R$)'],
+               ['taxCents','Tributos estimados (R$)'],['otherCents','Outros custos (R$)']
+             ];
+             const fields={};
+             inputs.forEach(([key,title])=>{
+               const inp=node('input');inp.type='number';inp.min='0';inp.step='.01';inp.placeholder=title;inp.setAttribute('aria-label',title);
+               inp.required=true;fields[key]=inp;costs.append(inp);
+             });
+             const note=node('textarea');note.maxLength=1000;note.rows=2;note.placeholder='Observação interna da aprovação ou motivo da recusa';
+             const decision=async(status)=>{
+               if(status==='rejected'&&note.value.trim().length<8)return message('Informe o motivo da recusa.',true);
+               const payload={id:p.id,decision:status,note:note.value.trim()};
+               if(status==='approved'){
+                 for(const [key] of inputs){
+                   const v=fields[key].value.trim();
+                   if(v===''||!Number.isFinite(Number(v))||Number(v)<0)return message('Preencha todos os custos estimados, inclusive quando forem zero.',true);
+                   payload[key]=Math.round(Number(v)*100);
+                 }
+                 const total=inputs.reduce((n,[key])=>n+payload[key],0);
+                 if(total>p.price_cents)return message('Os custos previstos ultrapassam o preço da proposta.',true);
+                 if(!confirm('Confirma a revisão do escopo, preço, prazo, tributos, comissão e margem? A aprovação não envia a proposta.'))return;
+               }else if(!confirm('Devolver esta proposta com a justificativa informada?'))return;
+               try{await request('admin/proposal-review',payload);await refreshProposals();message(status==='approved'?'Proposta aprovada para emissão.':'Rascunho devolvido.');}
+               catch(e){message(e.message,true)}
+             };
+             costs.append(note,btn('Aprovar proposta',()=>decision('approved')),btn('Devolver rascunho',()=>decision('rejected')));
+             card.append(node('p','Revisão financeira interna — não aparece na via do cliente.','muted'),costs);
+           }
+           if(['approved','sent'].includes(p.status)){
+             const link=node('a','Abrir proposta para PDF','btn');link.href='proposta.html?o='+encodeURIComponent(x.id)+'&p='+encodeURIComponent(p.id);
+             link.target='_blank';link.rel='noopener noreferrer';card.append(link);
+             if(user.role==='admin'){
+               const total=(p.cost_dev_cents||0)+(p.cost_commission_cents||0)+(p.cost_tax_cents||0)+(p.cost_other_cents||0);
+               card.append(node('p','Margem estimada: '+currency(p.price_cents-total)+' · '+((p.price_cents-total)*100/p.price_cents).toFixed(1)+'%','muted'));
+               if(p.status==='approved'){
+                 card.append(btn('Marcar como enviada',async()=>{
+                   if(!confirm('Confirma que a proposta foi enviada ao cliente por um canal externo?'))return;
+                   try{await request('admin/proposal-mark-sent',{id:p.id,confirmedExternally:true});await refreshProposals();message('Envio registrado, sem criar venda.');}
+                   catch(e){message(e.message,true)}
+                 }));
+               }
+             }
+           }
+           proposalsArea.append(card);
+         });
+       };
+       if(!isClosed(x)){
+         const quoteDetails=node('details',null,'crm-new-proposal');
+         quoteDetails.append(node('summary','Preparar rascunho de proposta'));
+         const draft=node('div',null,'crm-action-grid'),
+           product=node('select'),scope=node('textarea'),price=node('input'),days=node('input'),until=node('input'),terms=node('textarea');
+         for(const [code,label] of [['landing','Landing'],['business','Business'],['catalogo','Catálogo'],['personalizado','Personalizado']])product.add(new Option(label,code));
+         const selected=String(x.product||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
+         product.value=selected.includes('catalogo')?'catalogo':selected.includes('business')?'business':selected.includes('landing')?'landing':'personalizado';
+         scope.placeholder='Escopo específico: páginas, seções, integrações, conteúdo, revisões, itens não incluídos e entregáveis';scope.maxLength=4000;scope.rows=5;
+         price.type='number';price.min='0.01';price.step='.01';price.placeholder='Valor da proposta (R$)';price.value=x.estimated_cents>0?String(x.estimated_cents/100):'';
+         days.type='number';days.min='1';days.max='180';days.step='1';days.value='14';days.setAttribute('aria-label','Prazo estimado em dias');
+         until.type='date';until.setAttribute('aria-label','Validade da proposta');until.value=today;
+         terms.rows=2;terms.maxLength=500;terms.placeholder='Condições e premissas comerciais; a aprovação final cabe à USBRIN';
+         draft.append(node('p','Apenas rascunho interno. Não envia mensagem, não confirma contrato nem registra receita.','muted'),product,scope,price,days,until,terms);
+         draft.append(btn('Salvar rascunho',async()=>{
+           const cents=Math.round(Number(price.value)*100),duration=Number(days.value);
+           if(scope.value.trim().length<30||!Number.isSafeInteger(cents)||cents<1||!Number.isSafeInteger(duration)||duration<1||duration>180||!until.value)
+             return message('Preencha escopo detalhado, preço, prazo e validade.',true);
+           try{
+             await request('crm/proposal-draft',{opportunityId:x.id,product:product.value,scope:scope.value.trim(),priceCents:cents,durationDays:duration,validUntil:until.value,terms:terms.value.trim()});
+             await refreshProposals();quoteDetails.open=false;message('Rascunho criado. Aguarda aprovação administrativa.');
+           }catch(e){message(e.message,true)}
+         }));
+         quoteDetails.append(draft);form.append(quoteDetails);
+       }
+       details.addEventListener('toggle',()=>{if(details.open){
+         loadHistory(history,x.id).catch(e=>{history.replaceChildren(node('p',e.message,'error'))});
+         refreshProposals().catch(e=>{proposalsArea.replaceChildren(node('p',e.message,'error'))});
+       }});
+       details.append(summary,form,node('strong','Propostas comerciais','crm-label'),proposalsArea,node('strong','Histórico de acompanhamento','crm-label'),history);cell.append(details);
      });
    }
    if(name==='projects'){
