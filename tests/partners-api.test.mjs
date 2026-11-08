@@ -13,7 +13,7 @@ import {readBody,checkOrigin} from "../functions/_lib/security.js";
 class TestD1{
  constructor(){
    this.sqlite=new DatabaseSync(":memory:");
-   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql","migrations/0004_studio_inquiries.sql","migrations/0005_studio_assignments.sql","migrations/0006_sale_project_links.sql","migrations/0007_atomic_receipts.sql","migrations/0008_crm_followups.sql","migrations/0009_proposal_drafts.sql","migrations/0010_project_proposal_handoff.sql","migrations/0011_optional_services.sql"]){
+   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql","migrations/0004_studio_inquiries.sql","migrations/0005_studio_assignments.sql","migrations/0006_sale_project_links.sql","migrations/0007_atomic_receipts.sql","migrations/0008_crm_followups.sql","migrations/0009_proposal_drafts.sql","migrations/0010_project_proposal_handoff.sql","migrations/0011_optional_services.sql","migrations/0012_recurring_billing_controls.sql"]){
      this.sqlite.exec(readFileSync(new URL("../"+migration,import.meta.url),"utf8"));
    }
  }
@@ -373,6 +373,79 @@ test("optional hosting and R$250 support remain outside setup revenue; only USBR
  assert.equal(plain.status,201);
  const standard=db.sqlite.prepare("SELECT hosting_requested,support_requested,support_reference_monthly_cents FROM proposals WHERE id=?").get(plain.data.id);
  assert.deepEqual([standard.hosting_requested,standard.support_requested,standard.support_reference_monthly_cents],[0,0,0]);
+});
+
+
+test("admin-only recurring-service ledger reconciles real receipts, blocks duplicates and protects immutable history",async()=>{
+ const rep=users[1][1],dev=users[3][1],admin=users[0][1];
+ assert.equal((await call(rep,"admin/billing/overview")).status,404);
+ assert.equal((await call(dev,"admin/billing/overview")).status,404);
+ const agreementBase={saleId:"",kind:"support",cadence:"monthly",amountCents:25000,startOn:"2026-11-01",
+   contractReference:"SIGNED-SUPPORT-CASE-2026",termsSummary:"Suporte remoto dentro de horário comercial, duas pequenas alterações mensais e cancelamento conforme termo assinado.",confirmedSigned:true};
+ assert.equal((await call(rep,"admin/billing/agreement",agreementBase)).status,404);
+ const lead=await call(rep,"representante/lead",{company:"CLIENTE RECORRENTE TESTE 2026",contact:"Responsável de teste",estimatedCents:119000});
+ assert.equal(lead.status,201);
+ const sale=await call(admin,"admin/sale",{opportunityId:lead.data.id,grossCents:119000,receivedCents:0,reference:""});
+ assert.equal(sale.status,200);
+ const agreement={...agreementBase,saleId:sale.data.saleId};
+ assert.equal((await call(admin,"admin/billing/agreement",agreement)).status,409,"service agreement requires fully received website sale");
+ assert.equal((await call(admin,"admin/sale-receipt",{saleId:sale.data.saleId,amountCents:119000,reference:"WEBSITE-2026-TEST-PAID-01"})).status,200);
+ assert.equal((await call(admin,"admin/billing/agreement",{...agreement,confirmedSigned:false})).status,400);
+ assert.equal((await call(admin,"admin/billing/agreement",{...agreement,contractReference:"short"})).status,400);
+ const created=await call(admin,"admin/billing/agreement",agreement);
+ assert.equal(created.status,201);const id=created.data.id;
+ assert.equal((await call(admin,"admin/billing/agreement",agreement)).status,409);
+ assert.equal((await call(rep,"admin/billing/charge",{agreementId:id,period:"2026-11",dueOn:"2026-11-15",confirmedManual:true})).status,404);
+ assert.equal((await call(dev,"admin/billing/receipt",{chargeId:"something",amountCents:1000,reference:"INTRUDER-001",confirmedBank:true})).status,404);
+ assert.equal(db.sqlite.prepare("SELECT COUNT(*) n FROM service_charges WHERE agreement_id=?").get(id).n,0);
+ const badDate=await call(admin,"admin/billing/charge",{agreementId:id,period:"2026-11",dueOn:"2026-12-10",confirmedManual:true});
+ assert.equal(badDate.status,400);
+ const charge=await call(admin,"admin/billing/charge",{agreementId:id,period:"2026-11",dueOn:"2026-11-15",confirmedManual:true});
+ assert.equal(charge.status,201);
+ assert.equal(charge.data.amountCents,25000);
+ const chargeId=charge.data.id;
+ assert.equal((await call(admin,"admin/billing/charge",{agreementId:id,period:"2026-11",dueOn:"2026-11-20",confirmedManual:true})).status,409);
+ assert.equal((await call(admin,"admin/billing/receipt",{chargeId,amountCents:10000,reference:"UNCONFIRMED-2026",confirmedBank:false})).status,400);
+ assert.equal((await call(admin,"admin/billing/receipt",{chargeId,amountCents:10000,reference:"WEBSITE-2026-TEST-PAID-01",confirmedBank:true})).status,409,"sale references must not be reusable for service payments");
+ const first=await call(admin,"admin/billing/receipt",{chargeId,amountCents:10000,reference:"SUPPORT-BANK-2026-001",confirmedBank:true});
+ assert.equal(first.status,200);assert.equal(first.data.receivedCents,10000);assert.equal(first.data.status,"partially_paid");
+ assert.equal((await call(admin,"admin/billing/receipt",{chargeId,amountCents:10000,reference:"SUPPORT-BANK-2026-001",confirmedBank:true})).status,409);
+ assert.equal((await call(admin,"admin/billing/receipt",{chargeId,amountCents:15001,reference:"SUPPORT-BANK-2026-OVERPAY",confirmedBank:true})).status,409);
+ const second=await call(admin,"admin/billing/receipt",{chargeId,amountCents:15000,reference:"SUPPORT-BANK-2026-002",confirmedBank:true});
+ assert.equal(second.status,200);assert.equal(second.data.status,"paid");assert.equal(second.data.receivedCents,25000);
+ assert.equal((await call(admin,"admin/billing/receipt",{chargeId,amountCents:1,reference:"SUPPORT-BANK-2026-003",confirmedBank:true})).status,409);
+ const dupSaleLead=await call(rep,"representante/lead",{company:"VENDA CRUZADA RECIBO TESTE",contact:"Contato 2",estimatedCents:69000});
+ const secondSale=await call(admin,"admin/sale",{opportunityId:dupSaleLead.data.id,grossCents:69000,receivedCents:0,reference:""});
+ assert.equal(secondSale.status,200);
+ assert.equal((await call(admin,"admin/sale-receipt",{saleId:secondSale.data.saleId,amountCents:69000,reference:"SUPPORT-BANK-2026-002"})).status,409,"website receipt must not reuse service bank transaction");
+ const overview=await call(admin,"admin/billing/overview");
+ assert.equal(overview.status,200);
+ const row=overview.data.charges.find(x=>x.id===chargeId);
+ assert.equal(row.amount_cents,25000);assert.equal(row.received_cents,25000);
+ assert.equal(overview.data.totals.receivedCents>=25000,true);
+ assert.ok(overview.data.agreements.some(x=>x.id===id));
+ assert.ok(overview.data.receipts.some(x=>x.reference==="SUPPORT-BANK-2026-001"));
+ const audit=db.sqlite.prepare("SELECT COUNT(*) n FROM audit_events WHERE entity='service_charge' AND entity_id=?").get(chargeId).n;
+ assert.ok(audit>=3);
+ assert.throws(()=>db.sqlite.prepare("UPDATE service_receipts SET amount_cents=100 WHERE charge_id=?").run(chargeId),/immutable/);
+ assert.throws(()=>db.sqlite.prepare("DELETE FROM service_receipts WHERE charge_id=?").run(chargeId),/immutable/);
+ assert.throws(()=>db.sqlite.prepare("UPDATE service_charges SET amount_cents=1 WHERE id=?").run(chargeId),/immutable/);
+ assert.throws(()=>db.sqlite.prepare("UPDATE service_agreements SET amount_cents=1 WHERE id=?").run(id),/immutable/);
+ assert.equal((await call(admin,"admin/billing/agreement-status",{id,status:"paused",reason:"Revisão contratual pendente",confirmedReview:true})).status,200);
+ assert.equal((await call(admin,"admin/billing/charge",{agreementId:id,period:"2026-12",dueOn:"2026-12-15",confirmedManual:true})).status,409);
+ assert.equal((await call(admin,"admin/billing/agreement-status",{id,status:"active",reason:"Retomada após verificação assinada",confirmedReview:true})).status,200);
+ const december=await call(admin,"admin/billing/charge",{agreementId:id,period:"2026-12",dueOn:"2026-12-15",confirmedManual:true});
+ assert.equal(december.status,201);
+ assert.equal((await call(admin,"admin/billing/agreement-status",{id,status:"cancelled",reason:"Rescisão formal confirmada",confirmedReview:true})).status,200);
+ assert.equal((await call(admin,"admin/billing/agreement-status",{id,status:"active",reason:"Tentativa de reativação proibida",confirmedReview:true})).status,409);
+ assert.equal((await call(admin,"admin/billing/charge",{agreementId:id,period:"2027-01",dueOn:"2027-01-15",confirmedManual:true})).status,409);
+ const hosting=await call(admin,"admin/billing/agreement",{saleId:sale.data.saleId,kind:"hosting",cadence:"annual",amountCents:12000,startOn:"2026-11-01",
+   contractReference:"HOSTING-AGREEMENT-SIGNED-2026",termsSummary:"Hospedagem gerenciada por período anual, domínio próprio contratado pelo cliente e renovações documentadas.",confirmedSigned:true});
+ assert.equal(hosting.status,201);
+ assert.equal((await call(admin,"admin/billing/charge",{agreementId:hosting.data.id,period:"2027-01",dueOn:"2027-01-15",confirmedManual:true})).status,400);
+ const yearly=await call(admin,"admin/billing/charge",{agreementId:hosting.data.id,period:"2027",dueOn:"2027-01-15",confirmedManual:true});
+ assert.equal(yearly.status,201);assert.equal(yearly.data.amountCents,12000);
+ assert.equal(db.sqlite.prepare("SELECT COUNT(*) n FROM sales WHERE opportunity_id=?").get(lead.data.id).n,1,"recurring charges cannot create new website sales");
 });
 
 test("JWT requires a valid Cloudflare signature, correct audience and active user",async()=>{
