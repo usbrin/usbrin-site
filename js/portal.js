@@ -9,10 +9,13 @@ document.addEventListener('DOMContentLoaded',async()=>{
  const portal=el('portal-content'),sessionGate=el('session-gate'),sessionMessage=el('session-message');
  const sessionErrors=new Set(['session_required','account_not_approved','account_suspended','mfa_required','identity_unavailable']);
  const showSessionGate=text=>{
+   const firstError=el('session-actions').hidden;
    portal.hidden=true;
    sessionGate.hidden=false;
    sessionMessage.textContent=text;
+   sessionMessage.dataset.state='error';
    el('session-actions').hidden=false;
+   if(firstError)el('session-title').focus();
  };
  // A page restored from browser history must check the session again before showing data.
  window.addEventListener('pagehide',()=>{portal.hidden=true;});

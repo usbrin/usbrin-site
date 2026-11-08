@@ -135,6 +135,46 @@ async function assertFits(page,label){
 }
 
 try{
+ const routing=await browser.newContext();
+ try{
+   const page=await routing.newPage();
+   const origin='https://usbrin-id-fixture.test';
+   let session={status:401,body:{ok:false}};
+   const fixtures={
+     '/public/usbrin-id':'dist/public/usbrin-id.html',
+     '/public/css/usbrin-id.css':'dist/public/css/usbrin-id.css',
+     '/public/js/usbrin-id.js':'dist/public/js/usbrin-id.js'
+   };
+   await routing.route(origin+'/**',async route=>{
+     const url=new URL(route.request().url());
+     if(url.pathname==='/api/private/me'){
+       assert.equal(route.request().headers()['x-requested-with'],'XMLHttpRequest');
+       await route.fulfill({status:session.status,json:session.body});
+     }else if(url.pathname==='/portal'){
+       await route.fulfill({status:200,body:'Protected portal destination'});
+     }else if(fixtures[url.pathname]){
+       await route.fulfill({path:resolve(fixtures[url.pathname])});
+     }else await route.abort();
+   });
+   for(const [code,copy] of [['account_not_approved','ainda não está autorizado'],['account_suspended','Esta conta está suspensa']]){
+     session={status:403,body:{ok:false,code}};
+     await page.goto(origin+'/public/usbrin-id');
+     await page.getByRole('status').filter({hasText:copy}).waitFor();
+     assert.equal(new URL(page.url()).pathname,'/public/usbrin-id');
+   }
+   for(const role of ['admin','representante','desenvolvedor']){
+     session={status:200,body:{ok:true,user:{role}}};
+     await page.goto(origin+'/public/usbrin-id');
+     await page.waitForURL(origin+'/portal');
+   }
+   session={status:401,body:{ok:false}};
+   await page.goto(origin+'/public/usbrin-id');
+   const button=page.getByRole('link',{name:'Entrar com meu e-mail'});
+   await button.focus();
+   await page.keyboard.press('Enter');
+   await page.waitForURL(origin+'/portal');
+   console.log('PASS public entry, keyboard handoff, denied states and active session routing');
+ }finally{await routing.close();}
  for(const width of [375,768,1440]){
    for(const role of ['admin','representante','desenvolvedor']){
      const {context,page,errors}=await pageFor(role,width,portalUrl);
@@ -320,6 +360,14 @@ try{
      assert.ok(identity.page.url().endsWith('#oportunidades'));
      await identity.page.getByRole('link',{name:'Já sou parceiro'}).click();
      await identity.page.getByRole('heading',{name:'Bem-vindo de volta.'}).waitFor();
+     await identity.page.getByRole('link',{name:'Programa de parceiros',exact:true}).focus();
+     await identity.page.keyboard.press('Tab');
+     assert.equal(await identity.page.evaluate(()=>document.activeElement.id),'id-entry');
+     await identity.page.keyboard.press('Tab');
+     assert.equal(await identity.page.evaluate(()=>document.activeElement.tagName),'SUMMARY');
+     await identity.page.keyboard.press('Enter');
+     await identity.page.getByText('Use o endereço aprovado',{exact:false}).waitFor();
+     await identity.page.keyboard.press('Enter');
      assert.ok(identity.page.url().includes('/public/usbrin-id.html'));
      assert.equal(await identity.page.getByRole('link',{name:'Entrar com meu e-mail'}).getAttribute('href'),'/portal');
      await assertFits(identity.page,'USBRIN ID '+width);
@@ -327,6 +375,8 @@ try{
      await identity.page.goto(portalUrl);
      await identity.page.getByText('Sua sessão precisa ser verificada.',{exact:false}).waitFor();
      assert.equal(await identity.page.locator('#portal-content').isVisible(),false);
+     assert.equal(await identity.page.evaluate(()=>document.activeElement.id),'session-title');
+     assert.equal(await identity.page.getByRole('link',{name:'Sair do Cloudflare Access'}).getAttribute('href'),'/cdn-cgi/access/logout');
      assert.equal(await identity.page.getByRole('link',{name:'Tentar novamente'}).getAttribute('href'),'/portal');
      assert.deepEqual(identity.errors,[]);
      console.log('PASS USBRIN ID and expired session',width);

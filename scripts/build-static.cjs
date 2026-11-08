@@ -34,7 +34,7 @@ for(const filename of ['parceiros.html','candidatura.html','status-candidatura.h
 fs.copyFileSync(path.join(recruitment,'parceiros.html'),path.join(recruitment,'index.html'));
 for(const asset of [
   'assets/favicon-small.png','assets/usbrin-logo-sem-fundo.svg',
-  'css/parceiros.css','js/candidatura.js','js/status-candidatura.js'
+  'css/parceiros.css','css/usbrin-id.css','js/usbrin-id.js','js/candidatura.js','js/status-candidatura.js'
 ]){
   fs.copyFileSync(path.join(root,asset),path.join(recruitment,asset));
 }
