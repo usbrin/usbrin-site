@@ -1,6 +1,7 @@
 import {respond,error,readBody,checkOrigin,str,email} from "../../_lib/security.js";
 import {authenticatedUser} from "../../_lib/auth.js";
 import {handleBilling} from "../../_lib/billing.js";
+import {handleBank} from "../../_lib/bank-reconcile.js";
 const statuses=new Set(["received","review","requested","interview","preapproved","documentation","approved","rejected","withdrawn"]);
 const repStages=new Set(["new","contact","interested","qualified","proposal","negotiation","lost"]);
 const projectStages=new Set(["proposed","accepted","in_progress","review","changes","approved","done","cancelled"]);
@@ -30,6 +31,7 @@ export async function onRequest(context){
   const db=env.DB;
   try{
     if(route.startsWith("admin/billing/"))return handleBilling({request,db,user,route});
+    if(route.startsWith("admin/bank/"))return handleBank({request,db,user,route});
     if(route==="me"&&method==="GET")return respond({ok:true,user});
     if(route==="crm/history"&&method==="GET"&&allowed(user,"admin","representante")){
       const id=str(new URL(request.url).searchParams.get("id"),60);
