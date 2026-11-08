@@ -7,16 +7,48 @@ document.addEventListener('DOMContentLoaded',async()=>{
  const btn=(text,run)=>{const n=node('button',text,'btn');n.type='button';n.addEventListener('click',run);return n};
  const message=(text,isError=false)=>{status.textContent=text;status.className='status '+(isError?'bad':'good')};
  const portal=el('portal-content'),sessionGate=el('session-gate'),sessionMessage=el('session-message');
- const sessionErrors=new Set(['session_required','account_not_approved','account_suspended','mfa_required','identity_unavailable']);
- const showSessionGate=text=>{
+ const sessionErrors=new Set(['usbrin_session_required','session_required','account_not_approved','account_suspended','mfa_required','identity_unavailable']);
+ const showSessionGate=(text,code)=>{
+   const needsConfirmation=code==='usbrin_session_required';
    const firstError=el('session-actions').hidden;
    portal.hidden=true;
    sessionGate.hidden=false;
-   sessionMessage.textContent=text;
+   sessionMessage.textContent=needsConfirmation&&new URLSearchParams(location.search).get('confirmacao')==='pendente'
+     ?'A confirmação anterior não abriu uma nova sessão. Tente novamente com seu autenticador.'
+     :text;
    sessionMessage.dataset.state='error';
    el('session-actions').hidden=false;
+   el('session-confirm').hidden=!needsConfirmation;
+   el('session-retry').hidden=needsConfirmation;
    if(firstError)el('session-title').focus();
  };
+ for(const [id,destination] of [['session-confirm','/api/session/verify'],['work-logout','/public/usbrin-id']]){
+   const form=el(id),button=form.querySelector('button');
+   form.addEventListener('submit',async event=>{
+     event.preventDefault();
+     if(button.disabled)return;
+     button.disabled=true;
+     const label=button.textContent;
+     button.textContent=id==='work-logout'?'Encerrando sessão…':'Preparando verificação…';
+     try{
+       const response=await fetch(form.action,{
+         method:'POST',credentials:'same-origin',cache:'no-store',redirect:'manual',headers:{accept:'application/json'}
+       });
+       if(response.type==='opaqueredirect'&&id==='session-confirm'){
+         location.assign('/portal');
+         return;
+       }
+       if(!response.ok||!(await response.json()).ok)throw Error();
+       location.assign(destination);
+     }catch{
+       const text=id==='work-logout'?'Não foi possível encerrar a sessão. Tente novamente.':'Não foi possível iniciar a verificação. Tente novamente.';
+       if(id==='work-logout')message(text,true);
+       else sessionMessage.textContent=text;
+       button.textContent=label;
+       button.disabled=false;
+     }
+   });
+ }
  // A page restored from browser history must check the session again before showing data.
  window.addEventListener('pagehide',()=>{portal.hidden=true;});
  window.addEventListener('pageshow',event=>{if(event.persisted)window.location.reload();});
@@ -24,16 +56,19 @@ document.addEventListener('DOMContentLoaded',async()=>{
    const options={credentials:'same-origin',cache:'no-store',redirect:'manual',headers:{'X-Requested-With':'XMLHttpRequest'}};
    if(data!==undefined){options.method='POST';options.headers['content-type']='application/json';options.body=JSON.stringify(data);}
    const response=await fetch('/api/private/'+path,options);
-   if(response.type==='opaqueredirect'||response.status===401){
+   const isJson=response.headers.get('content-type')?.includes('application/json');
+   if(response.type==='opaqueredirect'||(response.status===401&&!isJson)){
      const text='Sua sessão precisa ser verificada. Entre novamente para continuar.';
      showSessionGate(text);
      throw Error(text);
    }
    let json;try{json=await response.json()}catch{throw Error('Resposta do servidor inválida.');}
    if(!response.ok||!json.ok){
-     const text=json.error||'Falha na solicitação.';
-     if(sessionErrors.has(json.code))showSessionGate(text);
-     throw Error(text);
+     const text=response.status===401&&json.code!=='usbrin_session_required'
+       ?'Sua sessão precisa ser verificada. Entre novamente para continuar.'
+       :json.error||'Falha na solicitação.';
+     if(sessionErrors.has(json.code))showSessionGate(text,json.code);
+     throw Object.assign(Error(text),{code:json.code});
    }
    return json;
  };
@@ -1157,6 +1192,18 @@ document.addEventListener('DOMContentLoaded',async()=>{
  try{
    const res=await request('me');
    user=res.user;
+   if(res.workSession){
+     el('work-logout').hidden=false;
+     el('access-logout').hidden=true;
+     let lastActivity=Date.now();
+     const recordActivity=event=>{
+       const now=Date.now();
+       if(!event.isTrusted||document.hidden||portal.hidden||now-lastActivity<60_000)return;
+       lastActivity=now;
+       request('session/activity',{}).catch(e=>message(e.message,true));
+     };
+     for(const event of ['pointerdown','keydown','input'])document.addEventListener(event,recordActivity,{passive:true});
+   }
    const roleLabel={admin:'Administração',representante:'Representante comercial',desenvolvedor:'Desenvolvedor parceiro'};
    el('identity').textContent='Conta: '+user.name+' · '+roleLabel[user.role];
    setNavigation(user.role);
@@ -1164,6 +1211,6 @@ document.addEventListener('DOMContentLoaded',async()=>{
    portal.hidden=false;
    await open('overview');
  }catch(e){
-   showSessionGate(e.message);
+   showSessionGate(e.message,e.code);
  }
 });

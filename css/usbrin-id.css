@@ -157,3 +157,6 @@
   .id-button:hover { transform: none; }
   .id-spinner { animation: none; }
 }
+
+#work-logout[hidden] { display: none; }
+#work-logout { padding: 0 14px 16px; }

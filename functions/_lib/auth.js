@@ -34,7 +34,7 @@ async function accessKeys(domain,kid){
   }
 }
 
-async function verifySession(request,env,domain){
+async function verifySession(request,audience,domain){
   const token=request.headers.get("Cf-Access-Jwt-Assertion");
   if(!token||token.length>8192)throw invalidSession();
   const parts=token.split(".");
@@ -49,7 +49,7 @@ async function verifySession(request,env,domain){
   }
   const now=Math.floor(Date.now()/1000);
   if(header?.alg!=="RS256"||typeof header.kid!=="string"||!header.kid||
-     claims?.iss!==domain||claims.type!=="app"||!Array.isArray(claims.aud)||!claims.aud.includes(env.USBRIN_ID_ACCESS_AUD)||
+     claims?.iss!==domain||claims.type!=="app"||!Array.isArray(claims.aud)||!claims.aud.includes(audience)||
      !Number.isSafeInteger(claims.exp)||claims.exp<=now||
      !Number.isSafeInteger(claims.iat)||claims.iat>now+60||claims.iat>=claims.exp||
      !Number.isSafeInteger(claims.nbf)||claims.nbf>now+60||claims.nbf>=claims.exp||
@@ -69,13 +69,13 @@ async function verifySession(request,env,domain){
   return claims;
 }
 
-export async function authenticatedUser(request,env){
+export async function authenticatedIdentity(request,env,audience=env.USBRIN_ID_ACCESS_AUD){
   const url=new URL(request.url),domain=String(env.ACCESS_TEAM_DOMAIN||"").replace(/\/$/,"");
   // The Access application must cover this exact host. Pages shares preview settings across branches.
-  if(!env.USBRIN_ID_DB||!env.USBRIN_ID_ACCESS_AUD||url.protocol!=="https:"||url.host!==env.ACCESS_APP_HOST||
+  if(!env.USBRIN_ID_DB||!env.USBRIN_ID_ACCESS_AUD||!audience||url.protocol!=="https:"||url.host!==env.ACCESS_APP_HOST||
      !/^https:\/\/[a-z0-9-]+\.cloudflareaccess\.com$/i.test(domain))throw unavailable();
 
-  const claims=await verifySession(request,env,domain);
+  const claims=await verifySession(request,audience,domain);
   let user;
   try{
     user=await env.USBRIN_ID_DB.prepare("SELECT id,email,name,role,status FROM users WHERE email=?").bind(email(claims.email)).first();
@@ -90,5 +90,9 @@ export async function authenticatedUser(request,env){
   if(user.role==="admin"&&(!env.ACCESS_MFA_AUD||env.ACCESS_MFA_AUD!==env.USBRIN_ID_ACCESS_AUD)){
     throw new AuthError("mfa_required","O acesso administrativo depende da verificação em duas etapas. Fale com a USBRIN.",403);
   }
-  return user;
+  return {user,claims};
+}
+
+export async function authenticatedUser(request,env){
+  return (await authenticatedIdentity(request,env)).user;
 }

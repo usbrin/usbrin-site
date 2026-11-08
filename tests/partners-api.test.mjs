@@ -8,13 +8,16 @@ import {onRequestPost as studioInquiry} from "../functions/api/studio-inquiry.js
 import {onRequestGet as publicConfig} from "../functions/api/public-config.js";
 import {onRequestPost as statusLookup} from "../functions/api/application-status.js";
 import {authenticatedUser} from "../functions/_lib/auth.js";
+import {onRequest as startSession} from "../functions/api/session/start.js";
+import {onRequest as verifySession} from "../functions/api/session/verify.js";
+import {onRequest as logoutSession} from "../functions/api/session/logout.js";
 import {readBody,checkOrigin} from "../functions/_lib/security.js";
 import {parseBankCSV,bankCents,bankDate} from "../functions/_lib/bank-csv.js";
 
 class TestD1{
  constructor(){
    this.sqlite=new DatabaseSync(":memory:");
-   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql","migrations/0004_studio_inquiries.sql","migrations/0005_studio_assignments.sql","migrations/0006_sale_project_links.sql","migrations/0007_atomic_receipts.sql","migrations/0008_crm_followups.sql","migrations/0009_proposal_drafts.sql","migrations/0010_project_proposal_handoff.sql","migrations/0011_optional_services.sql","migrations/0012_recurring_billing_controls.sql","migrations/0013_bank_evidence_and_refunds.sql","migrations/0014_expense_obligations.sql","migrations/0015_fiscal_evidence.sql"]){
+   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql","migrations/0004_studio_inquiries.sql","migrations/0005_studio_assignments.sql","migrations/0006_sale_project_links.sql","migrations/0007_atomic_receipts.sql","migrations/0008_crm_followups.sql","migrations/0009_proposal_drafts.sql","migrations/0010_project_proposal_handoff.sql","migrations/0011_optional_services.sql","migrations/0012_recurring_billing_controls.sql","migrations/0013_bank_evidence_and_refunds.sql","migrations/0014_expense_obligations.sql","migrations/0015_fiscal_evidence.sql","migrations/0016_portal_sessions.sql"]){
      this.sqlite.exec(readFileSync(new URL("../"+migration,import.meta.url),"utf8"));
    }
  }
@@ -902,4 +905,65 @@ test("Gestão de Acessos audits role assignment and a prepared invitation withou
  assert.ok(final.data.history.every(x=>x.actor_name==="Administrador"&&x.target_name==="Parceiro Gestão QA"));
  assert.equal((await call(admin,route+"?page=0")).status,400);
  assert.equal((await call(admin,route+"?q=%25")).data.users.length,0);
+});
+
+test("experimental work sessions require distinct fresh proof, expire after 30 idle minutes and revoke on logout",async()=>{
+ const origin="https://usbrin-preview.pages.dev",step="step-up-qa",mail=users[1][1];
+ const cfg={...env,USBRIN_SESSION_EXPERIMENT:"true",USBRIN_ID_STEP_UP_AUD:step};
+ const clock=Date.now;
+ let at=Math.floor(clock()/1000);
+ Date.now=()=>at*1000;
+ const invoke=(fn,path,{token,cookies="",method="GET",from=origin}={})=>fn({
+   request:new Request(origin+path,{method,headers:{cookie:cookies,origin:from,...(token?{"Cf-Access-Jwt-Assertion":token}:{})}}),env:cfg
+ });
+ const getCookie=(response,name)=>response.headers.getSetCookie().find(x=>x.startsWith(name+"="))?.split(";")[0];
+ const start=token=>invoke(startSession,"/api/session/start",{token,method:"POST"});
+ const complete=(token,cookies)=>invoke(verifySession,"/api/session/verify",{token,cookies});
+ const hit=(token,cookies="",route="me")=>invoke(privateAPI,"/api/private/"+route,{token,cookies});
+ try{
+   const identity=await signed(mail);
+   const noWorkSession=await hit(identity);
+   assert.equal(noWorkSession.status,401);
+   assert.equal((await noWorkSession.json()).code,"usbrin_session_required");
+   assert.equal((await invoke(startSession,"/api/session/start",{token:identity,method:"POST",from:"https://foreign.test"})).status,403);
+   const staleProof=await signed(mail,{aud:[step]});
+   const started=await start(identity);
+   const challenge=getCookie(started,"__Host-usbrin-challenge");
+   assert.ok(challenge);
+   assert.equal(started.headers.get("location"),"/api/session/verify");
+   assert.ok(started.headers.getSetCookie().some(x=>x.includes("Path=/api/session/verify")&&x.includes("Max-Age=0")));
+   assert.equal((await complete(identity,challenge)).headers.get("location"),"/portal?confirmacao=pendente");
+   assert.equal((await complete(staleProof,challenge)).headers.get("location"),"/portal?confirmacao=pendente");
+   const challenge2=getCookie(await start(identity),"__Host-usbrin-challenge");
+   at++;
+   const proof=await signed(mail,{aud:[step]});
+   assert.equal((await complete(await signed(users[3][1],{aud:[step]}),challenge2)).headers.get("location"),"/portal?confirmacao=pendente");
+   const issued=await complete(proof,challenge2);
+   const cookie=getCookie(issued,"__Host-usbrin-session");
+   assert.ok(cookie);
+   assert.match(issued.headers.getSetCookie().find(x=>x.startsWith("__Host-usbrin-session=")),/Secure; HttpOnly; SameSite=Lax$/);
+   assert.equal((await complete(proof,challenge2)).headers.get("location"),"/portal?confirmacao=pendente");
+   assert.equal((await hit(identity,cookie)).status,200);
+   assert.equal((await hit(await signed(users[3][1]),cookie)).status,401);
+   assert.equal((await hit(await signed(mail,{sub:"different-access-identity"}),cookie)).status,401);
+   at+=29*60;
+   assert.equal((await hit(identity,cookie,"representante/dashboard")).status,200);
+   at+=29*60;
+   assert.equal((await hit(identity,cookie)).status,200);
+   at+=60;
+   assert.equal((await hit(identity,cookie)).status,401);
+   const renewedAccessIdentity=await signed(mail);
+   assert.equal((await hit(renewedAccessIdentity,cookie)).status,401);
+   const challenge3=getCookie(await start(renewedAccessIdentity),"__Host-usbrin-challenge");
+   at++;
+   const issuedAgain=await complete(await signed(mail,{aud:[step]}),challenge3);
+   const cookie2=getCookie(issuedAgain,"__Host-usbrin-session");
+   assert.ok(cookie2);
+   assert.equal((await invoke(logoutSession,"/api/session/logout",{method:"POST",cookies:cookie2,from:"https://foreign.test"})).status,403);
+   assert.equal((await hit(renewedAccessIdentity,cookie2)).status,200);
+   const logout=await invoke(logoutSession,"/api/session/logout",{method:"POST",cookies:cookie2});
+   assert.equal(logout.headers.get("location"),"/public/usbrin-id");
+   assert.match(logout.headers.getSetCookie().find(x=>x.startsWith("__Host-usbrin-session=")),/Max-Age=0/);
+   assert.equal((await hit(renewedAccessIdentity,cookie2)).status,401);
+ }finally{Date.now=clock;}
 });

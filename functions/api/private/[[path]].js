@@ -1,5 +1,6 @@
 import {respond,error,readBody,checkOrigin,str,email} from "../../_lib/security.js";
-import {authenticatedUser,AuthError} from "../../_lib/auth.js";
+import {authenticatedIdentity,AuthError} from "../../_lib/auth.js";
+import {portalSessionEnabled,requirePortalSession} from "../../_lib/portal-session.js";
 import {handleBilling} from "../../_lib/billing.js";
 import {handleBank} from "../../_lib/bank-reconcile.js";
 import {handleFinanceControl} from "../../_lib/finance-control.js";
@@ -29,7 +30,11 @@ export async function onRequest(context){
   if(!["GET","POST"].includes(method))return error("Método não permitido.",405);
   if(method==="POST"&&!checkOrigin(request))return error("Origem não autorizada.",403);
   let user;
-  try{user=await authenticatedUser(request,env);}catch(e){
+  try{
+    const identity=await authenticatedIdentity(request,env);
+    await requirePortalSession(request,env,identity,route!=="me");
+    user=identity.user;
+  }catch(e){
     if(e instanceof AuthError)return respond({ok:false,error:e.message,code:e.code},e.status);
     return error("Não foi possível verificar o acesso.",503);
   }
@@ -38,7 +43,8 @@ export async function onRequest(context){
     if(route.startsWith("admin/billing/"))return handleBilling({request,db,user,route});
     if(route.startsWith("admin/bank/"))return handleBank({request,db,user,route});
     if(route.startsWith("admin/control/"))return handleFinanceControl({request,db,user,route});
-    if(route==="me"&&method==="GET")return respond({ok:true,user});
+    if(route==="me"&&method==="GET")return respond({ok:true,user,workSession:portalSessionEnabled(env)});
+    if(route==="session/activity"&&method==="POST"&&portalSessionEnabled(env))return respond({ok:true});
     if(route==="crm/history"&&method==="GET"&&allowed(user,"admin","representante")){
       const id=str(new URL(request.url).searchParams.get("id"),60);
       if(!id)return error("Informe a oportunidade.",400);
@@ -334,14 +340,21 @@ export async function onRequest(context){
       if(partner.status===next||!["active","suspended"].includes(partner.status))return error("Mudança de acesso não permitida no estado atual.",409);
       if(next==="active"&&(!partner.contract_verified_at||String(partner.contract_reference||"").length<5))
         return error("Reativação exige um contrato previamente assinado e verificado.",409);
-      const [,result]=await db.batch([
+      const results=await db.batch([
         query(db,`INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at)
           SELECT ?,?,'partner.access','user',id,?,datetime('now')
           FROM users WHERE id=? AND status=? AND role IN ('representante','desenvolvedor')`,
           fresh(),user.id,partner.status+" -> "+next+" | motivo: "+reason,id,partner.status),
+        ...(next==="suspended"&&portalSessionEnabled(env)?[
+          query(db,`UPDATE portal_sessions SET ended_at=CAST(strftime('%s','now') AS INTEGER)
+            WHERE user_id=? AND ended_at IS NULL AND EXISTS (SELECT 1 FROM users WHERE id=? AND status=?)`,
+            id,id,partner.status),
+          query(db,`DELETE FROM portal_session_challenges WHERE user_id=?
+            AND EXISTS (SELECT 1 FROM users WHERE id=? AND status=?)`,id,id,partner.status)
+        ]:[]),
         query(db,"UPDATE users SET status=? WHERE id=? AND status=? AND role IN ('representante','desenvolvedor')",next,id,partner.status)
       ]);
-      if(result.meta?.changes!==1)return error("O acesso foi alterado por outra operação; atualize a lista.",409);
+      if(results.at(-1)?.meta?.changes!==1)return error("O acesso foi alterado por outra operação; atualize a lista.",409);
       return respond({ok:true,id,status:next});
     }
     if(route==="admin/goal"&&method==="POST"&&allowed(user,"admin")){
