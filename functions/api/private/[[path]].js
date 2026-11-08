@@ -88,7 +88,9 @@ export async function onRequest(context){
         return error("Pedido especial exige precificação manual e criação de nova proposta com preço final antes da aprovação.",409);
       if(decision==="rejected"&&note.length<8)return error("Informe o motivo da devolução.",400);
       if(decision==="approved"&&current.valid_until<new Date().toISOString().slice(0,10))return error("A proposta expirou; elabore uma nova versão.",409);
-      const costs=decision==="approved"?[b.developerCents,b.commissionCents,b.taxCents,b.otherCents]:[null,null,null,null];
+      // 15% of the one-off website price; optional support/hosting subscriptions are not part of this quote.
+      const fixedCommissionCents=Math.round(current.price_cents*1500/10000);
+      const costs=decision==="approved"?[b.developerCents,fixedCommissionCents,b.taxCents,b.otherCents]:[null,null,null,null];
       if(decision==="approved"&&costs.some(v=>!Number.isSafeInteger(v)||v<0||v>100000000))
         return error("Confirme todas as estimativas de custos em centavos inteiros.",400);
       const total=decision==="approved"?costs.reduce((n,v)=>n+v,0):0;
@@ -327,8 +329,8 @@ export async function onRequest(context){
       return respond({ok:true,saleId,receivedCents:updated.received_cents,status:updated.status});
     }
     if(route==="admin/commission"&&method==="POST"&&allowed(user,"admin")){
-      const b=await readBody(request),saleId=str(b.saleId,50),rate=b.rateBps;
-      if(!Number.isInteger(rate)||rate<0||rate>5000)return error("Taxa inválida em pontos-base.");
+      const b=await readBody(request),saleId=str(b.saleId,50),rate=1500;
+      if(b.rateBps!==undefined&&b.rateBps!==1500)return error("A comissão USBRIN para criação de sites é fixa em 15%.",400);
       const s=await query(db,"SELECT s.id,s.received_cents,s.status,o.partner_id FROM sales s JOIN opportunities o ON o.id=s.opportunity_id WHERE s.id=?",saleId).first();
       if(!s||s.status!=="paid")return error("A venda precisa estar integralmente recebida.");
       const existing=await query(db,"SELECT id FROM commissions WHERE sale_id=?",saleId).first();if(existing)return error("Comissão existente, revise o registro.",409);
