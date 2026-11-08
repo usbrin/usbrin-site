@@ -112,7 +112,7 @@ try{
          await page.locator('#guide-estimate-product').selectOption('catalogo');
          assert.ok((await total.innerText()).includes('2.390'),'Catalog + blog + form should total 2390');
 
-         await page.locator('#guide-brief-lead option').nth(1).waitFor();
+         await page.locator('#guide-brief-lead option').nth(1).waitFor({state:'attached'});
          await page.locator('#guide-brief-lead').selectOption('op-briefing-demo-001');
          await page.locator('#guide-brief-objective').fill('Apresentar os serviços e permitir orçamentos online.');
          await page.locator('#guide-brief-sections').fill('Página inicial, empresa, serviços, blog e contato.');
@@ -142,7 +142,7 @@ try{
        }
        if(role==='admin'){
          await page.locator('#portal-nav [data-view="projects"]').click();
-         await page.locator('#project-sale option').nth(1).waitFor();
+         await page.locator('#project-sale option').nth(1).waitFor({state:'attached'});
          await page.locator('#project-sale').selectOption('sale-handoff-demo-001');
          assert.equal(await page.locator('#project-proposal-id').inputValue(),'proposal-approved-demo-001');
          assert.equal(await page.locator('#project-form textarea[name="description"]').isEditable(),false);
