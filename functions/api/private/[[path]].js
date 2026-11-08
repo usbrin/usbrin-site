@@ -61,8 +61,12 @@ export async function onRequest(context){
       if(!lead)return error("Oportunidade não encontrada ou sem permissão.",404);
       if(["lost","cancelled","paid"].includes(lead.stage))return error("Oportunidade encerrada: não é possível criar proposta.",409);
       const id=fresh(),code="Q"+id.replace(/-/g,"").slice(0,13).toUpperCase();
+      // Representatives may describe the technical scope, but may not define payment terms or billing instructions.
+      const safeTerms=user.role==="representante"
+        ?"Pagamento e cobrança exclusivamente com a administração da USBRIN, após aprovação comercial. A proposta não confirma contratação, recebimento ou início da produção. Serviços opcionais requerem condições próprias."
+        :terms||null;
       await db.batch([
-        query(db,"INSERT INTO proposals(id,code,opportunity_id,created_by,product,scope,price_cents,duration_days,valid_until,terms,status,hosting_requested,support_requested,support_reference_monthly_cents) VALUES (?,?,?,?,?,?,?,?,?,?,'draft',?,?,?)",id,code,opportunityId,user.id,product,scope,price,days,validUntil,terms||null,hostingRequested?1:0,supportRequested?1:0,supportRequested?25000:0),
+        query(db,"INSERT INTO proposals(id,code,opportunity_id,created_by,product,scope,price_cents,duration_days,valid_until,terms,status,hosting_requested,support_requested,support_reference_monthly_cents) VALUES (?,?,?,?,?,?,?,?,?,?,'draft',?,?,?)",id,code,opportunityId,user.id,product,scope,price,days,validUntil,safeTerms,hostingRequested?1:0,supportRequested?1:0,supportRequested?25000:0),
         query(db,"INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at) VALUES (?,?,?,?,?,?,datetime('now'))",fresh(),user.id,"proposal.draft","proposal",id,"draft "+code)
       ]);
       return respond({ok:true,id,code,status:"draft"},201);
