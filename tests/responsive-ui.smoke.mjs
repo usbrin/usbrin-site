@@ -169,7 +169,18 @@ try{
          await page.locator('#portal-nav [data-view="billing"]').click();
          await page.locator('#view-billing').waitFor({state:'visible'});
          await page.locator('#billing-agreements').getByText('Cliente Homologação UX',{exact:true}).first().waitFor();
-         assert.ok((await page.locator('#billing-metrics').innerText()).includes('R
+         assert.ok((await page.locator('#billing-metrics').innerText()).includes('250,00'));
+         assert.equal(await page.locator('#billing-sale option').count(),2);
+         assert.equal(await page.locator('#billing-active-agreement option').count(),2);
+         assert.equal(await page.locator('#billing-open-charge option').count(),2);
+         assert.ok((await page.locator('#billing-receipts').innerText()).includes('BANK-MOCK-001'));
+         assert.equal(await page.locator('#billing-agreement-form').isVisible(),true);
+         await assertFits(page,'admin finance ledger '+width);
+       }else{
+         assert.equal(await page.locator('#portal-nav [data-view="billing"]').isVisible(),false);
+         assert.equal(await page.locator('#view-billing').isVisible(),false);
+       }
+       await assertFits(page,role+' '+width);
        assert.deepEqual(errors,[],'Page errors '+role+' '+width);
        await page.screenshot({path:resolve(outDir,role+'-'+width+'.png'),fullPage:true});
        console.log('PASS portal',role,width);
