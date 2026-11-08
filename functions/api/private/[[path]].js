@@ -71,6 +71,8 @@ export async function onRequest(context){
       if(!current)return error("Proposta não encontrada.",404);
       if(current.status!=="draft")return error("Esta proposta já foi analisada.",409);
       if(decision==="approved"&&["lost","paid","cancelled"].includes(current.lead_stage))return error("A oportunidade está encerrada. Não é possível aprovar nova proposta.",409);
+      if(decision==="approved"&&(await query(db,"SELECT product FROM proposals WHERE id=?",id).first())?.product==="personalizado")
+        return error("Pedido especial exige precificação manual e criação de nova proposta com preço final antes da aprovação.",409);
       if(decision==="rejected"&&note.length<8)return error("Informe o motivo da devolução.",400);
       if(decision==="approved"&&current.valid_until<new Date().toISOString().slice(0,10))return error("A proposta expirou; elabore uma nova versão.",409);
       const costs=decision==="approved"?[b.developerCents,b.commissionCents,b.taxCents,b.otherCents]:[null,null,null,null];
@@ -364,7 +366,7 @@ export async function onRequest(context){
       await audit(db,user,"lead.stage","opportunity",id,stage);return respond({ok:true});
     }
     if(route==="admin/sales"&&method==="GET"&&allowed(user,"admin")){
-      const sales=await db.prepare("SELECT s.id,s.gross_cents,s.received_cents,s.status,o.company,o.product FROM sales s JOIN opportunities o ON o.id=s.opportunity_id LEFT JOIN projects p ON p.sale_id=s.id WHERE s.received_cents>0 AND s.status IN ('paid','partially_paid') AND p.id IS NULL ORDER BY s.updated_at DESC LIMIT 200").all();
+      const sales=await db.prepare("SELECT s.id,s.gross_cents,s.received_cents,s.status,o.company,o.product,o.id opportunity_id,(SELECT q.id FROM proposals q WHERE q.opportunity_id=o.id AND q.status IN ('approved','sent') ORDER BY q.created_at DESC,q.rowid DESC LIMIT 1) approved_proposal_id,(SELECT q.code FROM proposals q WHERE q.opportunity_id=o.id AND q.status IN ('approved','sent') ORDER BY q.created_at DESC,q.rowid DESC LIMIT 1) approved_proposal_code,(SELECT q.scope FROM proposals q WHERE q.opportunity_id=o.id AND q.status IN ('approved','sent') ORDER BY q.created_at DESC,q.rowid DESC LIMIT 1) approved_scope FROM sales s JOIN opportunities o ON o.id=s.opportunity_id LEFT JOIN projects p ON p.sale_id=s.id WHERE s.received_cents>0 AND s.status IN ('paid','partially_paid') AND p.id IS NULL ORDER BY s.updated_at DESC LIMIT 200").all();
       return respond({ok:true,sales:sales.results});
     }
     if(route==="admin/projects"&&method==="GET"&&allowed(user,"admin")){
@@ -372,23 +374,31 @@ export async function onRequest(context){
       return respond({ok:true,projects:rows.results});
     }
     if(route==="admin/project"&&method==="POST"&&allowed(user,"admin")){
-      const b=await readBody(request),title=str(b.title,160),description=str(b.description,5000),developerId=str(b.developerId,60),amount=b.compensationCents,saleId=str(b.saleId,60),dueAt=str(b.dueAt,30);
+      const b=await readBody(request),title=str(b.title,160),description=str(b.description,5000),developerId=str(b.developerId,60),amount=b.compensationCents,saleId=str(b.saleId,60),proposalId=str(b.proposalId,60),dueAt=str(b.dueAt,30);
       if(title.length<3||description.length<15||!positive(amount)||!developerId)return error("Projeto inválido.");
       if(dueAt&&!/^\d{4}-\d{2}-\d{2}$/.test(dueAt))return error("Prazo inválido, use uma data válida.");
       const dev=await query(db,"SELECT id FROM users WHERE id=? AND role='desenvolvedor' AND status='active'",developerId).first();
       if(!dev)return error("Desenvolvedor não habilitado.");
+      if(proposalId&&!saleId)return error("O briefing aprovado só pode ser vinculado a uma venda confirmada.",400);
+      let developmentScope=description;
       if(saleId){
-        const sale=await query(db,"SELECT id,gross_cents,received_cents,status FROM sales WHERE id=?",saleId).first();
+        const sale=await query(db,"SELECT id,opportunity_id,gross_cents,received_cents,status FROM sales WHERE id=?",saleId).first();
         if(!sale||!["paid","partially_paid"].includes(sale.status)||sale.received_cents===0)return error("A venda deve possuir recebimento confirmado antes da produção.");
         if(amount>sale.gross_cents)return error("Custo técnico supera o valor contratado. Revise a margem da operação.");
         const existing=await query(db,"SELECT id FROM projects WHERE sale_id=?",saleId).first();
         if(existing)return error("Esta venda já possui um projeto vinculado.",409);
+        if(proposalId){
+          const approved=await query(db,"SELECT id,scope,price_cents,status FROM proposals WHERE id=? AND opportunity_id=? AND status IN ('approved','sent')",proposalId,sale.opportunity_id).first();
+          if(!approved)return error("O briefing não corresponde a uma proposta aprovada desta venda.",409);
+          if(approved.price_cents!==sale.gross_cents)return error("O valor da venda não coincide com a proposta aprovada. Revise o contrato e o orçamento.",409);
+          developmentScope=approved.scope;
+        }
       }
       const id=fresh();
       try{
-        await query(db,"INSERT INTO projects(id,title,description,developer_id,compensation_cents,due_at,sale_id) VALUES (?,?,?,?,?,?,?)",id,title,description,developerId,amount,dueAt||null,saleId||null).run();
+        await query(db,"INSERT INTO projects(id,title,description,developer_id,compensation_cents,due_at,sale_id,proposal_id) VALUES (?,?,?,?,?,?,?,?)",id,title,developmentScope,developerId,amount,dueAt||null,saleId||null,proposalId||null).run();
       }catch(e){if(/UNIQUE|constraint/i.test(String(e)))return error("Venda já vinculada a um projeto.",409);throw e;}
-      await audit(db,user,"project.create","project",id,saleId?"sale="+saleId:"standalone");
+      await audit(db,user,"project.create","project",id,saleId?"sale="+saleId+(proposalId?" proposal="+proposalId:""):"standalone");
       return respond({ok:true,id,saleId:saleId||null},201);
     }
     if(route==="admin/project-stage"&&method==="POST"&&allowed(user,"admin")){
