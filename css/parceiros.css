@@ -41,3 +41,15 @@
   .task-grid{grid-template-columns:1fr}
   #partner-list td:last-child{min-width:240px}
 }
+
+/* Prevent intrinsic grid/table widths from expanding the mobile viewport. */
+.portal,.mainarea,.sidebar,.panel,.view{min-width:0;max-width:100%}
+.portal{width:100%;grid-template-columns:225px minmax(0,1fr)}
+.mainarea{min-width:0;overflow-wrap:anywhere}
+.tablewrap{width:100%;min-width:0;max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain}
+@media(max-width:850px){
+  .portal{display:grid;grid-template-columns:minmax(0,1fr)}
+  .mainarea{width:100%;max-width:100%;margin:0;min-width:0}
+  .sidebar{max-width:100%;min-width:0}
+  .sidebar #portal-nav{max-width:100%;min-width:0}
+}
