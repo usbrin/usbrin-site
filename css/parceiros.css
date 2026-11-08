@@ -310,3 +310,9 @@
  .rep-command .cmd-priority-meta span{font-size:10px}
 }
 @media(prefers-reduced-motion:reduce){.rep-command *{scroll-behavior:auto}}
+
+/* Portal navigation: compact, wrapped chips avoid off-screen items on phones. */
+@media(max-width:850px){
+  .sidebar #portal-nav{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:6px;max-width:100%;min-width:0}
+  .sidebar #portal-nav button{display:inline-flex;align-items:center;justify-content:center;flex:0 1 auto;width:auto;max-width:100%;padding:10px 11px;margin:0;font-size:12px;line-height:1.3}
+}
