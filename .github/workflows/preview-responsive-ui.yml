@@ -1,0 +1,36 @@
+name: USBRIN Preview — Chromium Mobile and Role UI
+on:
+  push:
+    branches:
+      - feature/usbrin-partners-platform
+    paths:
+      - tests/responsive-ui.smoke.mjs
+      - .github/workflows/preview-responsive-ui.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  responsive-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build from the isolated development branch
+        run: npm run build
+      - name: Install browser for one-time layout validation
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Verify 375px, 768px and desktop layouts for every role
+        run: node tests/responsive-ui.smoke.mjs
+      - name: Save QA screenshots for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: usbrin-qa-mobile-and-roles
+          path: ui-smoke-artifacts/*.png
+          if-no-files-found: ignore
+          retention-days: 7
