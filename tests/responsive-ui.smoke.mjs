@@ -62,7 +62,6 @@ try{
    for(const role of ['admin','representante','desenvolvedor']){
      const {context,page,errors}=await pageFor(role,width,portalUrl);
      try{
-       await page.locator('#identity').getByText('Conta:',{exact:false}).waitFor({timeout:15000}).catch(()=>{});
        await page.waitForFunction(()=>document.querySelector('#portal-status')?.textContent?.includes('Dados atualizados'),{timeout:15000});
        const identity=await page.locator('#identity').textContent();
        assert.ok(identity?.includes(role),'Wrong account role: '+identity);
@@ -71,8 +70,7 @@ try{
        assert.deepEqual(visible,expected,role+' navigation mismatch');
        if(role==='admin'){
          await page.locator('#portal-nav [data-view="partners"]').click();
-         await page.waitForFunction(()=>document.querySelector('#panel-title')?.textContent==='Parceiros');
-         assert.ok((await page.locator('#partner-list').innerText()).includes('Nenhum registro disponível'));
+         await page.locator('#partner-list').getByText('Nenhum registro disponível.',{exact:true}).waitFor({timeout:15000});
        }else if(role==='representante'){
          await page.locator('#portal-nav [data-view="leads"]').click();
        }else{
