@@ -205,7 +205,7 @@ try{
          await assertFits(page,'admin finance ledger '+width);
          await page.locator('#portal-nav [data-view="bank"]').click();
          await page.locator('#view-bank').waitFor({state:'visible'});
-         assert.ok((await page.locator('#bank-entries').innerText()).includes('BANK-CREDIT-QA-001'));
+         await page.locator('#bank-entries').getByText('BANK-CREDIT-QA-001',{exact:true}).waitFor({timeout:15000});
          assert.ok((await page.locator('#bank-imports').innerText()).includes('sample.csv'));
          await assertFits(page,'admin reconciliation '+width);
        }else{
