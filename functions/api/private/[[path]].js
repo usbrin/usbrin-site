@@ -298,7 +298,7 @@ export async function onRequest(context){
         statements.push(query(db,"INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at) VALUES (?,?,?,?,?,?,datetime('now'))",fresh(),user.id,"sale.create","sale",saleId,"received="+received));
         await db.batch(statements);
       }catch(e){
-        if(/UNIQUE|constraint/i.test(String(e)))return error("Venda ou referência já registrada. Verifique os lançamentos.",409);
+        if(/UNIQUE|constraint|reference already/i.test(String(e)))return error("Venda ou referência já registrada. Verifique os lançamentos.",409);
         throw e;
       }
       return respond({ok:true,saleId,status});
@@ -314,7 +314,7 @@ export async function onRequest(context){
           query(db,"INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at) VALUES (?,?,?,?,?,?,datetime('now'))",fresh(),user.id,"sale.receipt","sale",saleId,"amount="+amount+" reference="+reference)
         ]);
       }catch(e){
-        if(/UNIQUE|constraint|receipt exceeds|immutable/i.test(String(e)))return error("Referência duplicada, saldo insuficiente ou venda indisponível. Revise a conciliação.",409);
+        if(/UNIQUE|constraint|receipt exceeds|reference already|immutable/i.test(String(e)))return error("Referência duplicada, saldo insuficiente ou venda indisponível. Revise a conciliação.",409);
         throw e;
       }
       const updated=await query(db,"SELECT received_cents,status FROM sales WHERE id=?",saleId).first();
