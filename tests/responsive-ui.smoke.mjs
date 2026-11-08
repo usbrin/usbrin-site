@@ -25,6 +25,30 @@ const fixture={
       charges:[{id:'charge-mock-002',agreement_id:'agreement-mock-001',company:'Cliente Homologação UX',kind:'support',period:'2026-11',due_on:'2026-11-15',amount_cents:25000,received_cents:0,status:'pending'},
         {id:'charge-mock-001',agreement_id:'agreement-mock-001',company:'Cliente Homologação UX',kind:'support',period:'2026-10',due_on:'2026-10-15',amount_cents:25000,received_cents:25000,status:'paid'}],
       receipts:[{id:'receipt-mock-001',charge_id:'charge-mock-001',amount_cents:25000,reference:'BANK-MOCK-001',received_at:'2026-10-15 12:00:00',actor_name:'HOMOLOGAÇÃO Admin'}]},
+    'admin/control/overview':{ok:true,month:'2026-11',
+      metrics:{grossContractedCents:119000,siteRecordedCents:119000,siteOutstandingCents:0,
+        serviceRecordedCents:25000,serviceOutstandingCents:25000,expenseApprovedCents:18000,expensePaidCents:9000,
+        expensePayableCents:9000,expenseOverdueCents:0,verifiedByImportedStatementCents:144000,
+        matchedExpenseDebitsCents:9000,matchedRefundDebitsCents:0,classifiedNetMovementCents:135000,
+        pendingCommissionsCents:11900,pendingDevelopersCents:35000,separatelyReportedPaidCommissionsCents:0,
+        separatelyReportedPaidDevelopersCents:0,matchedCount:2},
+      monthly:{bankMatchedInCents:144000,bankMatchedExpenseOutCents:9000,bankMatchedRefundOutCents:0,
+        netClassifiedCents:135000,pendingSupplierBillsDueCents:9000,pendingServiceInvoicesDueCents:25000},
+      projects:[{id:'sale-handoff-demo-001',company:'Cliente Homologação UX',gross_cents:119000,received_cents:119000,
+        commission_allocated_cents:11900,developer_allocated_cents:35000,direct_expense_cents:18000,estimatedContributionCents:54100}]},
+    'admin/control/expenses':{ok:true,
+      eligibleSales:[{id:'sale-handoff-demo-001',company:'Cliente Homologação UX',gross_cents:119000}],
+      unassignedBankDebits:[{id:'bank-debit-qa-001',account_alias:'CONTA-QA',external_id:'BANK-DEBIT-QA-001',posted_on:'2026-11-06',
+        amount_cents:-9000,description:'Pagamento de ferramenta'}],
+      expenses:[{id:'expense-qa-001',supplier:'Software Exemplo',label:'Ferramenta de trabalho',category:'software',
+        document_reference:'NOTA-QA-001',amount_cents:18000,paid_cents:9000,due_on:'2026-11-21',status:'partially_paid'}]},
+    'admin/bank/overview':{ok:true,batches:[{id:'batch-qa-001',account_alias:'CONTA-QA',filename:'sample.csv',sha_prefix:'123456789abc',row_count:2,created_at:'2026-11-06 00:00:00'}],
+      totals:{credits_imported:1,debits_imported:1,matched_credits:1,unmatched_credits:0,pending_refunds:0,
+        settled_refund_cents:0,unmatched_sale_receipts:0,unmatched_service_receipts:0},
+      entries:[{id:'bank-credit-qa-001',account_alias:'CONTA-QA',external_id:'BANK-CREDIT-QA-001',posted_on:'2026-11-06',
+        amount_cents:119000,description:'Site institucional',receipt_kind:'sale',receipt_id:'receipt-qa-001',match_status:'matched-receipt'}],
+      matches:[{id:'match-qa-001',receipt_kind:'sale',receipt_id:'receipt-qa-001',external_id:'BANK-CREDIT-QA-001',account_alias:'CONTA-QA',amount_cents:119000}],
+      unmatchedReceipts:[],refunds:[]},
     'crm/proposals':{ok:true,proposals:[{id:'mock-approved-quote-001',code:'Q0123456789ABC',opportunity_id:'mock-quote-op-1234',customer_company:'Empresa Demonstrativa',customer_contact:'Contato Comercial',scope:'Site institucional responsivo com cinco páginas, navegação, formulário de contato, revisão final e publicação orientada.',product:'business',price_cents:119000,duration_days:20,valid_until:'2027-02-20',terms:'O cronograma e o pagamento serão formalizados por contrato.',status:'approved',created_at:'2026-11-07 12:00:00',hosting_requested:1,support_requested:1,support_reference_monthly_cents:25000}]}
   },
   representante:{
@@ -82,7 +106,7 @@ try{
        const identity=await page.locator('#identity').textContent();
        assert.ok(identity?.includes(role),'Wrong account role: '+identity);
        const visible=await page.locator('#portal-nav button:not(.hidden)').evaluateAll(items=>items.map(x=>x.dataset.view));
-       const expected=role==='admin'?['overview','leads','guide','applications','studio','partners','projects','commissions','billing']:role==='representante'?['overview','leads','guide','commissions']:['overview','projects','commissions'];
+       const expected=role==='admin'?['overview','leads','guide','applications','studio','partners','projects','commissions','billing','bank']:role==='representante'?['overview','leads','guide','commissions']:['overview','projects','commissions'];
        assert.deepEqual(visible,expected,role+' navigation mismatch');
        if(role==='admin'){
          await page.locator('#portal-nav [data-view="partners"]').click();
@@ -175,10 +199,20 @@ try{
          assert.equal(await page.locator('#billing-open-charge option').count(),2);
          assert.ok((await page.locator('#billing-receipts').innerText()).includes('BANK-MOCK-001'));
          assert.equal(await page.locator('#billing-agreement-form').isVisible(),true);
+         assert.ok((await page.locator('#finance-main-metrics').innerText()).includes('1.190,00'));
+         assert.ok((await page.locator('#finance-expense-list').innerText()).includes('Software Exemplo'));
+         assert.ok((await page.locator('#finance-project-margin').innerText()).includes('Cliente Homologação UX'));
          await assertFits(page,'admin finance ledger '+width);
+         await page.locator('#portal-nav [data-view="bank"]').click();
+         await page.locator('#view-bank').waitFor({state:'visible'});
+         assert.ok((await page.locator('#bank-entries').innerText()).includes('BANK-CREDIT-QA-001'));
+         assert.ok((await page.locator('#bank-imports').innerText()).includes('sample.csv'));
+         await assertFits(page,'admin reconciliation '+width);
        }else{
          assert.equal(await page.locator('#portal-nav [data-view="billing"]').isVisible(),false);
          assert.equal(await page.locator('#view-billing').isVisible(),false);
+         assert.equal(await page.locator('#portal-nav [data-view="bank"]').isVisible(),false);
+         assert.equal(await page.locator('#view-bank').isVisible(),false);
        }
        await assertFits(page,role+' '+width);
        assert.deepEqual(errors,[],'Page errors '+role+' '+width);
