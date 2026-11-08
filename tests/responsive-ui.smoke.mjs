@@ -126,7 +126,7 @@ try{
          assert.equal(draft.priceCents,239000);
          assert.ok(draft.scope.includes('Cliente enviará logotipo e fotografias.'));
          assert.ok(draft.scope.includes('Blog gerenciável'));
-         assert.ok((await page.locator('#guide-brief-feedback').innerText()).includes('QTESTGUIDED001'));
+         await page.waitForFunction(()=>document.querySelector('#guide-brief-feedback')?.textContent?.includes('QTESTGUIDED001'),{timeout:15000});
          await page.locator('#sales-checklist input[type="checkbox"]').first().check();
          assert.ok((await page.locator('#sales-guide-progress').innerText()).includes('1 de 5'));
          await assertFits(page,role+' guide '+width);
