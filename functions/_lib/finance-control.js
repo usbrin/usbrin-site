@@ -69,8 +69,12 @@ export async function handleFinanceControl({request,db,user,route}){
    ]});
  }
  if(route==="admin/control/expenses"&&method==="GET"){
-   const rows=await q(db,"SELECT e.*,s.gross_cents as sale_gross,p.title project_title FROM expense_obligations e LEFT JOIN sales s ON s.id=e.sale_id LEFT JOIN projects p ON p.id=e.project_id ORDER BY e.due_on DESC,e.created_at DESC LIMIT 200").all();
-   return respond({ok:true,expenses:rows.results});
+   const [rows,debits,sales]=await db.batch([
+     db.prepare("SELECT e.*,s.gross_cents as sale_gross,p.title project_title FROM expense_obligations e LEFT JOIN sales s ON s.id=e.sale_id LEFT JOIN projects p ON p.id=e.project_id ORDER BY e.due_on DESC,e.created_at DESC LIMIT 200"),
+     db.prepare("SELECT b.id,b.account_alias,b.external_id,b.posted_on,b.amount_cents,b.description FROM bank_entries b WHERE b.amount_cents<0 AND NOT EXISTS(SELECT 1 FROM expense_payments x WHERE x.bank_entry_id=b.id) AND NOT EXISTS(SELECT 1 FROM bank_refunds r WHERE r.bank_entry_id=b.id) ORDER BY b.posted_on DESC LIMIT 150"),
+     db.prepare("SELECT s.id,o.company,s.gross_cents FROM sales s JOIN opportunities o ON o.id=s.opportunity_id ORDER BY s.created_at DESC LIMIT 150")
+   ]);
+   return respond({ok:true,expenses:rows.results,unassignedBankDebits:debits.results,eligibleSales:sales.results,limits:{expenses:200,debits:150,sales:150}});
  }
  if(route==="admin/control/expense"&&method==="POST"){
    const b=await readBody(request),supplier=str(b.supplier,160),label=str(b.label,260),category=str(b.category,40),
