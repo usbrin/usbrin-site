@@ -8,6 +8,17 @@ const positive=(v,max=100000000)=>Number.isSafeInteger(v)&&v>=0&&v<=max;
 const fresh=()=>crypto.randomUUID();
 const audit=async(db,user,action,entity,id,details="")=>query(db,"INSERT INTO audit_events (id,actor_id,action,entity,entity_id,details,created_at) VALUES (?,?,?,?,?,?,datetime('now'))",fresh(),user.id,action,entity,id,details).run();
 const allowed=(user,...roles)=>roles.includes(user.role);
+const isoDate=value=>{
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;
+  const d=new Date(value+"T00:00:00Z");
+  return !Number.isNaN(d.getTime())&&d.toISOString().slice(0,10)===value;
+};
+const permittedOpportunity=async(db,user,id)=>{
+  const item=await query(db,"SELECT id,partner_id,stage FROM opportunities WHERE id=?",id).first();
+  if(!item)return null;
+  return user.role==="admin"||item.partner_id===user.id?item:null;
+};
+
 export async function onRequest(context){
   const {request,env}=context;
   const method=request.method,route=new URL(request.url).pathname.replace(/^\/api\/private\/?/,"").replace(/\/$/,"");
@@ -18,6 +29,39 @@ export async function onRequest(context){
   const db=env.DB;
   try{
     if(route==="me"&&method==="GET")return respond({ok:true,user});
+    if(route==="crm/history"&&method==="GET"&&allowed(user,"admin","representante")){
+      const id=str(new URL(request.url).searchParams.get("id"),60);
+      if(!id)return error("Informe a oportunidade.",400);
+      const lead=await permittedOpportunity(db,user,id);
+      if(!lead)return error("Oportunidade inexistente ou sem permissão.",404);
+      const records=await query(db,"SELECT a.id,a.kind,a.note,a.created_at,u.name actor_name FROM crm_activities a LEFT JOIN users u ON u.id=a.actor_id WHERE a.opportunity_id=? ORDER BY a.created_at DESC,a.rowid DESC LIMIT 100",id).all();
+      return respond({ok:true,activities:records.results});
+    }
+    if(route==="crm/activity"&&method==="POST"&&allowed(user,"admin","representante")){
+      const b=await readBody(request),id=str(b.opportunityId,60),kind=str(b.kind,15),note=str(b.note,1200);
+      if(!["contact","note"].includes(kind)||note.length<3)return error("Registre um contato ou uma observação válida.",400);
+      const lead=await permittedOpportunity(db,user,id);
+      if(!lead)return error("Oportunidade inexistente ou sem permissão.",404);
+      const activityId=fresh();
+      await db.batch([
+        query(db,"INSERT INTO crm_activities(id,opportunity_id,actor_id,kind,note) VALUES (?,?,?,?,?)",activityId,id,user.id,kind,note),
+        query(db,"UPDATE opportunities SET last_contact_at=CASE WHEN ?='contact' THEN datetime('now') ELSE last_contact_at END,updated_at=datetime('now') WHERE id=?",kind,id)
+      ]);
+      return respond({ok:true,id:activityId},201);
+    }
+    if(route==="crm/followup"&&method==="POST"&&allowed(user,"admin","representante")){
+      const b=await readBody(request),id=str(b.opportunityId,60),action=str(b.action,160),day=str(b.date,10);
+      if((action||day)&&(!isoDate(day)||action.length<3))return error("Informe uma próxima ação e uma data válida.",400);
+      const lead=await permittedOpportunity(db,user,id);
+      if(!lead)return error("Oportunidade inexistente ou sem permissão.",404);
+      if(["paid","cancelled","lost"].includes(lead.stage))return error("Oportunidade encerrada; não pode receber novo acompanhamento.",409);
+      await db.batch([
+        query(db,"UPDATE opportunities SET next_action=?,next_action_at=?,updated_at=datetime('now') WHERE id=?",action||null,day||null,id),
+        query(db,"INSERT INTO crm_activities(id,opportunity_id,actor_id,kind,note) VALUES (?,?,?,?,?)",fresh(),id,user.id,"followup",action?"Próxima ação em "+day+": "+action:"Próxima ação removida")
+      ]);
+      return respond({ok:true,nextAction:action||null,nextActionAt:day||null});
+    }
+
     if(route==="admin/overview"&&method==="GET"&&allowed(user,"admin")){
       const [applicants,reps,devs,opportunities,received,commissions,inquiries,overdue,receivables,staleLeads]=await db.batch([
         db.prepare("SELECT status,COUNT(*) total FROM applications GROUP BY status"),
@@ -45,7 +89,8 @@ export async function onRequest(context){
           overdueProjects:overdue.results[0].total,
           salesAwaitingPayment:receivables.results[0].total,
           accountsReceivableCents:receivables.results[0].amount,
-          dormantOpportunities:staleLeads.results[0].total
+          dormantOpportunities:staleLeads.results[0].total,
+          dueFollowups:(await db.prepare("SELECT COUNT(*) total FROM opportunities WHERE next_action_at IS NOT NULL AND date(next_action_at)<=date('now') AND stage NOT IN ('paid','lost','cancelled')").first()).total
         }
       });
     }
@@ -243,17 +288,23 @@ export async function onRequest(context){
       return respond({ok:true,leads:leads.results,commissions:commissions.results,goals:goals.results,sales:sales.results});
     }
     if(route==="representante/lead"&&method==="POST"&&allowed(user,"representante")){
-      const b=await readBody(request),company=str(b.company,160),contact=str(b.contact,160),value=Number(b.estimatedCents||0);
+      const b=await readBody(request),company=str(b.company,160),contact=str(b.contact,160),value=Number(b.estimatedCents||0),action=str(b.nextAction,160),day=str(b.nextActionAt,10);
       if(company.length<3||contact.length<3||!positive(value))return error("Empresa, contato e valor precisam ser válidos.");
+      if((action||day)&&(!isoDate(day)||action.length<3))return error("Informe a próxima ação e uma data válida.");
       const id=fresh();
-      await query(db,"INSERT INTO opportunities(id,partner_id,company,contact,city,segment,product,estimated_cents,stage,note) VALUES (?,?,?,?,?,?,?,?, 'new',?)",id,user.id,company,contact,str(b.city,120),str(b.segment,120),str(b.product,80),value,str(b.note,1200)).run();
+      await query(db,"INSERT INTO opportunities(id,partner_id,company,contact,city,segment,product,estimated_cents,stage,note,next_action,next_action_at) VALUES (?,?,?,?,?,?,?,?, 'new',?,?,?)",id,user.id,company,contact,str(b.city,120),str(b.segment,120),str(b.product,80),value,str(b.note,1200),action||null,day||null).run();
       await audit(db,user,"lead.create","opportunity",id);return respond({ok:true,id},201);
     }
     if(route==="representante/lead-stage"&&method==="POST"&&allowed(user,"representante")){
-      const b=await readBody(request),id=str(b.id,50),stage=str(b.stage,30);
+      const b=await readBody(request),id=str(b.id,50),stage=str(b.stage,30),reason=str(b.lostReason,350);
       if(!repStages.has(stage))return error("O parceiro não pode confirmar contratos nem pagamentos.");
-      const result=await query(db,"UPDATE opportunities SET stage=?,updated_at=datetime('now') WHERE id=? AND partner_id=? AND stage NOT IN ('contracted','paid','cancelled','lost')",stage,id,user.id).run();
-      if(!result.meta?.changes)return error("Oportunidade inexistente ou bloqueada.",404);
+      if(stage==="lost"&&reason.length<5)return error("Informe por que a oportunidade foi perdida.",400);
+      const existing=await query(db,"SELECT stage FROM opportunities WHERE id=? AND partner_id=?",id,user.id).first();
+      if(!existing||["contracted","paid","cancelled","lost"].includes(existing.stage))return error("Oportunidade inexistente ou bloqueada.",404);
+      await db.batch([
+        query(db,"UPDATE opportunities SET stage=?,lost_reason=CASE WHEN ?='lost' THEN ? ELSE NULL END,next_action=CASE WHEN ?='lost' THEN NULL ELSE next_action END,next_action_at=CASE WHEN ?='lost' THEN NULL ELSE next_action_at END,updated_at=datetime('now') WHERE id=? AND partner_id=? AND stage=?",stage,stage,reason,stage,stage,id,user.id,existing.stage),
+        query(db,"INSERT INTO crm_activities(id,opportunity_id,actor_id,kind,note) VALUES (?,?,?,?,?)",fresh(),id,user.id,"stage",existing.stage+" → "+stage+(reason?" | Motivo: "+reason:""))
+      ]);
       await audit(db,user,"lead.stage","opportunity",id,stage);return respond({ok:true});
     }
     if(route==="admin/sales"&&method==="GET"&&allowed(user,"admin")){
