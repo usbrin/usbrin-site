@@ -830,13 +830,15 @@ document.addEventListener('DOMContentLoaded',async()=>{
            if(user.role==='admin'&&p.status==='draft'){
              const costs=node('div',null,'crm-proposal-costs');
              const inputs=[
-               ['developerCents','Produção técnica (R$)'],['commissionCents','Comissões (R$)'],
+               ['developerCents','Produção técnica (R$)'],['commissionCents','Comissão USBRIN 15% (R$)'],
                ['taxCents','Tributos estimados (R$)'],['otherCents','Outros custos (R$)']
              ];
              const fields={};
              inputs.forEach(([key,title])=>{
                const inp=node('input');inp.type='number';inp.min='0';inp.step='.01';inp.placeholder=title;inp.setAttribute('aria-label',title);
-               inp.required=true;fields[key]=inp;costs.append(inp);
+               inp.required=true;
+               if(key==='commissionCents'){inp.value=(Math.round(p.price_cents*0.15)/100).toFixed(2);inp.readOnly=true;inp.title='Comissão fixa de 15% sobre o valor da criação do site; serviços recorrentes não entram na base.';}
+               fields[key]=inp;costs.append(inp);
              });
              const note=node('textarea');note.maxLength=1000;note.rows=2;note.placeholder='Observação interna da aprovação ou motivo da recusa';
              const decision=async(status)=>{
@@ -988,8 +990,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
        });
        const box=node('div',null,'panel');box.append(node('h3','Registrar comissão de venda recebida'));
        const select=node('select');d.sales.forEach(s=>select.add(new Option(s.company+' — '+currency(s.received_cents),s.id)));
-       const rate=node('input');rate.type='number';rate.min='0';rate.max='50';rate.step='.01';rate.placeholder='Percentual aprovado (%)';
-       box.append(select,rate,btn('Calcular e registrar',async()=>{if(!confirm('Percentual confirmado conforme contrato do parceiro?'))return;try{await request('admin/commission',{saleId:select.value,rateBps:Math.round(Number(rate.value)*100)});await open('commissions')}catch(e){message(e.message,true)}}));target.prepend(box);
+       box.append(node('p','Comissão fixa: 15% sobre o valor final da venda do site, após recebimento integral. Serviços recorrentes são tratados separadamente.','muted'));
+       box.append(select,btn('Registrar comissão de 15%',async()=>{if(!select.value)return message('Selecione uma venda elegível.',true);if(!confirm('Confirma o recebimento integral e as condições contratuais da comissão fixa de 15%?'))return;try{await request('admin/commission',{saleId:select.value,rateBps:1500});await open('commissions')}catch(e){message(e.message,true)}}));target.prepend(box);
        const receipts=node('div',null,'panel');receipts.append(node('h3','Lançar parcela recebida'));
        const saleChoice=node('select');const eligible=d.receivableSales||[];
        saleChoice.add(new Option('Selecione uma venda com saldo',''));eligible.forEach(x=>saleChoice.add(new Option(x.company+' — saldo '+currency(x.gross_cents-x.received_cents),x.id)));
