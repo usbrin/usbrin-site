@@ -260,7 +260,7 @@ try{
          assert.ok((await page.locator('#finance-fiscal-list').innerText()).includes('NFS-QA-2026-01'));
          assert.equal(await page.locator('#finance-fiscal-source option').count(),2);
          await page.locator('#finance-fiscal-kind').selectOption('expense');
-         assert.ok((await page.locator('#finance-fiscal-source').innerText()).includes('Software Exemplo'));
+         assert.ok((await page.locator('#finance-fiscal-source option').allTextContents()).some(text=>text.includes('Software Exemplo')));
          await assertFits(page,'admin finance ledger '+width);
          await page.locator('#portal-nav [data-view="bank"]').click();
          await page.locator('#view-bank').waitFor({state:'visible'});
