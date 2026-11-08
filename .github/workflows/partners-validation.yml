@@ -42,7 +42,7 @@ jobs:
           python3 - <<'PY'
           import sqlite3
           c=sqlite3.connect(':memory:')
-          for migration in ['0001_partners.sql','0002_financial_integrity.sql','0003_partner_contracts.sql','0004_studio_inquiries.sql','0005_studio_assignments.sql','0006_sale_project_links.sql','0007_atomic_receipts.sql','0008_crm_followups.sql','0009_proposal_drafts.sql','0010_project_proposal_handoff.sql','0011_optional_services.sql','0012_recurring_billing_controls.sql','0013_bank_evidence_and_refunds.sql','0014_expense_obligations.sql']:
+          for migration in ['0001_partners.sql','0002_financial_integrity.sql','0003_partner_contracts.sql','0004_studio_inquiries.sql','0005_studio_assignments.sql','0006_sale_project_links.sql','0007_atomic_receipts.sql','0008_crm_followups.sql','0009_proposal_drafts.sql','0010_project_proposal_handoff.sql','0011_optional_services.sql','0012_recurring_billing_controls.sql','0013_bank_evidence_and_refunds.sql','0014_expense_obligations.sql','0015_fiscal_evidence.sql']:
               c.executescript(open('migrations/'+migration).read())
           expected=['users','applications','opportunities','sales','commissions','goals','projects','developer_payments','audit_events']
           for name in expected:
