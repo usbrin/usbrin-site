@@ -13,6 +13,9 @@ CREATE TABLE IF NOT EXISTS expense_obligations (
  paid_cents INTEGER NOT NULL DEFAULT 0 CHECK(paid_cents>=0 AND paid_cents<=amount_cents),
  due_on TEXT NOT NULL CHECK(length(due_on)=10),
  status TEXT NOT NULL DEFAULT 'approved' CHECK(status IN ('approved','partially_paid','paid','cancelled')),
+ cancel_reason TEXT,
+ cancelled_by TEXT REFERENCES users(id),
+ cancelled_at TEXT,
  created_by TEXT NOT NULL REFERENCES users(id),
  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -74,3 +77,24 @@ BEGIN
  VALUES(lower(hex(randomblob(16))),NEW.created_by,'expense.create','expense_obligation',NEW.id,
    'supplier='||NEW.supplier||' category='||NEW.category||' amount='||NEW.amount_cents,datetime('now'));
 END;
+
+CREATE TRIGGER IF NOT EXISTS trg_expense_cancel_rules
+BEFORE UPDATE OF status ON expense_obligations
+WHEN NEW.status='cancelled'
+BEGIN
+ SELECT CASE WHEN OLD.status<>'approved' OR OLD.paid_cents<>0 OR NEW.cancelled_by IS NULL
+    OR length(NEW.cancel_reason)<12 OR NEW.cancelled_at IS NULL
+   THEN RAISE(ABORT,'expense cancellation requires unpaid obligation, admin and reason') END;
+END;
+CREATE TRIGGER IF NOT EXISTS trg_expense_cancel_audit
+AFTER UPDATE OF status ON expense_obligations
+WHEN NEW.status='cancelled'
+BEGIN
+ INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at)
+ VALUES(lower(hex(randomblob(16))),NEW.cancelled_by,'expense.cancel','expense_obligation',NEW.id,
+   'reason='||NEW.cancel_reason,datetime('now'));
+END;
+CREATE TRIGGER IF NOT EXISTS trg_expense_no_cancel_metadata_tamper
+BEFORE UPDATE OF cancel_reason,cancelled_by,cancelled_at ON expense_obligations
+WHEN NEW.status=OLD.status
+BEGIN SELECT RAISE(ABORT,'expense cancellation record immutable'); END;
