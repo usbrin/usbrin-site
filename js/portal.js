@@ -266,7 +266,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
    infrastructure:'Infraestrutura',software:'Software',marketing:'Marketing',tax:'Impostos/taxas',
    contractor:'Terceirizados',office:'Administrativo',other:'Outros'
  };
- let financeExpenses=[],financeUnassignedBankDebits=[];
+ let financeExpenses=[],financeUnassignedBankDebits=[],financeFiscal={documents:[],sources:{sale:[],service_charge:[],expense:[]}};
  const localMonth=()=>isoLocal().slice(0,7);
  el('finance-month').value=localMonth();
  const financeMetric=(target,label,value)=>{
@@ -274,8 +274,11 @@ document.addEventListener('DOMContentLoaded',async()=>{
  };
  const loadFinanceControl=async()=>{
    const month=el('finance-month').value||localMonth();
-   const [summary,detail]=await Promise.all([request('admin/control/overview?month='+encodeURIComponent(month)),request('admin/control/expenses')]);
-   financeExpenses=detail.expenses;financeUnassignedBankDebits=detail.unassignedBankDebits;
+   const [summary,detail,fiscal]=await Promise.all([
+     request('admin/control/overview?month='+encodeURIComponent(month)),
+     request('admin/control/expenses'),request('admin/control/fiscal')
+   ]);
+   financeExpenses=detail.expenses;financeUnassignedBankDebits=detail.unassignedBankDebits;financeFiscal=fiscal;
    const m=el('finance-main-metrics');m.replaceChildren();
    [
      ['Vendas contratadas',currency(summary.metrics.grossContractedCents)],
@@ -308,6 +311,34 @@ document.addEventListener('DOMContentLoaded',async()=>{
    salesSelect.replaceChildren(new Option('Despesa geral, sem vínculo com venda',''));
    detail.eligibleSales.forEach(x=>salesSelect.add(new Option(x.company+' · '+currency(x.gross_cents),x.id)));
    if([...salesSelect.options].some(o=>o.value===oldSale))salesSelect.value=oldSale;
+   const fiscalSelect=el('finance-fiscal-source'),fiscalKind=el('finance-fiscal-kind').value;
+   const oldSource=fiscalSelect.value;
+   fiscalSelect.replaceChildren(new Option('Selecione registro de origem',''));
+   for(const source of fiscal.sources[fiscalKind]||[]){
+     const label=fiscalKind==='sale'?source.company+' · '+currency(source.gross_cents):
+       fiscalKind==='service_charge'?source.company+' · '+source.period+' · '+currency(source.amount_cents):
+       source.supplier+' · '+source.document_reference+' · '+currency(source.amount_cents);
+     fiscalSelect.add(new Option(label,source.id));
+   }
+   if([...fiscalSelect.options].some(x=>x.value===oldSource))fiscalSelect.value=oldSource;
+   table(el('finance-fiscal-list'),['Origem','Emissor','Documento','Emissão','Valor','Situação'],
+     fiscal.documents.map(x=>[
+       ({sale:'Site',service_charge:'Serviço',expense:'Despesa'})[x.source_kind],
+       x.issuer_name,x.document_number,x.issued_on,currency(x.amount_cents),
+       x.status==='recorded'?'Documento registrado':'Cancelamento registrado'
+     ]),(cell,i)=>{
+       const document=fiscal.documents[i];
+       if(document.status!=='recorded')return;
+       cell.append(btn('Registrar cancelamento externo',async()=>{
+         const reason=prompt('Motivo do cancelamento já efetuado no emissor:');
+         if(reason===null)return;
+         if(reason.trim().length<15)return message('Informe no mínimo 15 caracteres.',true);
+         if(!confirm('Confirma que a nota/documento foi CANCELADO no emissor oficial? O portal não executa cancelamentos fiscais.'))return;
+         try{await request('admin/control/fiscal-cancel',{id:document.id,reason:reason.trim(),confirmedExternalCancellation:true});
+           await loadFinanceControl();message('Cancelamento externo registrado; documentação preservada.');}
+         catch(e){message(e.message,true)}
+       }));
+     });
    table(el('finance-expense-list'),['Fornecedor','Categoria','Documento','Vencimento','Previsto','Pago com extrato','Saldo','Situação'],
      financeExpenses.map(x=>[
        x.supplier+' · '+x.label,financeCategory[x.category]||x.category,x.document_reference,x.due_on,
@@ -345,6 +376,35 @@ document.addEventListener('DOMContentLoaded',async()=>{
        }
      });
  };
+ el('finance-fiscal-kind').addEventListener('change',()=>{
+   const select=el('finance-fiscal-source'),kind=el('finance-fiscal-kind').value;
+   select.replaceChildren(new Option('Selecione registro de origem',''));
+   for(const source of financeFiscal.sources[kind]||[]){
+     const label=kind==='sale'?source.company+' · '+currency(source.gross_cents):
+       kind==='service_charge'?source.company+' · '+source.period+' · '+currency(source.amount_cents):
+       source.supplier+' · '+source.document_reference+' · '+currency(source.amount_cents);
+     select.add(new Option(label,source.id));
+   }
+ });
+ el('finance-fiscal-form').addEventListener('submit',async ev=>{
+   ev.preventDefault();
+   const form=ev.target,data=new FormData(form),amount=amountCents(data.get('amount'));
+   if(!amount)return message('Informe valor monetário válido.',true);
+   if(!confirm('O documento fiscal foi realmente emitido e conferido no emissor? Nenhuma nota será emitida pelo portal.'))return;
+   const sourceKind=String(data.get('sourceKind'));
+   try{
+     await request('admin/control/fiscal-record',{
+       sourceKind,sourceId:data.get('sourceId'),
+       documentType:sourceKind==='expense'?'supplier_invoice':'nfse',
+       issuerName:String(data.get('issuerName')||'').trim(),
+       documentNumber:String(data.get('documentNumber')||'').trim(),
+       verificationCode:String(data.get('verificationCode')||'').trim(),
+       issuedOn:data.get('issuedOn'),amountCents:amount,
+       confirmedExternalDocument:data.get('confirmedExternalDocument')==='on'
+     });
+     form.reset();await loadFinanceControl();message('Referência fiscal vinculada ao registro. Nenhuma nota foi emitida aqui.');
+   }catch(e){message(e.message,true)}
+ });
  el('finance-month').addEventListener('change',()=>{
    if(user?.role==='admin'&&view==='billing')loadFinanceControl().catch(e=>message(e.message,true));
  });
