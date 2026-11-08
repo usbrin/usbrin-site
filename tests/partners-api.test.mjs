@@ -226,7 +226,9 @@ test("representatives cannot view administration and cannot change each other's 
  assert.equal(created.status,201);const leadId=created.data.id;
  const foreign=await call(users[2][1],"representante/lead-stage",{id:leadId,stage:"qualified"});assert.equal(foreign.status,404);
  const self=await call(users[1][1],"representante/lead-stage",{id:leadId,stage:"qualified"});assert.equal(self.status,200);
- const dashboard=await call(users[2][1],"representante/dashboard");assert.deepEqual(dashboard.data.leads,[]);
+ const dashboard=await call(users[2][1],"representante/dashboard");assert.equal(dashboard.status,200);
+ assert.ok(dashboard.data.leads.every(lead=>lead.partner_id==="r2"),"representative 2 must never see another representative's leads");
+ assert.ok(!dashboard.data.leads.some(lead=>lead.id===leadId),"representative 2 cannot see representative 1's lead");
 });
 
 test("records real partial receipts, refuses duplicates and creates commission only after full receipt",async()=>{
@@ -281,7 +283,9 @@ test("developer access remains isolated and project transitions are guarded",asy
  assert.equal((await call(users[3][1],"desenvolvedor/project",{id,stage:"review",previewUrl:"https://example.com/preview"})).status,200);
  assert.equal((await call(users[0][1],"admin/project-stage",{id,stage:"approved"})).status,200);
  const backwards=await call(users[0][1],"admin/project-stage",{id,stage:"proposed"});assert.equal(backwards.status,409);
- const dev=await call(users[4][1],"desenvolvedor/dashboard");assert.deepEqual(dev.data.projects,[]);
+ const dev=await call(users[4][1],"desenvolvedor/dashboard");assert.equal(dev.status,200);
+ assert.ok(dev.data.projects.every(project=>project.developer_id==="d2"),"developer 2 must only receive assigned projects");
+ assert.ok(!dev.data.projects.some(project=>project.id===id),"developer 2 must not see developer 1's project");
 });
 
 test("applications cannot skip assessment and documentation",async()=>{
