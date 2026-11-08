@@ -292,6 +292,13 @@ document.addEventListener('DOMContentLoaded',async()=>{
      ['Despesas associadas a débitos',currency(summary.metrics.matchedExpenseDebitsCents)],
      ['Devoluções associadas a débitos',currency(summary.metrics.matchedRefundDebitsCents)]
    ].forEach(([label,value])=>financeMetric(m,label,value));
+   const risk=summary.exceptions||{};
+   const flags=[];
+   if(risk.commissionsWithRefunds>0)flags.push(risk.commissionsWithRefunds+' devolução(ões) de cliente exigem revisão de comissão e projeto');
+   if(risk.refundReviewsPending>0)flags.push(risk.refundReviewsPending+' estorno(s) pendentes de análise ou confirmação');
+   if(risk.unmatchedBankCredits>0)flags.push(risk.unmatchedBankCredits+' crédito(s) de extrato ainda sem recibo');
+   el('finance-exceptions').textContent=flags.length?'Atenção: '+flags.join(' · ')+'. Nenhuma comissão ou obrigação é revertida automaticamente.':
+     'Sem pendências identificadas nos controles de devolução e créditos importados até este momento. Isso não substitui a conferência externa.';
    const mm=el('finance-month-metrics');mm.replaceChildren();
    [
      ['Créditos classificados no mês',currency(summary.monthly.bankMatchedInCents)],
