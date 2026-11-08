@@ -68,6 +68,43 @@ export async function handleFinanceControl({request,db,user,route}){
     "O cadastro de contas a pagar não efetua transferências ou boletos."
    ]});
  }
+ if(route==="admin/control/fiscal"&&method==="GET"){
+   const [documents,sales,charges,expenses]=await db.batch([
+     db.prepare("SELECT id,source_kind,source_id,document_type,issuer_name,document_number,verification_code,issued_on,amount_cents,status,cancellation_reason,created_at FROM fiscal_documents ORDER BY issued_on DESC,created_at DESC LIMIT 200"),
+     db.prepare("SELECT s.id,o.company,s.gross_cents FROM sales s JOIN opportunities o ON o.id=s.opportunity_id ORDER BY s.created_at DESC LIMIT 100"),
+     db.prepare("SELECT c.id,o.company,a.kind,c.period,c.amount_cents FROM service_charges c JOIN service_agreements a ON a.id=c.agreement_id JOIN sales s ON s.id=a.sale_id JOIN opportunities o ON o.id=s.opportunity_id ORDER BY c.due_on DESC LIMIT 100"),
+     db.prepare("SELECT id,supplier,document_reference,amount_cents FROM expense_obligations WHERE status<>'cancelled' ORDER BY created_at DESC LIMIT 100")
+   ]);
+   return respond({ok:true,documents:documents.results,
+     sources:{sale:sales.results,service_charge:charges.results,expense:expenses.results},
+     warning:"Registro documental interno, não emissão ou consulta de NFS-e no órgão oficial."});
+ }
+ if(route==="admin/control/fiscal-record"&&method==="POST"){
+   const b=await readBody(request),sourceKind=str(b.sourceKind,20),sourceId=str(b.sourceId,60),
+     documentType=str(b.documentType,30),issuerName=str(b.issuerName,160),
+     number=str(b.documentNumber,120),verificationCode=str(b.verificationCode,180),
+     issuedOn=str(b.issuedOn,10),amount=b.amountCents;
+   if(b.confirmedExternalDocument!==true||!["sale","service_charge","expense"].includes(sourceKind)||
+     !sourceId||!["nfse","supplier_invoice"].includes(documentType)||issuerName.length<3||number.length<3||
+     verificationCode.length<3||!iso(issuedOn)||!cents(amount))
+     return error("Confirme documento fiscal emitido externamente, vínculo, referência, data e valor.",400);
+   const documentId=uid();
+   try{await q(db,"INSERT INTO fiscal_documents(id,source_kind,source_id,document_type,issuer_name,document_number,verification_code,issued_on,amount_cents,recorded_by) VALUES (?,?,?,?,?,?,?,?,?,?)",
+     documentId,sourceKind,sourceId,documentType,issuerName,number,verificationCode,issuedOn,amount,user.id).run();}
+   catch(e){if(conflict(e)||/fiscal document/i.test(String(e)))return error("Documento duplicado, valor ou tipo incompatível com o contrato ou despesa.",409);throw e;}
+   return respond({ok:true,id:documentId,status:"recorded"},201);
+ }
+ if(route==="admin/control/fiscal-cancel"&&method==="POST"){
+   const b=await readBody(request),documentId=str(b.id,60),reason=str(b.reason,800);
+   if(!documentId||reason.length<15||b.confirmedExternalCancellation!==true)
+     return error("O cancelamento deve estar concluído no emissor oficial; informe justificativa e confirmação.",400);
+   try{
+     const result=await q(db,"UPDATE fiscal_documents SET status='cancelled',cancellation_reason=?,cancelled_by=?,cancelled_at=datetime('now') WHERE id=? AND status='recorded'",
+       reason,user.id,documentId).run();
+     if(result.meta?.changes!==1)return error("Documento inexistente ou já cancelado no controle interno.",409);
+   }catch(e){if(conflict(e)||/fiscal/i.test(String(e)))return error("Registro fiscal não pode ser alterado; verifique a situação no emissor.",409);throw e;}
+   return respond({ok:true,id:documentId,status:"cancelled",notice:"O registro não cancelou a NFS-e no órgão emissor."});
+ }
  if(route==="admin/control/expenses"&&method==="GET"){
    const [rows,debits,sales]=await db.batch([
      db.prepare("SELECT e.*,s.gross_cents as sale_gross,p.title project_title FROM expense_obligations e LEFT JOIN sales s ON s.id=e.sale_id LEFT JOIN projects p ON p.id=e.project_id ORDER BY e.due_on DESC,e.created_at DESC LIMIT 200"),
