@@ -78,7 +78,7 @@ const users=[
  ["d2","dev2@usbrin.test","Desenvolvedor 2","desenvolvedor"]
 ];
 for(const u of users)db.sqlite.prepare("INSERT INTO users(id,email,name,role,status) VALUES (?,?,?,?,'active')").run(...u);
-const env={DB:db,ACCESS_TEAM_DOMAIN:domain,ACCESS_AUD:audience,ACCESS_APP_HOST:"usbrin-preview.pages.dev",ACCESS_MFA_AUD:audience,APPLICATIONS_ENABLED:"false"};
+const env={USBRIN_ID_DB:db,ACCESS_TEAM_DOMAIN:domain,USBRIN_ID_ACCESS_AUD:audience,ACCESS_APP_HOST:"usbrin-preview.pages.dev",ACCESS_MFA_AUD:audience,APPLICATIONS_ENABLED:"false"};
 async function call(email,route,data){
  const req=new Request("https://usbrin-preview.pages.dev/api/private/"+route,{method:data===undefined?"GET":"POST",headers:{"Cf-Access-Jwt-Assertion":await signed(email),...(data===undefined?{}:{"content-type":"application/json","origin":"https://usbrin-preview.pages.dev"})},...(data===undefined?{}:{body:JSON.stringify(data)})});
  const res=await privateAPI({request:req,env});

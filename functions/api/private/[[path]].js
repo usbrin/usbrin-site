@@ -32,7 +32,7 @@ export async function onRequest(context){
     if(e instanceof AuthError)return respond({ok:false,error:e.message,code:e.code},e.status);
     return error("Não foi possível verificar o acesso.",503);
   }
-  const db=env.DB;
+  const db=env.USBRIN_ID_DB;
   try{
     if(route.startsWith("admin/billing/"))return handleBilling({request,db,user,route});
     if(route.startsWith("admin/bank/"))return handleBank({request,db,user,route});

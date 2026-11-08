@@ -3,7 +3,7 @@ import {respond,error,readBody,checkOrigin,verifiedTurnstile,email,str} from "..
 // Default off in every environment. A preliminary estimate is NOT an accepted price.
 const validProducts=new Set(["landing","business","catalogo"]);
 export async function onRequestPost({request,env}){
- if(env.STUDIO_INQUIRIES_ENABLED!=="true"||!env.DB||!env.TURNSTILE_SITE_KEY||!env.TURNSTILE_SECRET){
+ if(env.STUDIO_INQUIRIES_ENABLED!=="true"||!env.USBRIN_ID_DB||!env.TURNSTILE_SITE_KEY||!env.TURNSTILE_SECRET){
    return error("O envio direto ainda não está disponível. Utilize o WhatsApp ou e-mail.",503);
  }
  if(!checkOrigin(request))return error("Origem não autorizada.",403);
@@ -27,9 +27,9 @@ export async function onRequestPost({request,env}){
  }catch{return error("Serviço de segurança temporariamente indisponível.",503)}
  const id=crypto.randomUUID(),protocol="S"+id.replace(/-/g,"").slice(0,13).toUpperCase();
  try{
-   const previous=await env.DB.prepare("SELECT protocol FROM studio_inquiries WHERE idempotency_key=?").bind(key).first();
+   const previous=await env.USBRIN_ID_DB.prepare("SELECT protocol FROM studio_inquiries WHERE idempotency_key=?").bind(key).first();
    if(previous)return respond({ok:true,protocol:previous.protocol,duplicate:true},200);
-   await env.DB.prepare(`INSERT INTO studio_inquiries
+   await env.USBRIN_ID_DB.prepare(`INSERT INTO studio_inquiries
      (id,protocol,idempotency_key,name,company,email,phone,goal,notes,briefing,product,estimate_cents,consent_version)
      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id,protocol,key,name,company,mail||null,phone||null,goal,notes||null,briefing,product,value,"studio-intake-v1").run();
    return respond({ok:true,protocol,status:"new"},201);

@@ -1,7 +1,7 @@
 import {respond,error,readBody,checkOrigin,verifiedTurnstile,email,str} from "../_lib/security.js";
 const types=new Set(["representante","desenvolvedor"]);
 export async function onRequestPost({request,env}){
-  if(env.APPLICATIONS_ENABLED!=="true"||!env.DB||!env.TURNSTILE_SECRET||!env.TURNSTILE_SITE_KEY)return error("Inscrições ainda não estão abertas.",503);
+  if(env.APPLICATIONS_ENABLED!=="true"||!env.USBRIN_ID_DB||!env.TURNSTILE_SECRET||!env.TURNSTILE_SITE_KEY)return error("Inscrições ainda não estão abertas.",503);
   if(!checkOrigin(request))return error("Origem não autorizada.",403);
   let b;try{b=await readBody(request,12000);}catch{return error("Dados da candidatura inválidos.");}
   if(str(b.website))return error("Candidatura inválida.",400); // invisible honeypot
@@ -11,9 +11,9 @@ export async function onRequestPost({request,env}){
   try{if(!await verifiedTurnstile(b.turnstileToken,env,request))return error("Confirmação de segurança inválida. Tente novamente.",403);}catch{return error("Não foi possível validar a segurança.",503);}
   const id=crypto.randomUUID(),protocol="U"+id.replace(/-/g,"").slice(0,13).toUpperCase();
   try{
-    const duplicate=await env.DB.prepare("SELECT id FROM applications WHERE email=? AND type=? AND status NOT IN ('rejected','withdrawn') LIMIT 1").bind(mail,type).first();
+    const duplicate=await env.USBRIN_ID_DB.prepare("SELECT id FROM applications WHERE email=? AND type=? AND status NOT IN ('rejected','withdrawn') LIMIT 1").bind(mail,type).first();
     if(duplicate)return error("Já existe uma candidatura ativa para este e-mail e modalidade.",409);
-    await env.DB.prepare("INSERT INTO applications (id,protocol,type,name,email,phone,city,state,experience,motivation,portfolio,availability,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?, 'received',datetime('now'),datetime('now'))").bind(id,protocol,type,name,mail,phone,city,state,experience,motivation,portfolio,availability).run();
+    await env.USBRIN_ID_DB.prepare("INSERT INTO applications (id,protocol,type,name,email,phone,city,state,experience,motivation,portfolio,availability,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?, 'received',datetime('now'),datetime('now'))").bind(id,protocol,type,name,mail,phone,city,state,experience,motivation,portfolio,availability).run();
     return respond({ok:true,protocol,status:"received"},201);
   }catch(e){
     if(String(e).includes("UNIQUE"))return error("Já existe uma candidatura com esses dados.",409);

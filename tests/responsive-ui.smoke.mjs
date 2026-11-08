@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
-import {chromium} from 'playwright';
+import {chromium,firefox} from 'playwright';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {mkdir} from 'node:fs/promises';
 
 // UI smoke: isolated local build. All API responses below are in-memory mocks.
 // Never use live credentials, partner e-mails or production data in browser tests.
-const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH});
+const useFirefox=process.env.USBRIN_BROWSER==='firefox';
+const browser=await (useFirefox?firefox:chromium).launch({headless:true,executablePath:useFirefox?undefined:process.env.CHROMIUM_PATH});
 const outDir=resolve('ui-smoke-artifacts');
 await mkdir(outDir,{recursive:true});
 const fixture={
@@ -134,7 +135,8 @@ try{
      try{
        await page.waitForFunction(()=>document.querySelector('#portal-status')?.textContent?.includes('Dados atualizados'),{timeout:15000});
        const identity=await page.locator('#identity').textContent();
-       assert.ok(identity?.includes(role),'Wrong account role: '+identity);
+       const roleLabel={admin:'Administração',representante:'Representante comercial',desenvolvedor:'Desenvolvedor parceiro'};
+       assert.ok(identity?.endsWith(roleLabel[role]),'Wrong account role: '+identity);
        const visible=await page.locator('#portal-nav button:not(.hidden)').evaluateAll(items=>items.map(x=>x.dataset.view));
        const expected=role==='admin'?['overview','leads','guide','applications','studio','partners','projects','commissions','billing','bank']:role==='representante'?['overview','leads','guide','commissions']:['overview','projects','commissions'];
        assert.deepEqual(visible,expected,role+' navigation mismatch');
@@ -290,7 +292,7 @@ try{
      await assertFits(printed.page,'approved-proposal '+width);
      assert.deepEqual(printed.errors,[],'Proposal page errors '+width);
      await printed.page.screenshot({path:resolve(outDir,'approved-proposal-'+width+'.png'),fullPage:true});
-     if(width===1440){
+     if(width===1440&&!useFirefox){
        const pdf=await printed.page.pdf({path:resolve(outDir,'approved-proposal-print.pdf'),format:'A4',printBackground:true});
        assert.ok(pdf.length>12000,'Browser must generate a nonempty PDF');
        assert.equal(pdf.subarray(0,4).toString(),'%PDF');
