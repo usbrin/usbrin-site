@@ -337,7 +337,10 @@ document.addEventListener('DOMContentLoaded',async()=>{
          scope.placeholder='Escopo específico: páginas, seções, integrações, conteúdo, revisões, itens não incluídos e entregáveis';scope.maxLength=4000;scope.rows=5;
          price.type='number';price.min='0.01';price.step='.01';price.placeholder='Valor da proposta (R$)';price.value=x.estimated_cents>0?String(x.estimated_cents/100):'';
          days.type='number';days.min='1';days.max='180';days.step='1';days.value='14';days.setAttribute('aria-label','Prazo estimado em dias');
-         until.type='date';until.setAttribute('aria-label','Validade da proposta');until.value=today;
+         until.type='date';until.setAttribute('aria-label','Validade da proposta');
+         const expiry=new Date();expiry.setDate(expiry.getDate()+7);
+         const pad=n=>String(n).padStart(2,'0');
+         until.value=expiry.getFullYear()+'-'+pad(expiry.getMonth()+1)+'-'+pad(expiry.getDate());
          terms.rows=2;terms.maxLength=500;terms.placeholder='Condições e premissas comerciais; a aprovação final cabe à USBRIN';
          draft.append(node('p','Apenas rascunho interno. Não envia mensagem, não confirma contrato nem registra receita.','muted'),product,scope,price,days,until,terms);
          draft.append(btn('Salvar rascunho',async()=>{
