@@ -110,10 +110,14 @@ async function pageFor(role,width,url){
  return {context,page,errors};
 }
 async function assertFits(page,label){
- const dims=await page.evaluate(()=>({
-   body:document.body.scrollWidth,document:document.documentElement.scrollWidth,
-   width:innerWidth,main:document.querySelector('main')?.getBoundingClientRect().right
- }));
+ const dims=await page.evaluate(()=>{
+   const width=innerWidth;
+   const offenders=Array.from(document.querySelectorAll('body *'))
+     .filter(x=>{const r=x.getBoundingClientRect();return r.right>width+2||r.left< -2})
+     .slice(0,6).map(x=>({tag:x.tagName,cls:String(x.className||'').slice(0,70),right:Math.round(x.getBoundingClientRect().right),text:x.textContent?.slice(0,36)}));
+   return {body:document.body.scrollWidth,document:document.documentElement.scrollWidth,
+     width,main:document.querySelector('main')?.getBoundingClientRect().right,offenders};
+ });
  assert.ok(dims.document<=dims.width+2,label+' viewport overflow: '+JSON.stringify(dims));
 }
 
