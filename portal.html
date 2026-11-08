@@ -147,6 +147,28 @@
     <div id="finance-expense-list"></div>
   </div>
   <div class="panel">
+    <h2>Documentação fiscal</h2>
+    <p class="muted"><strong>Somente registro de referências.</strong> A emissão, substituição e cancelamento de NFS-e precisam ser realizados e confirmados fora do portal, no emissor competente. Confirme enquadramento e obrigatoriedade com o contador.</p>
+    <form id="finance-fiscal-form" class="billing-form">
+      <label>Origem do documento
+        <select id="finance-fiscal-kind" name="sourceKind">
+          <option value="sale">Venda de site (NFS-e)</option>
+          <option value="service_charge">Serviço recorrente (NFS-e)</option>
+          <option value="expense">Despesa de fornecedor (nota/documento de entrada)</option>
+        </select>
+      </label>
+      <label>Registro relacionado <select id="finance-fiscal-source" name="sourceId" required><option value="">Selecione um registro</option></select></label>
+      <label>Emissor <input name="issuerName" required minlength="3" maxlength="160" placeholder="Razão social do emissor"></label>
+      <label>Número da nota/documento <input name="documentNumber" required minlength="3" maxlength="120"></label>
+      <label>Código de verificação ou referência externa <input name="verificationCode" required minlength="3" maxlength="180"></label>
+      <label>Data de emissão <input name="issuedOn" type="date" required></label>
+      <label>Valor do documento (R$) <input name="amount" type="number" step="0.01" min="0.01" required></label>
+      <label class="billing-wide billing-confirm"><input type="checkbox" name="confirmedExternalDocument" required><span>Conferi o documento emitido externamente. Este registro não emite documento fiscal nem modifica registros da autoridade tributária.</span></label>
+      <button type="submit" class="btn primary">Vincular documento já emitido</button>
+    </form>
+    <div id="finance-fiscal-list"></div>
+  </div>
+  <div class="panel">
     <span class="kicker">CONTROLE ADMINISTRATIVO · SOMENTE USBRIN</span>
     <h2>Financeiro dos serviços recorrentes</h2>
     <p class="muted">Hospedagem gerenciada e Suporte USBRIN. Contrato, cobrança prevista e recebimento conciliado são registros diferentes. Nenhuma cobrança é enviada automaticamente e nenhuma mensalidade é reconhecida como recebida sem confirmação bancária.</p>
