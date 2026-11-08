@@ -219,3 +219,20 @@ O site oficial `usbrin-site.pages.dev` permanece com a versão anterior, sem pub
 - Limites comerciais: nenhum representante deve garantir resultados em vendas ou busca, prazo, desconto, domínio/hospedagem incluídos, suporte recorrente ou integrações além do escopo sem confirmação documental da USBRIN.
 - Controle de manutenção: ao atualizar os valores ou escopo oficiais do Studio, atualizar o guia na mesma revisão. No estado atual não há sincronização automática das tabelas de preço.
 - Testes Chromium incluem preços e visibilidade nos três perfis e telas de 375/768/1440 px.
+
+## Guia → Pré-orçamento → Desenvolvimento (07/11/2026)
+
+### Fluxo operacional protegido
+1. Em **Oportunidades**, o representante cadastra o cliente e registra o próximo acompanhamento.
+2. Em **Guia comercial**, escolhe oportunidade de sua responsabilidade, plano, número de páginas e opcionais com preços calculados pelo mesmo motor do USBRIN Studio. O cliente informa objetivo, seções, materiais, identidade visual e necessidades extras. O formulário não aceita credenciais ou dados sensíveis por orientação expressa.
+3. **Gerar rascunho para aprovação** transforma as respostas em um `scope` textual estruturado, cria proposta vinculada à oportunidade via `crm/proposal-draft`, e **não** cria contrato, venda, cobrança, comissão ou atribuição de desenvolvedor. Apenas propostas já aprovadas ficam disponíveis para impressão/PDF no portal.
+4. A administração revisa escopo, viabilidade, prazo, preço e os quatro grupos de custo antes da aprovação. `product=personalizado` é bloqueado para aprovação no preço automático: pedidos especiais exigem precificação manual e substituição por proposta comercial adequada. **Limitação atual:** revisões de preços personalizados ainda exigem nova versão manual da proposta.
+5. Após confirmação real de contrato e recebimento pela administração, a tela **Projetos** lista a venda recebida e a proposta aprovada mais recente, quando houver. Selecionar a venda importa o escopo aprovado, torna o campo de briefing somente leitura e inclui `proposalId` no pedido de criação do projeto.
+6. O backend **não confia no texto enviado pelo navegador**: valida que a proposta está aprovada/enviada, pertence à mesma oportunidade da venda e possui preço igual ao da venda. Em caso positivo, copia para `projects.description` o `proposals.scope` armazenado no D1. A migração `0010_project_proposal_handoff.sql` adiciona `projects.proposal_id` para rastreabilidade.
+7. O desenvolvedor atribuído consulta **Ver escopo da proposta aprovada** no cartão do projeto. Ele só obtém acesso a partir do projeto criado pelo Admin, não acessa custos internos ou a fila de propostas. Projetos avulsos e vendas legadas sem proposta aprovada continuam exigindo um briefing técnico manual.
+
+### Critérios de aceitação e limites
+- Migração `0010` aplicada **somente** ao D1 de homologação `usbrin_partners_preview`; não migrar banco/credenciais/contas fictícias para produção.
+- Testes verificam que o representante não cria projetos, que uma proposta de outra venda é recusada, que o escopo aprovado prevalece sobre um texto adulterado no navegador e que o desenvolvedor só visualiza o projeto atribuído.
+- O arquivo PDF é uma proposta para o cliente, não a ordem de serviço. Os desenvolvedores recebem o escopo via projeto e não acessam a proposta comercial completa automaticamente. Ainda não existe aceite eletrônico nem gestão de alterações de escopo após a contratação.
+- **Não habilitar candidaturas nem publicar em produção** até completar: teste manual do fluxo comercial com dados fictícios, revisão jurídica, migração/backup dedicado de produção e controle permanente de identidades.
