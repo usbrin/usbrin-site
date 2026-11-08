@@ -91,7 +91,7 @@ try{
          const cards=page.locator('.sales-plan');
          assert.equal(await cards.count(),3,'Three official plans required');
          const prices=await page.locator('.sales-price').allTextContents();
-         assert.deepEqual(prices,['A partir de R$ 690','A partir de R$ 1.190','A partir de R$ 1.790']);
+         assert.deepEqual(prices.map(x=>x.replace(/\\u00a0/g,' ')),['A partir de R$ 690','A partir de R$ 1.190','A partir de R$ 1.790']);
          assert.equal(await page.locator('#sales-checklist input[type="checkbox"]').count(),5);
          assert.equal(await page.locator('#guide-addon-list .sales-addon-row').count(),5);
          assert.ok((await page.locator('[data-guide-feature="blog"]').innerText()).includes('450'));
