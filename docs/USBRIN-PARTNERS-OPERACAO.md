@@ -269,3 +269,13 @@ O site oficial `usbrin-site.pages.dev` permanece com a versão anterior, sem pub
 - O teste de navegador usa respostas em memória para simular a interface de administração em celular/tablet/computador **sem criar cobranças reais**. Nenhum banco/conta de cliente é tocado por esses testes.
 - **Pendências obrigatórias antes de produção:** revisão de contrato e LGPD, validação de SLA/escopo do suporte, regras de suspensão por atraso e cancelamento, política fiscal e de emissão de nota, política de estorno/crédito/lançamento compensatório, backup automático de D1 com restauração testada, provisionamento do D1 de produção separado, segregação de funções para conciliação em escala e verificação manual de bancos/contas de pagamento.
 - Não implantar gateway, cobrança automática, envio de Pix ou renovação silenciosa nesta etapa. Não usar aliases ou registros de homologação em produção.
+
+## Conciliação bancária, contas a pagar e evidências fiscais — 08/11/2026
+
+- Novas migrações: `0013_bank_evidence_and_refunds.sql`, `0014_expense_obligations.sql` e `0015_fiscal_evidence.sql`. Aplicadas **apenas** ao banco `usbrin_partners_preview`, sem criar valores recebidos ou pagar despesas.
+- Administradores têm a aba **Conciliação** para importação manual de CSV bancário restrito, comparação 1:1 com recibos, histórico de devoluções e débitos de estorno.
+- A aba **Financeiro** reúne visão consolidada de vendas, suporte/hospedagem, contas a pagar, comissões e pagamentos técnicos; registra despesas/documentos de fornecedor com pagamento parcial condicionado a débito importado; gera contribuição gerencial aproximada por contrato e referências fiscais externas.
+- Regras de SQL impedem sobrescrever recibos, extratos, associações, documentos, despesas e lançamentos de estorno. Existem verificações de duplicidades e saldos em centavos, associação por ID e valor e controle de quem realizou cada ação.
+- Exceções visíveis: devolução de cliente com comissão ainda ativa, pedido de estorno pendente e créditos bancários importados sem recibo correspondente.
+- **Atenção:** CSV importado manualmente não comprova a origem bancária; marcações de comissões/desenvolvedores legados não têm conciliação independente; documentos fiscais só são registrados, nunca emitidos/cancelados no órgão oficial.
+- Consulte o documento de critérios completos e bloqueios: `docs/USBRIN-FINANCEIRO-RELEASE-GATES.md`. **Não considerar produção liberada** até restauração efetiva de backup, conferência bancária independente e validação fiscal/jurídica.
