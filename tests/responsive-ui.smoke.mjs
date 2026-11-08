@@ -68,7 +68,7 @@ try{
        const identity=await page.locator('#identity').textContent();
        assert.ok(identity?.includes(role),'Wrong account role: '+identity);
        const visible=await page.locator('#portal-nav button:not(.hidden)').evaluateAll(items=>items.map(x=>x.dataset.view));
-       const expected=role==='admin'?['overview','leads','applications','studio','partners','projects','commissions']:role==='representante'?['overview','leads','commissions']:['overview','projects','commissions'];
+       const expected=role==='admin'?['overview','leads','guide','applications','studio','partners','projects','commissions']:role==='representante'?['overview','leads','guide','commissions']:['overview','projects','commissions'];
        assert.deepEqual(visible,expected,role+' navigation mismatch');
        if(role==='admin'){
          await page.locator('#portal-nav [data-view="partners"]').click();
@@ -77,6 +77,27 @@ try{
          await page.locator('#portal-nav [data-view="leads"]').click();
        }else{
          await page.locator('#portal-nav [data-view="projects"]').click();
+       }
+       if(role==='admin'||role==='representante'){
+         await page.locator('#portal-nav [data-view="guide"]').click();
+         await page.locator('#view-guide').waitFor({state:'visible'});
+         const cards=page.locator('.sales-plan');
+         assert.equal(await cards.count(),3,'Three official plans required');
+         const prices=await page.locator('.sales-price').allTextContents();
+         assert.deepEqual(prices,['A partir de R$ 690','A partir de R$ 1.190','A partir de R$ 1.790']);
+         assert.equal(await page.locator('#sales-checklist input[type="checkbox"]').count(),5);
+         await page.locator('#sales-checklist input[type="checkbox"]').first().check();
+         assert.ok((await page.locator('#sales-guide-progress').innerText()).includes('1 de 5'));
+         await assertFits(page,role+' guide '+width);
+         await page.locator('#guide-goto-leads').click();
+         await page.locator('#view-leads').waitFor({state:'visible'});
+         if(role==='representante'){
+           await page.locator('#lead-open-guide').click();
+           await page.locator('#view-guide').waitFor({state:'visible'});
+           await page.locator('#portal-nav [data-view="leads"]').click();
+         }
+       }else{
+         assert.equal(await page.locator('#portal-nav [data-view="guide"]').isVisible(),false);
        }
        await assertFits(page,role+' '+width);
        assert.deepEqual(errors,[],'Page errors '+role+' '+width);
