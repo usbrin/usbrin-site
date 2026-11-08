@@ -128,3 +128,26 @@
 #guide-estimate-description{font-size:12px;overflow-wrap:anywhere}
 @media(max-width:700px){.sales-addon-grid{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:480px){.sales-estimate-controls{grid-template-columns:minmax(0,1fr)}.sales-estimate-result{align-items:flex-start;flex-direction:column;gap:3px}.sales-quick-estimate{padding:14px}.sales-estimate-result strong{font-size:23px}}
+
+/* Structured briefing collected from representative, reused after approved sale. */
+.sales-brief-workspace{border-top:1px solid var(--line);margin-top:24px;padding-top:22px}
+.sales-brief-workspace h3{font-size:21px;margin:8px 0}
+.sales-brief-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin-top:16px}
+.sales-brief-form>label{display:flex;flex-direction:column;gap:7px;color:#ddd4eb;font-size:12px;min-width:0}
+.sales-brief-form>label:nth-of-type(1),.sales-brief-form>label:nth-of-type(2),.sales-brief-form>label:nth-of-type(3),.sales-brief-form>label:nth-of-type(4),.sales-brief-form>label:nth-of-type(5),.sales-brief-form>label:nth-of-type(6){grid-column:1/-1}
+.sales-brief-form input:not([type="checkbox"]),.sales-brief-form select,.sales-brief-form textarea{width:100%;max-width:100%;min-width:0;border:1px solid #57466a;border-radius:9px;background:#14101c;color:var(--text);padding:11px;min-height:44px;font:inherit;line-height:1.45}
+.sales-brief-form textarea{resize:vertical}
+.sales-brief-form .sales-special-check{display:flex;flex-direction:row;align-items:flex-start;gap:11px;grid-column:1/-1;line-height:1.5;padding:12px;background:#261e31;border:1px solid #5a4870;border-radius:9px}
+.sales-brief-form .sales-special-check input{width:18px;height:18px;accent-color:var(--purple);flex:none}
+.sales-brief-form>p,.sales-brief-form>.sales-brief-result{grid-column:1/-1}
+.sales-brief-form>button{justify-self:start;min-height:44px}
+.sales-brief-result{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 17px;background:#241c30;border:1px solid #4b395f;border-radius:11px}
+.sales-brief-result div{display:flex;flex-direction:column;gap:5px}
+.sales-brief-result small,.sales-brief-result>span{color:var(--muted);font-size:12px}
+.sales-brief-result strong{color:#ddc9ff;font-size:23px}
+.project-approved-brief{margin:9px 0;max-width:380px}
+.project-approved-brief summary{cursor:pointer;font-size:12px;color:var(--purple);font-weight:700}
+.project-scope{font:12px/1.55 'Inter',sans-serif;color:var(--text);white-space:pre-wrap;overflow-wrap:anywhere;max-height:360px;overflow:auto;max-width:350px;padding:12px;background:#191622;border:1px solid #453b4e;border-radius:9px}
+#project-brief-status{font-size:12px}
+#project-form textarea:read-only{border-color:#6e5393;background:#231c2d}
+@media(max-width:620px){.sales-brief-form{grid-template-columns:minmax(0,1fr)}.sales-brief-result{flex-direction:column;align-items:flex-start}.sales-brief-form>button{width:100%}}
