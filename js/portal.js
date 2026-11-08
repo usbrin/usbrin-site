@@ -6,11 +6,32 @@ document.addEventListener('DOMContentLoaded',async()=>{
  const node=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined&&text!==null)n.textContent=String(text);if(cls)n.className=cls;return n};
  const btn=(text,run)=>{const n=node('button',text,'btn');n.type='button';n.addEventListener('click',run);return n};
  const message=(text,isError=false)=>{status.textContent=text;status.className='status '+(isError?'bad':'good')};
+ const portal=el('portal-content'),sessionGate=el('session-gate'),sessionMessage=el('session-message');
+ const sessionErrors=new Set(['session_required','account_not_approved','account_suspended','mfa_required','identity_unavailable']);
+ const showSessionGate=text=>{
+   portal.hidden=true;
+   sessionGate.hidden=false;
+   sessionMessage.textContent=text;
+   el('session-actions').hidden=false;
+ };
+ // A page restored from browser history must check the session again before showing data.
+ window.addEventListener('pagehide',()=>{portal.hidden=true;});
+ window.addEventListener('pageshow',event=>{if(event.persisted)window.location.reload();});
  const request=async(path,data)=>{
-   const options={credentials:'same-origin',cache:'no-store'};
-   if(data!==undefined){options.method='POST';options.headers={'content-type':'application/json'};options.body=JSON.stringify(data);}
-   const response=await fetch('/api/private/'+path,options);let json;try{json=await response.json()}catch{throw Error('Resposta do servidor inválida.');}
-   if(!response.ok||!json.ok)throw Error(json.error||'Falha na solicitação.');
+   const options={credentials:'same-origin',cache:'no-store',redirect:'manual',headers:{'X-Requested-With':'XMLHttpRequest'}};
+   if(data!==undefined){options.method='POST';options.headers['content-type']='application/json';options.body=JSON.stringify(data);}
+   const response=await fetch('/api/private/'+path,options);
+   if(response.type==='opaqueredirect'||response.status===401){
+     const text='Sua sessão precisa ser verificada. Entre novamente para continuar.';
+     showSessionGate(text);
+     throw Error(text);
+   }
+   let json;try{json=await response.json()}catch{throw Error('Resposta do servidor inválida.');}
+   if(!response.ok||!json.ok){
+     const text=json.error||'Falha na solicitação.';
+     if(sessionErrors.has(json.code))showSessionGate(text);
+     throw Error(text);
+   }
    return json;
  };
  const metric=(label,value)=>{const box=node('div',null,'metric');box.append(node('strong',value),node('span',label));metrics.append(box)};
@@ -1055,5 +1076,16 @@ document.addEventListener('DOMContentLoaded',async()=>{
  el('goal-form').addEventListener('submit',async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));try{await request('admin/goal',{partnerId:d.partnerId,period:d.period,goalCents:Math.round(Number(d.amount)*100)});message('Meta comercial atualizada.')}catch(err){message(err.message,true)}});
  el('lead-form').addEventListener('submit',async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));try{await request('representante/lead',{company:d.company,contact:d.contact,city:d.city,segment:d.segment,product:d.product,estimatedCents:Math.round(Number(d.estimated||0)*100),note:d.note,nextAction:d.nextAction||'',nextActionAt:d.nextActionAt||''});e.target.reset();await open('leads')}catch(err){message(err.message,true)}});
  el('project-form').addEventListener('submit',async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));try{await request('admin/project',{title:d.title,description:d.description,developerId:d.developerId,compensationCents:Math.round(Number(d.compensation)*100),dueAt:d.dueAt,saleId:d.saleId||'',proposalId:d.proposalId||''});e.target.reset();await open('projects')}catch(err){message(err.message,true)}});
- try{const res=await request('me');user=res.user;el('identity').textContent='Conta: '+user.name+' · '+user.role;setNavigation(user.role);await open('overview');}catch(e){message('Portal indisponível: '+e.message+' O acesso é liberado somente após aprovação e configuração do Cloudflare Access.',true);document.querySelectorAll('#portal-nav button').forEach(x=>x.disabled=true)}
+ try{
+   const res=await request('me');
+   user=res.user;
+   const roleLabel={admin:'Administração',representante:'Representante comercial',desenvolvedor:'Desenvolvedor parceiro'};
+   el('identity').textContent='Conta: '+user.name+' · '+roleLabel[user.role];
+   setNavigation(user.role);
+   sessionGate.hidden=true;
+   portal.hidden=false;
+   await open('overview');
+ }catch(e){
+   showSessionGate(e.message);
+ }
 });

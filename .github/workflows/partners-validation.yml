@@ -3,9 +3,11 @@ on:
   push:
     branches:
       - feature/usbrin-partners-platform
+      - feature/usbrin-id
   pull_request:
     branches:
       - feature/usbrin-studio-mvp
+      - feature/usbrin-partners-platform
 permissions:
   contents: read
 jobs:
@@ -79,7 +81,10 @@ jobs:
           test ! -e dist/public/portal.html
           test ! -e dist/public/js/portal.js
           test ! -e dist/public/api/private
-          grep -q 'href="/portal.html"' dist/public/parceiros.html
+          test -f dist/usbrin-id.html
+          test -f dist/public/usbrin-id.html
+          grep -q 'href="usbrin-id.html"' dist/public/parceiros.html
+          grep -q 'href="/portal"' dist/public/usbrin-id.html
           test -f dist/css/parceiros.css
           test -f dist/js/portal.js
           grep -q 'id="studio-form"' dist/studio.html

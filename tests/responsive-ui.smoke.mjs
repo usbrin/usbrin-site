@@ -6,7 +6,7 @@ import {mkdir} from 'node:fs/promises';
 
 // UI smoke: isolated local build. All API responses below are in-memory mocks.
 // Never use live credentials, partner e-mails or production data in browser tests.
-const browser=await chromium.launch({headless:true});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH});
 const outDir=resolve('ui-smoke-artifacts');
 await mkdir(outDir,{recursive:true});
 const fixture={
@@ -91,6 +91,7 @@ async function pageFor(role,width,url){
      let result=null;
      if(path.includes('api/public-config'))result={ok:true,applicationsOpen:false,studioInquiriesOpen:false,turnstileSiteKey:null};
      else if(path.includes('/api/private/')){
+       if(role==='expired')return Response.json({ok:false,code:'session_required'},{status:401});
        const endpoint=path.split('/api/private/')[1].split('?')[0];
        if(endpoint==='crm/proposal-draft'&&options.method==='POST'){
          window.__guideSubmitted=JSON.parse(options.body);
@@ -296,6 +297,23 @@ try{
      }
      console.log('PASS approved proposal / PDF',width);
    }finally{await printed.context.close();}
+   const identity=await pageFor('expired',width,recruitmentUrl);
+   try{
+     await identity.page.getByRole('link',{name:'Conheça as oportunidades'}).click();
+     assert.ok(identity.page.url().endsWith('#oportunidades'));
+     await identity.page.getByRole('link',{name:'Já sou parceiro'}).click();
+     await identity.page.getByRole('heading',{name:'Bem-vindo de volta.'}).waitFor();
+     assert.ok(identity.page.url().includes('/public/usbrin-id.html'));
+     assert.equal(await identity.page.getByRole('link',{name:'Entrar com meu e-mail'}).getAttribute('href'),'/portal');
+     await assertFits(identity.page,'USBRIN ID '+width);
+     await identity.page.screenshot({path:resolve(outDir,'usbrin-id-'+width+'.png'),fullPage:true});
+     await identity.page.goto(portalUrl);
+     await identity.page.getByText('Sua sessão precisa ser verificada.',{exact:false}).waitFor();
+     assert.equal(await identity.page.locator('#portal-content').isVisible(),false);
+     assert.equal(await identity.page.getByRole('link',{name:'Tentar novamente'}).getAttribute('href'),'/portal');
+     assert.deepEqual(identity.errors,[]);
+     console.log('PASS USBRIN ID and expired session',width);
+   }finally{await identity.context.close();}
    for(const [name,url] of [['recruitment',recruitmentUrl],['candidate-closed',applyUrl]]){
      const {context,page,errors}=await pageFor('admin',width,url);
      try{

@@ -1,5 +1,5 @@
 import {respond,error,readBody,checkOrigin,str,email} from "../../_lib/security.js";
-import {authenticatedUser} from "../../_lib/auth.js";
+import {authenticatedUser,AuthError} from "../../_lib/auth.js";
 import {handleBilling} from "../../_lib/billing.js";
 import {handleBank} from "../../_lib/bank-reconcile.js";
 import {handleFinanceControl} from "../../_lib/finance-control.js";
@@ -28,7 +28,10 @@ export async function onRequest(context){
   if(!["GET","POST"].includes(method))return error("Método não permitido.",405);
   if(method==="POST"&&!checkOrigin(request))return error("Origem não autorizada.",403);
   let user;
-  try{user=await authenticatedUser(request,env);}catch{return error("Acesso restrito. Faça login e confirme que sua conta está ativa.",403);}
+  try{user=await authenticatedUser(request,env);}catch(e){
+    if(e instanceof AuthError)return respond({ok:false,error:e.message,code:e.code},e.status);
+    return error("Não foi possível verificar o acesso.",503);
+  }
   const db=env.DB;
   try{
     if(route.startsWith("admin/billing/"))return handleBilling({request,db,user,route});
@@ -248,11 +251,16 @@ export async function onRequest(context){
       if(b.contractVerified!==true||contractReference.length<5)return error("Confirme a assinatura e informe a referência documental do contrato.");
       const a=await query(db,"SELECT id,name,email,type,status FROM applications WHERE id=?",id).first();
       if(!a||a.status!=="approved")return error("A candidatura ainda não está aprovada.");
-      const role=a.type;
-      const existing=await query(db,"SELECT id FROM users WHERE email=?",a.email).first();
-      if(existing)return error("Esta identidade já possui conta; revisão administrativa necessária.",409);
-      await query(db,"INSERT INTO users(id,email,name,role,status,application_id,contract_reference,contract_verified_at,created_at) VALUES (?,?,?,?, 'active',?,?,datetime('now'),datetime('now'))",fresh(),a.email,a.name,role,a.id,contractReference).run();
-      await audit(db,user,"user.activate","application",id,role+" contract="+contractReference);return respond({ok:true});
+      const userId=fresh();
+      const [result]=await db.batch([
+        query(db,`INSERT INTO users(id,email,name,role,status,application_id,contract_reference,contract_verified_at,created_at)
+          SELECT ?,email,name,type,'active',id,?,datetime('now'),datetime('now')
+          FROM applications WHERE id=? AND status='approved' ON CONFLICT(email) DO NOTHING`,userId,contractReference,id),
+        query(db,`INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at)
+          SELECT ?,?,'user.activate','user',id,role,datetime('now') FROM users WHERE id=?`,fresh(),user.id,userId)
+      ]);
+      if(result.meta?.changes!==1)return error("A candidatura mudou ou esta identidade já possui conta. Revise o cadastro.",409);
+      return respond({ok:true});
     }
     if(route==="admin/finance"&&method==="GET"&&allowed(user,"admin")){
       const [commissions,sales,receivableSales]=await db.batch([
@@ -274,9 +282,14 @@ export async function onRequest(context){
       if(partner.status===next||!["active","suspended"].includes(partner.status))return error("Mudança de acesso não permitida no estado atual.",409);
       if(next==="active"&&(!partner.contract_verified_at||String(partner.contract_reference||"").length<5))
         return error("Reativação exige um contrato previamente assinado e verificado.",409);
-      const result=await query(db,"UPDATE users SET status=? WHERE id=? AND status=? AND role IN ('representante','desenvolvedor')",next,id,partner.status).run();
+      const [,result]=await db.batch([
+        query(db,`INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at)
+          SELECT ?,?,'partner.access','user',id,?,datetime('now')
+          FROM users WHERE id=? AND status=? AND role IN ('representante','desenvolvedor')`,
+          fresh(),user.id,partner.status+" -> "+next+" | motivo: "+reason,id,partner.status),
+        query(db,"UPDATE users SET status=? WHERE id=? AND status=? AND role IN ('representante','desenvolvedor')",next,id,partner.status)
+      ]);
       if(result.meta?.changes!==1)return error("O acesso foi alterado por outra operação; atualize a lista.",409);
-      await audit(db,user,"partner.access","user",id,partner.status+" -> "+next+" | motivo: "+reason);
       return respond({ok:true,id,status:next});
     }
     if(route==="admin/goal"&&method==="POST"&&allowed(user,"admin")){

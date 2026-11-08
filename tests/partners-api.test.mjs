@@ -64,7 +64,7 @@ globalThis.fetch=async (url,options={})=>{
 async function signed(email,options={}){
  const now=Math.floor(Date.now()/1000);
  const header=b64(JSON.stringify({alg:"RS256",typ:"JWT",kid:jwk.kid}));
- const payload=b64(JSON.stringify({iss:domain,aud:options.aud||audience,email,iat:now,exp:options.exp??now+3600}));
+ const payload=b64(JSON.stringify({iss:domain,aud:[audience],type:"app",sub:"fixture-identity",email,iat:now,nbf:now,exp:now+3600,...options}));
  const signing=header+"."+payload;
  const sig=await crypto.subtle.sign("RSASSA-PKCS1-v1_5",privateKey,encoder.encode(signing));
  return signing+"."+b64(Buffer.from(sig));
@@ -78,7 +78,7 @@ const users=[
  ["d2","dev2@usbrin.test","Desenvolvedor 2","desenvolvedor"]
 ];
 for(const u of users)db.sqlite.prepare("INSERT INTO users(id,email,name,role,status) VALUES (?,?,?,?,'active')").run(...u);
-const env={DB:db,ACCESS_TEAM_DOMAIN:domain,ACCESS_AUD:audience,APPLICATIONS_ENABLED:"false"};
+const env={DB:db,ACCESS_TEAM_DOMAIN:domain,ACCESS_AUD:audience,ACCESS_APP_HOST:"usbrin-preview.pages.dev",ACCESS_MFA_AUD:audience,APPLICATIONS_ENABLED:"false"};
 async function call(email,route,data){
  const req=new Request("https://usbrin-preview.pages.dev/api/private/"+route,{method:data===undefined?"GET":"POST",headers:{"Cf-Access-Jwt-Assertion":await signed(email),...(data===undefined?{}:{"content-type":"application/json","origin":"https://usbrin-preview.pages.dev"})},...(data===undefined?{}:{body:JSON.stringify(data)})});
  const res=await privateAPI({request:req,env});
@@ -632,18 +632,54 @@ test("representative Command is scoped to own CRM, enforces 15 percent, and prev
  assert.equal((await call(rep,"admin/commission",{saleId:sale.data.saleId,rateBps:1500})).status,404);
 });
 
-test("JWT requires a valid Cloudflare signature, correct audience and active user",async()=>{
- const missing=new Request("https://usbrin-preview.pages.dev/api/private/me");
- const response=await privateAPI({request:missing,env});
- assert.equal(response.status,403);
- const good=await signed(users[0][1]);const pieces=good.split(".");pieces[2]=(pieces[2][0]==="A"?"B":"A")+pieces[2].slice(1);const bad=pieces.join(".");
- for(const token of [bad,await signed(users[0][1],{aud:"wrong-audience"}),await signed(users[0][1],{exp:1})]){
-   await assert.rejects(()=>authenticatedUser(new Request("https://usbrin-preview.pages.dev",{headers:{"Cf-Access-Jwt-Assertion":token}}),env));
+test("USBRIN ID distinguishes invalid sessions, account status and provider failure",async()=>{
+ const url="https://usbrin-preview.pages.dev/api/private/me";
+ const request=(token,host=url)=>new Request(host,{headers:token?{"Cf-Access-Jwt-Assertion":token}:{}});
+ const response=await privateAPI({request:request(),env});
+ assert.equal(response.status,401);
+ assert.equal((await response.json()).code,"session_required");
+ assert.equal(response.headers.get("cache-control"),"no-store, private");
+ const admin=users[0][1],good=await signed(admin);
+ const pieces=good.split(".");
+ pieces[2]=(pieces[2][0]==="A"?"B":"A")+pieces[2].slice(1);
+ const bad=pieces.join(".");
+ for(const token of [bad,"a.b.c",await signed(admin,{aud:["wrong-audience"]}),await signed(admin,{exp:1}),
+   await signed(admin,{type:"org"}),await signed(admin,{sub:""}),await signed(admin,{exp:"9999999999"}),
+   await signed(admin,{nbf:Math.floor(Date.now()/1000)+600})]){
+   const denied=await privateAPI({request:request(token),env});
+   assert.equal(denied.status,401);
  }
- const user=await authenticatedUser(new Request("https://usbrin-preview.pages.dev",{headers:{"Cf-Access-Jwt-Assertion":good}}),env);
+ const user=await authenticatedUser(request(good),env);
  assert.equal(user.role,"admin");
- const unknown=await signed("not-approved@usbrin.test");
- await assert.rejects(()=>authenticatedUser(new Request("https://usbrin-preview.pages.dev",{headers:{"Cf-Access-Jwt-Assertion":unknown}}),env));
+ const unknown=await call("not-approved@usbrin.test","me");
+ assert.equal(unknown.status,403);
+ assert.equal(unknown.data.code,"account_not_approved");
+ const pending="pending@usbrin.test";
+ db.sqlite.prepare("INSERT INTO users(id,email,name,role,status) VALUES ('pending',?, 'Pendente','representante','pending')").run(pending);
+ assert.equal((await call(pending,"me")).data.code,"account_not_approved");
+ const otherDomain="https://unavailable-fixture.cloudflareaccess.com";
+ const missingKeys=await signed(admin,{iss:otherDomain});
+ const outage=await privateAPI({request:request(missingKeys),env:{...env,ACCESS_TEAM_DOMAIN:otherDomain}});
+ assert.equal(outage.status,503);
+ assert.equal((await outage.json()).code,"identity_unavailable");
+ const alias=await privateAPI({request:request(good,"https://different-preview.pages.dev/api/private/me"),env});
+ assert.equal(alias.status,503);
+});
+
+test("administrative access requires a JWT issued for the configured MFA application",async()=>{
+ const url="https://usbrin-preview.pages.dev/api/private/";
+ const request=async(mail,route)=>new Request(url+route,{headers:{"Cf-Access-Jwt-Assertion":await signed(mail)}});
+ for(const ACCESS_MFA_AUD of [undefined,"different-mfa-audience"]){
+   const misconfigured={...env,ACCESS_MFA_AUD};
+   for(const route of ["me","admin/overview","admin/billing/overview"]){
+     const denied=await privateAPI({request:await request(users[0][1],route),env:misconfigured});
+     assert.equal(denied.status,403);
+     assert.equal((await denied.json()).code,"mfa_required");
+   }
+   const partner=await privateAPI({request:await request(users[1][1],"me"),env:misconfigured});
+   assert.equal(partner.status,200);
+ }
+ assert.equal((await call(users[0][1],"admin/overview")).status,200);
 });
 
 test("representatives cannot view administration and cannot change each other's opportunities",async()=>{
@@ -745,6 +781,12 @@ test("partner activation requires an approved application and a traceable signed
  assert.equal(verified.status,"active");
  const again=await call(users[0][1],"admin/activate",{applicationId:id,contractVerified:true,contractReference:"TEST-DUPLICATE"});
  assert.equal(again.status,409);
+ const logs=db.sqlite.prepare("SELECT ae.details FROM audit_events ae JOIN users u ON ae.entity_id=u.id WHERE ae.action='user.activate' AND u.application_id=?").all(id);
+ assert.deepEqual(logs.map(x=>x.details),["representante"]);
+ const developerApplication="application-reviewed-2";
+ const developer=await call(users[0][1],"admin/activate",{applicationId:developerApplication,contractVerified:true,contractReference:"TEST-DEVELOPER-CONTRACT"});
+ assert.equal(developer.status,200);
+ assert.equal((await call("developer-candidate@usbrin.test","me")).data.user.role,"desenvolvedor");
 });
 
 test("developer payments cannot exceed the approved contract or be marked paid without reference",async()=>{
@@ -791,7 +833,9 @@ test("admin can immediately revoke a partner session; only signed-contract partn
  assert.equal((await call(admin,"admin/partner-access",{userId:"r2",status:"suspended",reason:"curto"})).status,400);
  const revoked=await call(admin,"admin/partner-access",{userId:"r2",status:"suspended",reason:"Revisão da colaboração e acesso preventivo"});
  assert.equal(revoked.status,200);
- assert.equal((await call(rep,"representante/dashboard")).status,403);
+ const denied=await call(rep,"representante/dashboard");
+ assert.equal(denied.status,403);
+ assert.equal(denied.data.code,"account_suspended");
  assert.equal((await call(rep,"representante/lead",{company:"Empresa X",contact:"Contato Y"})).status,403);
  assert.equal((await call(users[1][1],"representante/dashboard")).status,200);
  assert.equal((await call(dev,"desenvolvedor/dashboard")).status,200);
