@@ -495,7 +495,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
          const pad=n=>String(n).padStart(2,'0');
          until.value=expiry.getFullYear()+'-'+pad(expiry.getMonth()+1)+'-'+pad(expiry.getDate());
          terms.rows=2;terms.maxLength=500;terms.placeholder='Condições e premissas comerciais; a aprovação final cabe à USBRIN';
-         draft.append(node('p','Apenas rascunho interno. Não envia mensagem, não confirma contrato nem registra receita.','muted'),product,scope,price,days,until,terms);
+         draft.append(node('p','Apenas rascunho interno. Não envia mensagem, não confirma contrato nem registra receita. Pagamento e cobrança são realizados exclusivamente pela USBRIN.','muted'),product,scope,price,days,until);
+         if(user.role==='admin')draft.append(terms);
          draft.append(btn('Salvar rascunho',async()=>{
            const cents=Math.round(Number(price.value)*100),duration=Number(days.value);
            if(scope.value.trim().length<30||!Number.isSafeInteger(cents)||cents<1||!Number.isSafeInteger(duration)||duration<1||duration>180||!until.value)
