@@ -18,6 +18,13 @@ const fixture={
     'admin/sales':{ok:true,sales:[{id:'sale-handoff-demo-001',company:'Cliente Homologação UX',gross_cents:179000,received_cents:179000,approved_proposal_id:'proposal-approved-demo-001',approved_proposal_code:'QTESTDEMO001',approved_scope:'BRIEFING APROVADO: cinco páginas, blog gerenciável e contato por WhatsApp.'}]},
     'admin/projects':{ok:true,projects:[]},
     'admin/developer-payments':{ok:true,payments:[]},
+    'admin/billing/overview':{ok:true,today:'2026-11-07',listsLimitedTo:400,
+      totals:{agreementsActive:1,openCents:25000,overdueCents:0,receivedCents:25000,paidCount:1},
+      agreements:[{id:'agreement-mock-001',sale_id:'sale-handoff-demo-001',company:'Cliente Homologação UX',kind:'support',cadence:'monthly',amount_cents:25000,start_on:'2026-10-01',contract_reference:'SIGNED-MOCK-001',status:'active'}],
+      eligibleSales:[{id:'sale-handoff-demo-001',company:'Cliente Homologação UX',gross_cents:119000,received_cents:119000}],
+      charges:[{id:'charge-mock-002',agreement_id:'agreement-mock-001',company:'Cliente Homologação UX',kind:'support',period:'2026-11',due_on:'2026-11-15',amount_cents:25000,received_cents:0,status:'pending'},
+        {id:'charge-mock-001',agreement_id:'agreement-mock-001',company:'Cliente Homologação UX',kind:'support',period:'2026-10',due_on:'2026-10-15',amount_cents:25000,received_cents:25000,status:'paid'}],
+      receipts:[{id:'receipt-mock-001',charge_id:'charge-mock-001',amount_cents:25000,reference:'BANK-MOCK-001',received_at:'2026-10-15 12:00:00',actor_name:'HOMOLOGAÇÃO Admin'}]},
     'crm/proposals':{ok:true,proposals:[{id:'mock-approved-quote-001',code:'Q0123456789ABC',opportunity_id:'mock-quote-op-1234',customer_company:'Empresa Demonstrativa',customer_contact:'Contato Comercial',scope:'Site institucional responsivo com cinco páginas, navegação, formulário de contato, revisão final e publicação orientada.',product:'business',price_cents:119000,duration_days:20,valid_until:'2027-02-20',terms:'O cronograma e o pagamento serão formalizados por contrato.',status:'approved',created_at:'2026-11-07 12:00:00',hosting_requested:1,support_requested:1,support_reference_monthly_cents:25000}]}
   },
   representante:{
@@ -75,7 +82,7 @@ try{
        const identity=await page.locator('#identity').textContent();
        assert.ok(identity?.includes(role),'Wrong account role: '+identity);
        const visible=await page.locator('#portal-nav button:not(.hidden)').evaluateAll(items=>items.map(x=>x.dataset.view));
-       const expected=role==='admin'?['overview','leads','guide','applications','studio','partners','projects','commissions']:role==='representante'?['overview','leads','guide','commissions']:['overview','projects','commissions'];
+       const expected=role==='admin'?['overview','leads','guide','applications','studio','partners','projects','commissions','billing']:role==='representante'?['overview','leads','guide','commissions']:['overview','projects','commissions'];
        assert.deepEqual(visible,expected,role+' navigation mismatch');
        if(role==='admin'){
          await page.locator('#portal-nav [data-view="partners"]').click();
@@ -157,6 +164,59 @@ try{
          assert.equal(await page.locator('#project-proposal-id').inputValue(),'proposal-approved-demo-001');
          assert.equal(await page.locator('#project-form textarea[name="description"]').isEditable(),false);
          assert.ok((await page.locator('#project-form textarea[name="description"]').inputValue()).includes('BRIEFING APROVADO'));
+       }
+       if(role==='admin'){
+         await page.locator('#portal-nav [data-view="billing"]').click();
+         await page.locator('#view-billing').waitFor({state:'visible'});
+         await page.locator('#billing-agreements').getByText('Cliente Homologação UX',{exact:true}).first().waitFor();
+         assert.ok((await page.locator('#billing-metrics').innerText()).includes('R
+       assert.deepEqual(errors,[],'Page errors '+role+' '+width);
+       await page.screenshot({path:resolve(outDir,role+'-'+width+'.png'),fullPage:true});
+       console.log('PASS portal',role,width);
+     }finally{await context.close();}
+   }
+   const printed=await pageFor('admin',width,proposalUrl);
+   try{
+     await printed.page.locator('#proposal-document').waitFor({state:'visible',timeout:15000});
+     assert.ok((await printed.page.locator('#proposal-customer').innerText()).includes('Empresa Demonstrativa'));
+     assert.ok((await printed.page.locator('#proposal-price').innerText()).includes('1.190,00'));
+     await printed.page.locator('#proposal-optional-services').waitFor({state:'visible'});
+     assert.ok((await printed.page.locator('#proposal-optional-services').innerText()).includes('R$ 250 por mês'));
+     assert.ok((await printed.page.locator('#proposal-optional-services').innerText()).includes('preço e condições a definir'));
+     assert.ok((await printed.page.locator('.payment-policy').innerText()).includes('Representantes comerciais não estão autorizados'));
+     assert.equal(await printed.page.locator('#print-proposal').isEnabled(),true);
+     await assertFits(printed.page,'approved-proposal '+width);
+     assert.deepEqual(printed.errors,[],'Proposal page errors '+width);
+     await printed.page.screenshot({path:resolve(outDir,'approved-proposal-'+width+'.png'),fullPage:true});
+     if(width===1440){
+       const pdf=await printed.page.pdf({path:resolve(outDir,'approved-proposal-print.pdf'),format:'A4',printBackground:true});
+       assert.ok(pdf.length>12000,'Browser must generate a nonempty PDF');
+       assert.equal(pdf.subarray(0,4).toString(),'%PDF');
+     }
+     console.log('PASS approved proposal / PDF',width);
+   }finally{await printed.context.close();}
+   for(const [name,url] of [['recruitment',recruitmentUrl],['candidate-closed',applyUrl]]){
+     const {context,page,errors}=await pageFor('admin',width,url);
+     try{
+       if(name==='candidate-closed')await page.waitForFunction(()=>document.querySelector('#availability')?.textContent?.includes('ainda não estão abertas'),{timeout:15000});
+       await assertFits(page,name+' '+width);
+       assert.deepEqual(errors,[],'Page errors '+name+' '+width);
+       await page.screenshot({path:resolve(outDir,name+'-'+width+'.png'),fullPage:true});
+       console.log('PASS',name,width);
+     }finally{await context.close();}
+   }
+ }
+}finally{await browser.close();}
+));
+         assert.equal(await page.locator('#billing-sale option').count(),2);
+         assert.equal(await page.locator('#billing-active-agreement option').count(),2);
+         assert.equal(await page.locator('#billing-open-charge option').count(),2);
+         assert.ok((await page.locator('#billing-receipts').innerText()).includes('BANK-MOCK-001'));
+         assert.equal(await page.locator('#billing-agreement-form').isVisible(),true);
+         await assertFits(page,'admin finance ledger '+width);
+       }else{
+         assert.equal(await page.locator('#portal-nav [data-view="billing"]').isVisible(),false);
+         assert.equal(await page.locator('#view-billing').isVisible(),false);
        }
        await assertFits(page,role+' '+width);
        assert.deepEqual(errors,[],'Page errors '+role+' '+width);
