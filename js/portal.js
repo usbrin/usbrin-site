@@ -45,6 +45,19 @@ document.addEventListener('DOMContentLoaded',async()=>{
  let currentGuideQuote=null;
  const guideBriefIds=new Set();
  const guideBriefLead=el('guide-brief-lead'),guideBriefForm=el('guide-brief-form'),guideBriefFeedback=el('guide-brief-feedback');
+ const guideHosting=el('guide-service-hosting'),guideSupport=el('guide-service-support');
+ const SUPPORT_REFERENCE_CENTS=25000; // referência comercial, não assinatura ou débito automático
+ const updateServiceSummary=()=>{
+   const choices=[];
+   if(guideHosting.checked)choices.push('Domínio USBRIN: hospedagem gerenciada, orçamento próprio a definir');
+   if(guideSupport.checked)choices.push('Suporte USBRIN: R$ 250/mês de referência, escopo e contratação separados');
+   el('guide-service-summary').textContent=choices.length
+     ?'Interesse registrado: '+choices.join(' · ')+'. Não somar ao preço de criação; aguardar aprovação da USBRIN.'
+     :'Nenhum serviço recorrente ou de hospedagem solicitado. O valor de criação acima não muda.';
+ };
+ guideHosting.addEventListener('change',updateServiceSummary);
+ guideSupport.addEventListener('change',updateServiceSummary);
+ updateServiceSummary();
  const studioPricing=window.USBRIN_PRICING;
  const guideProduct=el('guide-estimate-product'),guidePages=el('guide-estimate-pages'),guideTotal=el('guide-estimate-total');
  const guideDescription=el('guide-estimate-description');
@@ -137,12 +150,18 @@ document.addEventListener('DOMContentLoaded',async()=>{
      'Visual e referências: '+(visual||'A definir com o cliente'),
      'Materiais entregues/pedidos: '+(materials||'A confirmar com o cliente'),
      'Outros requisitos: '+(notes||'Nenhum indicado'),
+     'Domínio USBRIN / hospedagem gerenciada: '+(guideHosting.checked?'Solicitado — orçamento e condições à parte, NÃO INCLUSO no preço de criação':'Não solicitado'),
+     'Suporte USBRIN mensal: '+(guideSupport.checked?'Interesse em R$ 250/mês (referência), condicionado a escopo e contratação separada; NÃO INCLUSO no preço de criação':'Não solicitado'),
+     'Pagamento: somente a administração da USBRIN pode informar dados de cobrança, enviar instruções e confirmar recebimentos; o representante não recebe valores.',
      'Recurso fora do configurador: '+(special?'SIM — REVISÃO E PRECIFICAÇÃO MANUAL OBRIGATÓRIAS':'Não'),
      'Briefing sujeito a validação do escopo, prazo e condições pela administração.'
    ].join('\n');
-   const terms=special
+   const terms=(special
      ?'Pré-orçamento parcial: adicionais especiais não estão incluídos no valor estimado. Exige novo preço autorizado e uma proposta substituta antes de envio ao cliente.'
-     :'Valor estimado sujeito à aprovação administrativa. O envio, aceite, contratação e início do desenvolvimento dependem de formalização.';
+     :'Valor estimado sujeito à aprovação administrativa. O envio, aceite, contratação e início do desenvolvimento dependem de formalização.')
+     +' Cobrança e pagamentos: exclusivamente pela administração da USBRIN; representantes não estão autorizados a receber valores.'
+     +(guideHosting.checked?' Hospedagem/domínio solicitados para orçamento separado, sem valor incluso no projeto.':'')
+     +(guideSupport.checked?' Suporte mensal de R$ 250 é apenas referência preliminar e exige contratação e condições específicas, sem mensalidade automática.':'');
    const priceCents=Math.round(currentGuideQuote.estimate*100);
    if(scope.length>4000||!Number.isSafeInteger(priceCents)||priceCents<=0)return message('Revise o briefing ou os valores; o conteúdo ultrapassa o limite.',true);
    const button=el('guide-brief-submit');
@@ -151,7 +170,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
      const outcome=await request('crm/proposal-draft',{
        opportunityId:guideBriefLead.value,
        product:special?'personalizado':currentGuideQuote.product,
-       scope,priceCents,durationDays:duration,validUntil:validity,terms
+       scope,priceCents,durationDays:duration,validUntil:validity,terms,
+       hostingRequested:guideHosting.checked,supportRequested:guideSupport.checked
      });
      guideBriefFeedback.textContent='Rascunho '+outcome.code+' salvo. Abra Oportunidades → Acompanhar para consultar a proposta. A aprovação cabe à administração.';
      message('Pré-orçamento registrado, sem gerar venda nem enviar proposta ao cliente.');
@@ -402,8 +422,14 @@ document.addEventListener('DOMContentLoaded',async()=>{
          list.forEach(p=>{
            const card=node('div',null,'crm-proposal-card');
            card.append(node('strong',p.code+' · '+currency(p.price_cents)+' · '+p.status),
-             node('p','Serviço: '+p.product+' · Prazo: '+p.duration_days+' dias · Válida até '+p.valid_until),
+             node('p','Criação: '+p.product+' · Prazo: '+p.duration_days+' dias · Válida até '+p.valid_until),
              node('p',p.scope.slice(0,160)+(p.scope.length>160?'…':'')));
+           if(p.hosting_requested||p.support_requested){
+             const opt=[];
+             if(p.hosting_requested)opt.push('Domínio/Hospedagem USBRIN: solicitado, preço à parte');
+             if(p.support_requested)opt.push('Suporte USBRIN: R$ 250/mês de referência; contratação separada');
+             card.append(node('p',opt.join(' · '),'muted'));
+           }
            if(user.role==='admin'&&p.status==='draft'){
              const costs=node('div',null,'crm-proposal-costs');
              const inputs=[
