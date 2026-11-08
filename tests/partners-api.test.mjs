@@ -265,7 +265,7 @@ test("quote drafts require administrator approval and never create sales or disc
  const noCosts=await call(admin,"admin/proposal-review",{id:proposalId,decision:"approved",developerCents:35000});
  assert.equal(noCosts.status,400);
  const approve=await call(admin,"admin/proposal-review",{id:proposalId,decision:"approved",developerCents:35000,commissionCents:12000,taxCents:10000,otherCents:5000,note:"Custos revisados em homologação"});
- assert.equal(approve.status,200);assert.equal(approve.data.marginCents,57000);
+ assert.equal(approve.status,200);assert.equal(approve.data.marginCents,51150); // 15% fixed on R$1190, not the manual quote estimate
  assert.equal((await call(admin,"admin/proposal-review",{id:proposalId,decision:"rejected",note:"Tentativa dupla"})).status,409);
  const visible=(await call(rep,"crm/proposals?id="+id)).data.proposals[0];
  assert.equal(visible.status,"approved");assert.equal(visible.customer_company,"Cliente teste propostas");
@@ -594,6 +594,42 @@ test("fiscal reference register links to real contract or expense but never issu
  assert.throws(()=>db.sqlite.prepare("DELETE FROM fiscal_documents WHERE id=?").run(recorded.data.id),/immutable/);
  assert.throws(()=>db.sqlite.prepare("UPDATE fiscal_documents SET amount_cents=1 WHERE id=?").run(recorded.data.id),/immutable/);
  assert.ok(db.sqlite.prepare("SELECT COUNT(*) n FROM audit_events WHERE entity='fiscal_document' AND entity_id=?").get(recorded.data.id).n>=2);
+});
+
+
+test("representative Command is scoped to own CRM, enforces 15 percent, and prevents duplicate lead",async()=>{
+ const admin=users[0][1],rep=users[1][1],other=users[2][1];
+ const first=await call(rep,"representante/lead",{company:"COMMAND CLIENTE QA",contact:"Responsável QA",estimatedCents:119000,nextAction:"Enviar briefing",nextActionAt:"2026-11-18"});
+ assert.equal(first.status,201);
+ const dup=await call(rep,"representante/lead",{company:" command cliente qa ",contact:"responsável qa",estimatedCents:119000});
+ assert.equal(dup.status,409);
+ const otherLead=await call(other,"representante/lead",{company:"COMMAND OUTRA CARTEIRA",contact:"Contato Externo QA",estimatedCents:179000});
+ assert.equal(otherLead.status,201);
+ const quote=await call(rep,"crm/proposal-draft",{opportunityId:first.data.id,product:"business",scope:"Site institucional com páginas, atendimento e funcionalidades básicas solicitadas pelo cliente.",priceCents:119000,durationDays:20,validUntil:"2027-03-01"});
+ assert.equal(quote.status,201);
+ const dashboard=await call(rep,"representante/dashboard");
+ assert.equal(dashboard.status,200);
+ assert.equal(dashboard.data.commissionRateBps,1500);
+ assert.ok(dashboard.data.leads.some(x=>x.id===first.data.id));
+ assert.ok(dashboard.data.proposals.some(x=>x.id===quote.data.id));
+ assert.ok(!dashboard.data.leads.some(x=>x.id===otherLead.data.id));
+ assert.ok(!dashboard.data.proposals.some(x=>x.opportunity_id===otherLead.data.id));
+ assert.ok(dashboard.data.leadCount>=1);
+ const wrong=await call(other,"representante/dashboard");
+ assert.ok(!wrong.data.leads.some(x=>x.id===first.data.id));
+ const approval=await call(admin,"admin/proposal-review",{id:quote.data.id,decision:"approved",developerCents:30000,commissionCents:0,taxCents:10000,otherCents:5000});
+ assert.equal(approval.status,200);
+ assert.equal(db.sqlite.prepare("SELECT cost_commission_cents FROM proposals WHERE id=?").get(quote.data.id).cost_commission_cents,17850);
+ const sale=await call(admin,"admin/sale",{opportunityId:first.data.id,grossCents:119000,receivedCents:119000,reference:"COMMAND-BANK-QA-2026-001"});
+ assert.equal(sale.status,200);
+ assert.equal((await call(admin,"admin/commission",{saleId:sale.data.saleId,rateBps:1200})).status,400);
+ const commission=await call(admin,"admin/commission",{saleId:sale.data.saleId,rateBps:1500});
+ assert.equal(commission.status,200);assert.equal(commission.data.amountCents,17850);
+ const updated=await call(rep,"representante/dashboard");
+ assert.ok(updated.data.commissions.some(x=>x.sale_id===sale.data.saleId&&x.customer_company==="COMMAND CLIENTE QA"&&x.rate_bps===1500));
+ assert.ok(updated.data.contracts.some(x=>x.id===sale.data.saleId&&x.status==="paid"));
+ assert.ok(!updated.data.commissions.some(x=>x.customer_company==="COMMAND OUTRA CARTEIRA"));
+ assert.equal((await call(rep,"admin/commission",{saleId:sale.data.saleId,rateBps:1500})).status,404);
 });
 
 test("JWT requires a valid Cloudflare signature, correct audience and active user",async()=>{
