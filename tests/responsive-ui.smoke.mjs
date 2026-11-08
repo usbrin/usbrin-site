@@ -14,11 +14,15 @@ const fixture={
     me:{ok:true,user:{name:'HOMOLOGAÇÃO Admin',role:'admin'}},
     'admin/overview':{ok:true,applications:[],users:[],projects:[],opportunities:[],receivedCents:0,commissionsPendingCents:0,studioInquiries:[],tasks:{}},
     'admin/users':{ok:true,users:[]},
+    'admin/opportunities':{ok:true,opportunities:[{id:'op-briefing-demo-001',company:'Cliente Homologação UX',contact:'Contato Exemplo',stage:'new',product:'Business',estimated_cents:119000}]},
+    'admin/sales':{ok:true,sales:[{id:'sale-handoff-demo-001',company:'Cliente Homologação UX',gross_cents:179000,received_cents:179000,approved_proposal_id:'proposal-approved-demo-001',approved_proposal_code:'QTESTDEMO001',approved_scope:'BRIEFING APROVADO: cinco páginas, blog gerenciável e contato por WhatsApp.'}]},
+    'admin/projects':{ok:true,projects:[]},
+    'admin/developer-payments':{ok:true,payments:[]},
     'crm/proposals':{ok:true,proposals:[{id:'mock-approved-quote-001',code:'Q0123456789ABC',opportunity_id:'mock-quote-op-1234',customer_company:'Empresa Demonstrativa',customer_contact:'Contato Comercial',scope:'Site institucional responsivo com cinco páginas, navegação, formulário de contato, revisão final e publicação orientada.',product:'business',price_cents:119000,duration_days:20,valid_until:'2027-02-20',terms:'O cronograma e o pagamento serão formalizados por contrato.',status:'approved',created_at:'2026-11-07 12:00:00'}]}
   },
   representante:{
     me:{ok:true,user:{name:'HOMOLOGAÇÃO Representante',role:'representante'}},
-    'representante/dashboard':{ok:true,leads:[],commissions:[],goals:[],sales:[]}
+    'representante/dashboard':{ok:true,leads:[{id:'op-briefing-demo-001',company:'Cliente Homologação UX',contact:'Contato Exemplo',stage:'new',product:'Business',estimated_cents:119000}],commissions:[],goals:[],sales:[]}
   },
   desenvolvedor:{
     me:{ok:true,user:{name:'HOMOLOGAÇÃO Desenvolvedor',role:'desenvolvedor'}},
@@ -35,13 +39,16 @@ async function pageFor(role,width,url){
  const page=await context.newPage();
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.addInitScript(({role,fixture})=>{
-   window.fetch=async(input)=>{
+   window.fetch=async(input,options={})=>{
      const path=String(input);
      let result=null;
      if(path.includes('api/public-config'))result={ok:true,applicationsOpen:false,studioInquiriesOpen:false,turnstileSiteKey:null};
      else if(path.includes('/api/private/')){
        const endpoint=path.split('/api/private/')[1].split('?')[0];
-       result=fixture[role]?.[endpoint]||{ok:false,error:'Endpoint não simulado'};
+       if(endpoint==='crm/proposal-draft'&&options.method==='POST'){
+         window.__guideSubmitted=JSON.parse(options.body);
+         result={ok:true,code:'QTESTGUIDED001',status:'draft'};
+       }else result=fixture[role]?.[endpoint]||{ok:false,error:'Endpoint não simulado'};
      }
      if(result)return new Response(JSON.stringify(result),{status:result.ok?200:404,headers:{'content-type':'application/json'}});
      return new Response('Não encontrado',{status:404});
@@ -105,6 +112,21 @@ try{
          await page.locator('#guide-estimate-product').selectOption('catalogo');
          assert.ok((await total.innerText()).includes('2.390'),'Catalog + blog + form should total 2390');
 
+         await page.locator('#guide-brief-lead option').nth(1).waitFor();
+         await page.locator('#guide-brief-lead').selectOption('op-briefing-demo-001');
+         await page.locator('#guide-brief-objective').fill('Apresentar os serviços e permitir orçamentos online.');
+         await page.locator('#guide-brief-sections').fill('Página inicial, empresa, serviços, blog e contato.');
+         await page.locator('#guide-brief-materials').fill('Cliente enviará logotipo e fotografias.');
+         await page.locator('#guide-brief-duration').fill('21');
+         await page.locator('#guide-brief-submit').click();
+         await page.waitForFunction(()=>Boolean(window.__guideSubmitted),{timeout:15000});
+         const draft=await page.evaluate(()=>window.__guideSubmitted);
+         assert.equal(draft.opportunityId,'op-briefing-demo-001');
+         assert.equal(draft.product,'catalogo');
+         assert.equal(draft.priceCents,239000);
+         assert.ok(draft.scope.includes('Cliente enviará logotipo e fotografias.'));
+         assert.ok(draft.scope.includes('Blog gerenciável'));
+         assert.ok((await page.locator('#guide-brief-feedback').innerText()).includes('QTESTGUIDED001'));
          await page.locator('#sales-checklist input[type="checkbox"]').first().check();
          assert.ok((await page.locator('#sales-guide-progress').innerText()).includes('1 de 5'));
          await assertFits(page,role+' guide '+width);
@@ -117,6 +139,14 @@ try{
          }
        }else{
          assert.equal(await page.locator('#portal-nav [data-view="guide"]').isVisible(),false);
+       }
+       if(role==='admin'){
+         await page.locator('#portal-nav [data-view="projects"]').click();
+         await page.locator('#project-sale option').nth(1).waitFor();
+         await page.locator('#project-sale').selectOption('sale-handoff-demo-001');
+         assert.equal(await page.locator('#project-proposal-id').inputValue(),'proposal-approved-demo-001');
+         assert.equal(await page.locator('#project-form textarea[name="description"]').isEditable(),false);
+         assert.ok((await page.locator('#project-form textarea[name="description"]').inputValue()).includes('BRIEFING APROVADO'));
        }
        await assertFits(page,role+' '+width);
        assert.deepEqual(errors,[],'Page errors '+role+' '+width);
