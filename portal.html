@@ -1,0 +1,272 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><title>Portal de Parceiros — USBRIN</title><link rel="icon" href="assets/favicon-small.png"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;600;700;800&display=swap" rel="stylesheet"><link href="css/parceiros.css" rel="stylesheet"></head><body><div class="portal">
+<aside class="sidebar"><a class="logo" href="index.html"><img src="assets/usbrin-logo-sem-fundo.svg" alt="USBRIN"></a><p class="muted" style="font-size:12px;margin:0 14px 15px">PORTAL DE PARCEIROS</p><nav id="portal-nav" aria-label="Navegação do portal"><button class="active" type="button" data-view="overview">Visão geral</button><button type="button" data-view="leads" class="hidden">Oportunidades</button><button type="button" data-view="guide" class="hidden">Guia comercial</button><button type="button" data-view="applications" class="hidden">Candidaturas</button><button type="button" data-view="studio" class="hidden">Solicitações Studio</button><button type="button" data-view="partners" class="hidden">Parceiros</button><button type="button" data-view="projects" class="hidden">Projetos</button><button type="button" data-view="commissions" class="hidden">Comissões</button><button type="button" data-view="billing" class="hidden">Financeiro</button><button type="button" data-view="bank" class="hidden">Conciliação</button></nav><p class="muted" style="font-size:12px;margin:25px 14px"><a href="parceiros.html" style="color:var(--purple)">Voltar ao site</a></p></aside>
+<main class="mainarea"><p class="kicker">USBRIN / ÁREA RESTRITA</p><h1 id="panel-title">Visão geral</h1><p id="identity" class="muted">Verificando sessão e permissões...</p><div role="alert" id="portal-status" class="status">O acesso exige uma conta de parceiro ou administrador aprovada e autenticação segura.</div>
+<section id="view-overview" class="view"><div id="rep-command" class="rep-command" hidden aria-label="USBRIN Command — painel comercial do representante"></div><div class="metrics" id="metrics"></div>
+<div class="panel hidden" id="action-center"><div class="section-heading"><div><span class="kicker">OPERAÇÃO</span><h2>Central de prioridades</h2><p class="muted">O que precisa da sua atenção agora, com base nos dados registrados.</p></div></div><div class="task-grid" id="action-list"></div></div>
+<div class="panel hidden" id="goal-panel"><h2>Definir meta comercial</h2><p class="muted">Metas mensais são administradas pela USBRIN e exibidas no painel individual do representante.</p><form id="goal-form" class="mini-form"><select id="goal-partner" name="partnerId" required><option value="">Selecione um representante</option></select><input name="period" type="month" required><input name="amount" type="number" min="0" step=".01" placeholder="Meta em R$" required><button type="submit" class="btn primary">Salvar meta</button></form></div><div class="panel"><h2>Resumo de atividade</h2><p class="muted" id="overview-description">Assim que o acesso estiver habilitado, seus indicadores aparecerão aqui com dados reais.</p></div></section>
+<section id="view-guide" class="view hidden">
+<div class="panel">
+  <div class="section-heading"><div><span class="kicker">CONSULTA RÁPIDA</span><h2>O que a USBRIN oferece</h2><p class="muted">Explique o plano certo com clareza. Os valores abaixo são preços iniciais; o orçamento final depende do escopo aprovado.</p></div></div>
+  <div class="sales-plans">
+    <article class="sales-plan"><span class="kicker">01 · APRESENTAÇÃO OBJETIVA</span><h3>USBRIN Landing</h3><strong class="sales-price">A partir de R$ 690</strong><p><strong>Inclui:</strong> 1 página com até 6 seções.</p><p><strong>Indique quando:</strong> o cliente precisa apresentar um serviço, profissional ou campanha.</p></article>
+    <article class="sales-plan"><span class="kicker">02 · PRESENÇA INSTITUCIONAL</span><h3>USBRIN Business</h3><strong class="sales-price">A partir de R$ 1.190</strong><p><strong>Inclui:</strong> site institucional com até 5 páginas.</p><p><strong>Indique quando:</strong> a empresa precisa mostrar serviços, informações e portfólio em páginas separadas.</p></article>
+    <article class="sales-plan"><span class="kicker">03 · VITRINE DE PRODUTOS</span><h3>USBRIN Catálogo</h3><strong class="sales-price">A partir de R$ 1.790</strong><p><strong>Inclui:</strong> catálogo digital com até 20 itens.</p><p><strong>Indique quando:</strong> o cliente deseja apresentar produtos e receber contatos.</p><p><strong>Atenção:</strong> não inclui carrinho, checkout ou pagamento online.</p></article>
+  </div>
+  <section class="sales-addons" aria-labelledby="addons-title">
+    <div class="section-heading"><div><span class="kicker">ADICIONAIS DO STUDIO</span><h3 id="addons-title">O que pode aumentar o orçamento?</h3><p class="muted">Valores de referência para apresentar ao cliente. Confirme a viabilidade e a proposta final com a administração.</p></div></div>
+    <div class="sales-addon-grid" id="guide-addon-list">
+      <div class="sales-addon-row"><strong>Botão de WhatsApp</strong><span data-guide-feature="whatsapp">Incluso</span><small>Atalho de contato com a empresa.</small></div>
+      <div class="sales-addon-row"><strong>Formulário avançado</strong><span data-guide-feature="formulario">Consulte valor</span><small>Campos extras e validação.</small></div>
+      <div class="sales-addon-row"><strong>Galeria de projetos</strong><span data-guide-feature="galeria">Consulte valor</span><small>Fotos e trabalhos organizados.</small></div>
+      <div class="sales-addon-row"><strong>Blog gerenciável</strong><span data-guide-feature="blog">Consulte valor</span><small>Publicação e administração de conteúdo.</small></div>
+      <div class="sales-addon-row"><strong>Página adicional</strong><span id="guide-extra-page-price">Consulte valor</span><small>Business/Catálogo, acima das 5 páginas iniciais.</small></div>
+    </div>
+    <div class="sales-quick-estimate" aria-labelledby="estimate-title">
+      <div><h4 id="estimate-title">Estimativa rápida de investimento</h4><p class="muted">Selecione o plano e os opcionais. O valor não é proposta aprovada.</p></div>
+      <div class="sales-estimate-controls">
+        <label>Plano
+          <select id="guide-estimate-product">
+            <option value="landing">USBRIN Landing</option><option value="business" selected>USBRIN Business</option><option value="catalogo">USBRIN Catálogo</option>
+          </select>
+        </label>
+        <label>Páginas no total
+          <input id="guide-estimate-pages" type="number" min="1" max="15" step="1" value="5">
+        </label>
+      </div>
+      <div class="sales-estimate-features" id="guide-estimate-features">
+        <label><input type="checkbox" value="formulario"> Formulário avançado</label>
+        <label><input type="checkbox" value="galeria"> Galeria de projetos</label>
+        <label><input type="checkbox" value="blog"> Blog gerenciável</label>
+      </div>
+      <div class="sales-estimate-result"><span>Estimativa inicial</span><strong id="guide-estimate-total" aria-live="polite">Carregando preços...</strong></div>
+      <p id="guide-estimate-description" class="muted">Os valores e limites são calculados pela mesma tabela de preços do USBRIN Studio.</p>
+    </div>
+    <section class="guide-postsale" aria-labelledby="guide-postsale-title">
+      <span class="kicker">SERVIÇOS OPCIONAIS — PÓS-ENTREGA</span>
+      <h3 id="guide-postsale-title">Domínio USBRIN e Suporte USBRIN</h3>
+      <p class="muted">Ofereça separadamente da criação do site. Marque apenas se o cliente demonstrar interesse; nenhuma contratação ou cobrança será gerada.</p>
+      <div class="guide-postsale-grid">
+        <label class="guide-postsale-option">
+          <input type="checkbox" id="guide-service-hosting">
+          <span><strong>Domínio USBRIN · hospedagem gerenciada</strong><small>A USBRIN administra a publicação, a hospedagem e as configurações técnicas combinadas. Registro, propriedade e renovação de domínio próprio devem ser definidos à parte, se necessários.</small><b>Preço a definir pela administração</b></span>
+        </label>
+        <label class="guide-postsale-option">
+          <input type="checkbox" id="guide-service-support">
+          <span><strong>Suporte USBRIN · acompanhamento mensal</strong><small>Solicitação de manutenção e pequenas atualizações, dentro de limites contratuais ainda a definir. Não inclui atendimento ilimitado nem novas funcionalidades.</small><b>R$ 250/mês · valor de referência em avaliação</b></span>
+        </label>
+      </div>
+      <p class="guide-postsale-note" id="guide-service-summary" aria-live="polite">Nenhum serviço recorrente ou de hospedagem solicitado. O valor de criação acima não muda.</p>
+    </section>
+    <section class="guide-payments-policy" aria-labelledby="guide-payments-title">
+      <h3 id="guide-payments-title">Pagamentos: somente a USBRIN</h3>
+      <p>O representante apresenta as soluções e registra o interesse, mas <strong>não recebe Pix, transferências, dinheiro ou comprovantes</strong>, não informa contas bancárias e não negocia parcelamento por conta própria. A administração da USBRIN confirma os termos e envia as instruções oficiais de pagamento diretamente ao cliente.</p>
+    </section>
+    <p class="muted"><strong>Orçamento sob análise:</strong> mais de 20 itens no catálogo, loja com checkout, área restrita, agendamentos, sistemas externos ou recursos personalizados. Não atribua um preço fechado sem aprovação.</p>
+  </section>
+  <section id="guide-brief-workspace" class="sales-brief-workspace" aria-labelledby="guide-brief-title">
+    <div class="section-heading"><div><span class="kicker">PRÉ-ORÇAMENTO</span><h3 id="guide-brief-title">Registrar o pedido do cliente</h3><p class="muted">O guia vira um briefing comercial. Use o plano e os adicionais selecionados acima; descreva o que o cliente espera receber. O rascunho exige revisão administrativa.</p></div></div>
+    <form id="guide-brief-form" class="sales-brief-form">
+      <label>Oportunidade do CRM <select id="guide-brief-lead" required><option value="">Carregando oportunidades...</option></select></label>
+      <p id="guide-brief-empty" class="muted" hidden>Cadastre primeiro uma oportunidade. Depois, volte ao Guia comercial para preparar o pré-orçamento.</p>
+      <label>Objetivo do site e público do cliente * <textarea id="guide-brief-objective" required minlength="15" maxlength="650" rows="3" placeholder="Ex.: apresentar a empresa, receber pedidos de orçamento e mostrar os serviços..."></textarea></label>
+      <label>O que precisa aparecer no site? * <textarea id="guide-brief-sections" required minlength="15" maxlength="700" rows="3" placeholder="Ex.: início, sobre, serviços, galeria, depoimentos, contato..."></textarea></label>
+      <label>Identidade visual e referências <textarea id="guide-brief-visual" maxlength="450" rows="2" placeholder="Ex.: usar cores da marca, estilo minimalista, referências de sites..."></textarea></label>
+      <label>Materiais que o cliente fornecerá <textarea id="guide-brief-materials" maxlength="450" rows="2" placeholder="Ex.: logo, textos, fotos, catálogo, imagens; o que ainda está pendente..."></textarea></label>
+      <label>Outros pedidos ou observações <textarea id="guide-brief-notes" maxlength="550" rows="2" placeholder="Ex.: requisitos de navegação, formulário, responsividade, integrações ou dúvidas..."></textarea></label>
+      <label class="sales-special-check"><input type="checkbox" id="guide-brief-special"> <span>O cliente pediu algo fora dos planos (ex.: checkout, login, integração, catálogo acima de 20 itens). Será necessário orçamento personalizado.</span></label>
+      <label>Prazo de execução estimado em dias * <input id="guide-brief-duration" type="number" required min="1" max="180" step="1" value="14"></label>
+      <label>Validade do orçamento * <input id="guide-brief-validity" type="date" required></label>
+      <p class="muted">Não informe senhas, dados sensíveis ou valores financeiros internos nos campos do briefing. Serviços opcionais e mensalidades ficam separados do preço de criação; o representante nunca recebe pagamentos. Se houver funcionalidade especial, o valor indicado será apenas referência inicial, sem precificar o extra.</p>
+      <div class="sales-brief-result"><div><small>Base + adicionais do configurador</small><strong id="guide-brief-total">—</strong></div><span>Somente criação do site · sem cobranças recorrentes</span></div>
+      <button id="guide-brief-submit" class="btn primary" type="submit">Gerar rascunho para aprovação</button>
+      <p id="guide-brief-feedback" class="muted" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+  <p class="notice"><strong>Não prometa sem aprovação:</strong> funcionalidades extras, descontos, hospedagem ou domínio incluídos, posição no Google, número de vendas, prazo de entrega ou suporte contínuo. Pedidos fora do escopo exigem orçamento da USBRIN.</p>
+</div>
+<div class="panel">
+  <h2>Checklist antes de apresentar a proposta</h2><p class="muted">Marque durante cada conversa. As marcações não são armazenadas nem substituem o briefing da oportunidade.</p>
+  <div id="sales-checklist" class="sales-checklist">
+    <label><input type="checkbox"><span>Entendi o objetivo do cliente e qual plano faz sentido.</span></label>
+    <label><input type="checkbox"><span>Expliquei o que está incluído e os limites do plano.</span></label>
+    <label><input type="checkbox"><span>Deixei claro que o valor é inicial e extras exigem confirmação.</span></label>
+    <label><input type="checkbox"><span>Confirmei quais materiais e funcionalidades o cliente precisa.</span></label>
+    <label><input type="checkbox"><span>Registrei a oportunidade, o próximo contato e o briefing no CRM.</span></label>
+    <label><input type="checkbox"><span>Orientei que pagamento, cobrança e confirmação financeira são feitos somente pela USBRIN.</span></label>
+  </div>
+  <div class="sales-guide-footer"><p id="sales-guide-progress" class="muted" aria-live="polite">0 de 5 pontos conferidos.</p><button type="button" class="btn primary" id="guide-goto-leads">Ir para oportunidades</button></div>
+</div>
+</section>
+<section id="view-leads" class="view hidden"><div class="panel" id="lead-create"><h2>Registrar oportunidade</h2><p class="muted">Antes de informar preço ou escopo ao cliente, consulte o <button class="sales-guide-link" type="button" id="lead-open-guide">Guia comercial da USBRIN</button>.</p><form id="lead-form" class="mini-form">
+<input name="company" placeholder="Empresa *" minlength="3" required><input name="contact" placeholder="Contato *" minlength="3" required><input name="city" placeholder="Cidade"><input name="segment" placeholder="Segmento">
+<select name="product"><option value="Landing">Landing</option><option value="Business">Business</option><option value="Catálogo">Catálogo</option><option value="Outro">Outro</option></select><input name="estimated" type="number" min="0" step=".01" placeholder="Valor estimado (R$)">
+<textarea name="note" placeholder="Observações iniciais"></textarea><input name="nextAction" maxlength="160" placeholder="Próxima ação (ex.: enviar demonstração)"><label class="field-label">Data do próximo contato <input name="nextActionAt" type="date"></label><button class="btn primary" type="submit">Adicionar oportunidade</button></form></div><div class="panel"><h2>Oportunidades registradas</h2><p class="muted">Acompanhe os retornos, registre conversas e identifique clientes sem próximo contato. Propostas não são consideradas vendas recebidas.</p><div id="crm-summary" class="crm-summary"></div><div class="toolbar"><label>Pesquisar <input id="lead-search" type="search" placeholder="Empresa, responsável, segmento"></label><label>Etapa <select id="lead-filter-stage"><option value="">Todas</option><option value="new">Novo contato</option><option value="contact">Em contato</option><option value="interested">Interessado</option><option value="qualified">Qualificado</option><option value="proposal">Proposta</option><option value="negotiation">Negociação</option><option value="contracted">Contratado</option><option value="paid">Recebido</option><option value="lost">Perdido</option></select></label><label>Prazo <select id="lead-filter-due"><option value="">Todos</option><option value="due">Vencidos ou hoje</option><option value="no-date">Sem retorno agendado</option></select></label></div><div id="lead-list"></div></div></section>
+<section id="view-studio" class="view hidden"><div class="panel"><div class="section-heading"><div><span class="kicker">CAPTAÇÃO</span><h2>Solicitações recebidas pelo Studio</h2><p class="muted">Um briefing é uma oportunidade de conversa, não um contrato ou pagamento confirmado.</p></div></div><div class="toolbar"><label>Filtrar situação <select id="studio-status-filter"><option value="">Todas</option><option value="new">Nova</option><option value="review">Em análise</option><option value="qualified">Qualificada</option><option value="proposal">Proposta</option><option value="closed">Concluída</option><option value="archived">Arquivada</option></select></label><label>Pesquisar <input type="search" id="studio-search" placeholder="Nome, empresa ou protocolo" autocomplete="off"></label></div><div id="studio-list"></div></div></section>
+<section id="view-applications" class="view hidden"><div class="panel"><h2>Candidaturas</h2><p class="muted">As aprovações exigem análise e formalização prévia, sem acesso automático. Alterar a etapa aqui não envia mensagens automaticamente ao candidato.</p><div class="toolbar"><label>Modalidade <select id="app-type-filter"><option value="">Todas</option><option value="representante">Representantes</option><option value="desenvolvedor">Desenvolvedores</option></select></label><label>Etapa <select id="app-status-filter"><option value="">Todas</option><option value="received">Recebida</option><option value="review">Em análise</option><option value="requested">Informações solicitadas</option><option value="interview">Entrevista</option><option value="preapproved">Pré-aprovada</option><option value="documentation">Documentação</option><option value="approved">Aprovada</option><option value="rejected">Não selecionada</option></select></label><label>Pesquisar <input id="app-search" type="search" placeholder="Nome, e-mail, protocolo" autocomplete="off"></label></div><div id="application-list"></div></div></section>
+<section id="view-partners" class="view hidden"><div class="panel"><div class="section-heading"><div><span class="kicker">GESTÃO DE ACESSO</span><h2>Parceiros cadastrados</h2><p class="muted">Suspenda ou reative o acesso de parceiros com justificativa. A suspensão bloqueia as APIs imediatamente, mesmo que a sessão Cloudflare Access ainda esteja válida.</p></div></div><p class="muted">A reativação exige contrato já verificado. Para permitir o login de novos parceiros, também será necessário autorizar a identidade correspondente na política Cloudflare Access. Não há convite automático nesta versão.</p><div id="partner-list"></div></div></section>
+<section id="view-projects" class="view hidden"><div class="panel" id="project-create"><h2>Novo projeto</h2><p class="muted">Você pode vincular o projeto a uma venda já recebida ou criar um projeto avulso. Confirme o escopo e a margem antes de atribuir.</p><form id="project-form" class="mini-form"><input name="title" required minlength="3" placeholder="Título do projeto"><select id="project-sale" name="saleId"><option value="">Projeto avulso — sem venda vinculada</option></select><input type="hidden" id="project-proposal-id" name="proposalId" value=""><p id="project-brief-status" class="muted" role="status" aria-live="polite">Ao selecionar uma venda recebida com proposta aprovada, o escopo será importado para o projeto e ficará disponível ao desenvolvedor atribuído.</p><select id="project-developer" name="developerId" required><option value="">Selecione um desenvolvedor aprovado</option></select><input name="compensation" type="number" min="0" step=".01" required placeholder="Remuneração (R$)"><input name="dueAt" type="date"><textarea name="description" required minlength="15" placeholder="Escopo e critérios de aceite"></textarea><button class="btn primary" type="submit">Criar projeto</button></form></div><div class="panel"><h2>Projetos</h2><div id="project-list"></div></div></section>
+<section id="developer-payments-admin" class="panel hidden"><h2>Remuneração de desenvolvedores</h2><p class="muted">Registre obrigações somente de projetos aprovados, e marque como pago somente após conciliação financeira.</p><form id="developer-payment-form" class="mini-form"><select id="developer-payment-project" name="projectId" required><option value="">Selecione um projeto aprovado</option></select><input name="amount" type="number" min="0.01" step=".01" placeholder="Valor (BRL)" required><button class="btn primary" type="submit">Registrar valor previsto</button></form><div id="developer-payment-list"></div></section>
+<section id="view-billing" class="view hidden">
+  <div class="panel">
+    <span class="kicker">PAINEL FINANCEIRO USBRIN · ADMIN</span>
+    <h2>Visão financeira consolidada</h2>
+    <p class="muted">Vendas, serviços recorrentes, obrigações, comissões e desenvolvedores. Valores previstos, registrados e associados a extratos são exibidos separadamente.</p>
+    <label class="finance-month-select">Competência do fluxo classificado <input type="month" id="finance-month" aria-label="Mês da análise financeira"></label>
+    <div id="finance-main-metrics" class="billing-metrics"></div>
+    <p id="finance-exceptions" class="notice" role="status" aria-live="polite">Pendências de conciliação e estornos serão sinalizadas após carregar o financeiro.</p>
+    <h3>Movimentos classificados no mês</h3>
+    <div id="finance-month-metrics" class="billing-metrics"></div>
+    <p class="notice">O fluxo classificado <strong>não é saldo bancário, lucro líquido nem demonstração contábil</strong>. Extratos CSV importados precisam ter a origem confirmada independentemente no banco. Pagamentos informados de comissões/desenvolvedores ainda requerem conciliação externa.</p>
+    <h3>Contribuição estimada por contrato</h3>
+    <p class="muted">Receita contratada menos custos alocados registrados. Não representa lucro efetivo; impostos, despesas fixas e obrigações não vinculadas podem estar ausentes.</p>
+    <div id="finance-project-margin"></div>
+  </div>
+  <div class="panel">
+    <h2>Contas a pagar e fornecedores</h2>
+    <p class="muted">Cadastre obrigações somente após conferir o documento do fornecedor. O pagamento só será classificado quando houver um débito compatível no extrato importado. A administração não transfere dinheiro por este portal.</p>
+    <form id="finance-expense-form" class="billing-form">
+      <label>Fornecedor <input name="supplier" maxlength="160" minlength="3" required placeholder="Nome do fornecedor"></label>
+      <label>Referência do documento <input name="documentReference" maxlength="160" minlength="5" required placeholder="Número da nota ou contrato"></label>
+      <label class="billing-wide">Descrição do custo <input name="label" maxlength="260" minlength="8" required placeholder="O que foi contratado ou comprado"></label>
+      <label>Categoria
+        <select name="category" required>
+          <option value="infrastructure">Infraestrutura e hospedagem</option>
+          <option value="software">Software e ferramentas</option>
+          <option value="marketing">Marketing e captação</option>
+          <option value="tax">Impostos e taxas</option>
+          <option value="contractor">Fornecedor terceirizado (não duplicar folha de desenvolvedores)</option>
+          <option value="office">Administrativo e escritório</option>
+          <option value="other">Outros custos</option>
+        </select>
+      </label>
+      <label>Valor previsto (R$) <input name="amount" type="number" step="0.01" min="0.01" required></label>
+      <label>Vencimento <input name="dueOn" type="date" required></label>
+      <label>Projeto ou contrato relacionado (opcional) <select id="finance-expense-sale" name="saleId"><option value="">Custo geral, não vinculado a uma venda</option></select></label>
+      <label class="billing-wide billing-confirm"><input name="confirmedDocument" type="checkbox" required><span>Conferi o documento e estou registrando apenas uma obrigação financeira, ainda não um pagamento.</span></label>
+      <button type="submit" class="btn primary">Registrar obrigação</button>
+    </form>
+    <div id="finance-expense-list"></div>
+  </div>
+  <div class="panel">
+    <h2>Documentação fiscal</h2>
+    <p class="muted"><strong>Somente registro de referências.</strong> A emissão, substituição e cancelamento de NFS-e precisam ser realizados e confirmados fora do portal, no emissor competente. Confirme enquadramento e obrigatoriedade com o contador.</p>
+    <form id="finance-fiscal-form" class="billing-form">
+      <label>Origem do documento
+        <select id="finance-fiscal-kind" name="sourceKind">
+          <option value="sale">Venda de site (NFS-e)</option>
+          <option value="service_charge">Serviço recorrente (NFS-e)</option>
+          <option value="expense">Despesa de fornecedor (nota/documento de entrada)</option>
+        </select>
+      </label>
+      <label>Registro relacionado <select id="finance-fiscal-source" name="sourceId" required><option value="">Selecione um registro</option></select></label>
+      <label>Emissor <input name="issuerName" required minlength="3" maxlength="160" placeholder="Razão social do emissor"></label>
+      <label>Número da nota/documento <input name="documentNumber" required minlength="3" maxlength="120"></label>
+      <label>Código de verificação ou referência externa <input name="verificationCode" required minlength="3" maxlength="180"></label>
+      <label>Data de emissão <input name="issuedOn" type="date" required></label>
+      <label>Valor do documento (R$) <input name="amount" type="number" step="0.01" min="0.01" required></label>
+      <label class="billing-wide billing-confirm"><input type="checkbox" name="confirmedExternalDocument" required><span>Conferi o documento emitido externamente. Este registro não emite documento fiscal nem modifica registros da autoridade tributária.</span></label>
+      <button type="submit" class="btn primary">Vincular documento já emitido</button>
+    </form>
+    <div id="finance-fiscal-list"></div>
+  </div>
+  <div class="panel">
+    <span class="kicker">CONTROLE ADMINISTRATIVO · SOMENTE USBRIN</span>
+    <h2>Financeiro dos serviços recorrentes</h2>
+    <p class="muted">Hospedagem gerenciada e Suporte USBRIN. Contrato, cobrança prevista e recebimento conciliado são registros diferentes. Nenhuma cobrança é enviada automaticamente e nenhuma mensalidade é reconhecida como recebida sem confirmação bancária.</p>
+    <div id="billing-metrics" class="billing-metrics"></div>
+    <p class="muted">Relatório operacional — não substitui contabilidade, nota fiscal ou extrato bancário. Os totais de cobranças são históricos; não representam receita reconhecida pelo regime de competência.</p>
+  </div>
+  <div class="panel">
+    <h2>1. Registrar contrato de serviço</h2>
+    <p class="muted">Somente para uma venda do site integralmente recebida, com instrumento contratual do serviço já assinado e conferido pela USBRIN. Valor efetivamente contratado pode ser diferente do preço de referência.</p>
+    <form id="billing-agreement-form" class="billing-form">
+      <label>Venda do cliente (recebida) <select name="saleId" id="billing-sale" required><option value="">Selecione uma venda recebida</option></select></label>
+      <label>Serviço <select name="kind" required><option value="support">Suporte USBRIN</option><option value="hosting">Domínio USBRIN — hospedagem gerenciada</option></select></label>
+      <label>Periodicidade <select name="cadence" required><option value="monthly">Mensal</option><option value="annual">Anual</option></select></label>
+      <label>Valor contratual por período (R$) <input type="number" min="0.01" step="0.01" name="amount" required placeholder="Ex.: 250,00"></label>
+      <label>Início da vigência <input type="date" name="startOn" required></label>
+      <label>Referência do contrato assinado <input type="text" minlength="8" maxlength="120" name="contractReference" required placeholder="Código ou identificador interno de documento assinado"></label>
+      <label class="billing-wide">Escopo, limites, prazo de resposta e condições de cancelamento <textarea name="termsSummary" minlength="30" maxlength="1600" rows="4" required placeholder="Descreva cobertura, limites de alterações, prazo de atendimento, exclusões e regras de renovação/cancelamento."></textarea></label>
+      <label class="billing-wide billing-confirm"><input type="checkbox" name="confirmedSigned" required><span>Confirmei o documento assinado e suas condições. O cadastro não envia nenhuma cobrança ao cliente.</span></label>
+      <button type="submit" class="btn primary">Registrar contrato conferido</button>
+    </form>
+    <p id="billing-agreement-warning" class="muted">Se não houver vendas integralmente recebidas, não será possível registrar contratos aqui.</p>
+  </div>
+  <div class="panel">
+    <h2>2. Lançar vencimento de cobrança</h2>
+    <p class="muted">Gera uma previsão interna de recebimento para uma competência. Não emite boleto, Pix, fatura nem notifica o cliente. O valor vem do contrato, sem edição livre.</p>
+    <form id="billing-charge-form" class="billing-form">
+      <label>Contrato ativo <select id="billing-active-agreement" name="agreementId" required><option value="">Selecione um contrato ativo</option></select></label>
+      <label>Competência (AAAA-MM para mensal; AAAA para anual) <input id="billing-period" name="period" required maxlength="7" placeholder="2026-11"></label>
+      <label>Data de vencimento <input type="date" name="dueOn" required></label>
+      <label class="billing-wide billing-confirm"><input type="checkbox" name="confirmedManual" required><span>Conferi a competência e o vencimento contratual. Não gerar registro duplicado.</span></label>
+      <button type="submit" class="btn primary">Registrar cobrança prevista</button>
+    </form>
+  </div>
+  <div class="panel">
+    <h2>3. Conciliar pagamento recebido</h2>
+    <p class="muted">Só registre após conferir o recebimento no extrato da USBRIN. O histórico não permite editar ou excluir comprovantes lançados. Em caso de erro, é necessário procedimento financeiro formal de correção.</p>
+    <form id="billing-receipt-form" class="billing-form">
+      <label>Cobrança em aberto <select id="billing-open-charge" name="chargeId" required><option value="">Selecione uma cobrança pendente</option></select></label>
+      <label>Valor recebido (R$) <input name="amount" type="number" step="0.01" min="0.01" required></label>
+      <label>Identificador da transação bancária <input name="reference" minlength="3" maxlength="120" required placeholder="Referência verificável no extrato"></label>
+      <label class="billing-wide billing-confirm"><input type="checkbox" name="confirmedBank" required><span>Confirmei a entrada efetiva na conta da USBRIN e que este identificador não foi utilizado antes.</span></label>
+      <button type="submit" class="btn primary">Confirmar recebimento conciliado</button>
+    </form>
+  </div>
+  <div class="panel"><h2>Contratos de serviço</h2><p class="muted">Pausar ou cancelar exige justificativa. Contratos cancelados não podem ser reativados por esta tela.</p><div id="billing-agreements"></div></div>
+  <div class="panel"><h2>Cobranças previstas e recebidas</h2><div id="billing-charges"></div></div>
+  <div class="panel"><h2>Histórico de recebimentos conciliados</h2><div id="billing-receipts"></div></div>
+</section>
+<section id="view-bank" class="view hidden">
+  <div class="panel">
+    <span class="kicker">AUDITORIA DE ENTRADAS E SAÍDAS · SOMENTE ADMIN</span>
+    <h2>Conciliação bancária</h2>
+    <p>Compare o histórico de recibos da USBRIN com transações de um extrato importado. A correspondência exige <strong>identificador e valor exatamente iguais</strong>. Nenhuma importação cria um recebimento ou transfere dinheiro.</p>
+    <p class="notice" id="bank-source-warning"><strong>Atenção:</strong> arquivos CSV importados manualmente não têm autenticidade bancária comprovada. Confirme sempre o extrato dentro do banco antes de aprovar devoluções; a integração bancária somente de leitura continua pendente.</p>
+    <div id="bank-metrics" class="billing-metrics"></div>
+  </div>
+  <div class="panel">
+    <h2>1. Importar extrato CSV</h2>
+    <p class="muted">Formato controlado, codificação UTF-8, até 150 transações e 110 mil caracteres por arquivo. Colunas: <code>data;valor;descricao;identificador</code>. Use valor positivo para crédito e negativo para débito; o identificador bancário deve ser único por conta.</p>
+    <form id="bank-import-form" class="billing-form">
+      <label>Identificação interna da conta (sem número da conta)
+        <input type="text" name="accountAlias" pattern="[a-zA-Z0-9][a-zA-Z0-9_-]{3,59}" value="USBRIN-PRINCIPAL" required maxlength="60">
+      </label>
+      <label>Arquivo do extrato
+        <input id="bank-import-file" name="statement" type="file" accept=".csv,text/csv" required>
+      </label>
+      <label class="billing-wide billing-confirm"><input name="confirmedSource" type="checkbox" required><span>Conferi a origem deste arquivo no ambiente do banco. Sei que a importação não comprova autenticidade nem realiza conciliação automaticamente.</span></label>
+      <button type="submit" class="btn primary">Importar para conferência</button>
+    </form>
+    <p id="bank-import-feedback" class="muted" role="status" aria-live="polite"></p>
+  </div>
+  <div class="panel">
+    <h2>2. Confrontar transações e recibos</h2>
+    <p class="muted">Cada crédito do extrato pode confirmar no máximo um recibo já registrado na USBRIN. Crédito sem recibo e recibo sem crédito continuam pendentes de análise.</p>
+    <div id="bank-entries"></div>
+    <h3>Recibos sem correspondência</h3>
+    <div id="bank-unmatched-receipts"></div>
+  </div>
+  <div class="panel">
+    <h2>3. Solicitar devolução / estorno</h2>
+    <p class="muted">Este registro não envia Pix, transferência nem ordem ao banco. Indique a origem e o motivo. A aprovação exige que o recebimento original esteja associado ao extrato.</p>
+    <form id="bank-refund-form" class="billing-form">
+      <label class="billing-wide">Recibo original associado ao extrato
+        <select id="bank-refund-receipt" name="source" required><option value="">Selecione um recebimento conciliado</option></select>
+      </label>
+      <label>Valor da devolução (R$) <input name="amount" type="number" min="0.01" step="0.01" required></label>
+      <label class="billing-wide">Motivo documentado <textarea name="reason" minlength="15" maxlength="800" rows="3" required placeholder="Explique por que o valor deve ser devolvido ao cliente."></textarea></label>
+      <label class="billing-wide billing-confirm"><input type="checkbox" name="confirmedCase" required><span>Conferi o pedido e sei que nenhum dinheiro será movimentado por este sistema.</span></label>
+      <button type="submit" class="btn primary">Registrar pedido sem movimentar dinheiro</button>
+    </form>
+    <h3>Decisões e devoluções</h3>
+    <div id="bank-refunds"></div>
+  </div>
+  <div class="panel">
+    <h2>Histórico de extratos importados</h2>
+    <div id="bank-imports"></div>
+  </div>
+</section>
+<section id="view-commissions" class="view hidden"><div class="panel"><h2>Remuneração e pagamentos</h2><p class="muted">Valores estimados, aprovados e efetivamente pagos são apresentados separadamente.</p><div id="commission-list"></div></div></section>
+</main></div><script defer src="js/studio-pricing.js"></script><script defer src="js/rep-command.js"></script><script defer src="js/portal.js"></script></body></html>

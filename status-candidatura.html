@@ -1,0 +1,12 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><title>Acompanhar candidatura — USBRIN</title><link rel="icon" href="assets/favicon-small.png"><link href="css/parceiros.css" rel="stylesheet"></head><body>
+<header class="head"><div class="container"><a href="index.html" class="logo"><img src="assets/usbrin-logo-sem-fundo.svg" alt="USBRIN"></a><nav class="nav"><a href="parceiros.html">Oportunidades</a><a href="candidatura.html?area=representante">Candidatura</a></nav></div></header>
+<main class="formwrap"><span class="kicker">USBRIN / RECRUTAMENTO</span><h1>Acompanhe sua candidatura.</h1><p class="lead">Informe o protocolo entregue no momento da inscrição e o mesmo e-mail utilizado no cadastro. Esta consulta mostra apenas o andamento da seleção.</p>
+<div id="lookup-status" class="status" role="status">Verificando disponibilidade...</div>
+<form id="status-form" class="form hidden" novalidate><div class="fields">
+<div class="field full"><label for="protocol">Número do protocolo</label><input id="protocol" name="protocol" maxlength="20" placeholder="U..." autocomplete="off" required></div>
+<div class="field full"><label for="email">E-mail utilizado na candidatura</label><input id="email" type="email" name="email" autocomplete="email" required></div>
+<div class="field full"><div id="status-turnstile" aria-label="Verificação de segurança"></div></div>
+<div class="field full"><button type="submit" class="btn primary" id="status-button" disabled>Consultar situação</button></div>
+</div></form><div id="status-result" class="status hidden" role="alert" aria-live="polite"></div></main>
+<footer class="footer"><div class="container"><span>© 2026 USBRIN</span><a href="privacidade-parceiros.html">Privacidade</a></div></footer>
+<script src="js/status-candidatura.js" defer></script></body></html>

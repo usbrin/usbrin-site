@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const output = path.join(root, 'dist');
-const pages = ['index.html','studio.html','privacidade.html','demo-clinica.html','demo-construtora.html','demo-imobiliaria.html','demo-restaurante.html','sitemap.xml','_headers'];
+const pages = ['index.html','studio.html','privacidade.html','demo-clinica.html','demo-construtora.html','demo-imobiliaria.html','demo-restaurante.html','parceiros.html','candidatura.html','status-candidatura.html','portal.html','privacidade-parceiros.html','privacidade-studio.html','proposta.html','sitemap.xml','_headers'];
 const folders = ['assets','css','js'];
 fs.rmSync(output, {recursive:true,force:true});
 fs.mkdirSync(output,{recursive:true});
@@ -17,6 +17,27 @@ for(const folder of folders){
   const source=path.join(root,folder);
   if(!fs.existsSync(source)) throw new Error('Diretório obrigatório ausente: '+folder);
   fs.cpSync(source,path.join(output,folder),{recursive:true});
+}
+// Isolated recruitment surface for Cloudflare Access path-scoped public preview.
+// Only known public assets and explicitly public API functions live below /public/.
+// Never copy admin interfaces, JS/portal.js, protected functions or private user data.
+const recruitment=path.join(output,'public');
+for(const dir of ['assets','css','js'])fs.mkdirSync(path.join(recruitment,dir),{recursive:true});
+for(const filename of ['parceiros.html','candidatura.html','status-candidatura.html','privacidade-parceiros.html']){
+  const source=path.join(root,filename);
+  let page=fs.readFileSync(source,'utf8')
+    .replaceAll('href="index.html"','href="https://usbrin-site.pages.dev/"')
+    .replaceAll('href="studio.html"','href="https://usbrin-site.pages.dev/studio.html"')
+    .replaceAll('href="privacidade.html"','href="https://usbrin-site.pages.dev/privacidade.html"')
+    .replaceAll('href="portal.html"','href="/portal.html"');
+  fs.writeFileSync(path.join(recruitment,filename),page);
+}
+fs.copyFileSync(path.join(recruitment,'parceiros.html'),path.join(recruitment,'index.html'));
+for(const asset of [
+  'assets/favicon-small.png','assets/usbrin-logo-sem-fundo.svg',
+  'css/parceiros.css','js/candidatura.js','js/status-candidatura.js'
+]){
+  fs.copyFileSync(path.join(root,asset),path.join(recruitment,asset));
 }
 // PUBLIC_SITE_URL overrides the default for a later custom domain.
 function cloudflareProductionUrl(raw){

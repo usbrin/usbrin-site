@@ -5,3 +5,28 @@
 
 /privacidade.html
   X-Robots-Tag: noindex
+
+/portal.html
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store, private
+
+/candidatura.html
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store, private
+
+/privacidade-parceiros.html
+  X-Robots-Tag: noindex, follow
+
+/parceiros.html
+  X-Robots-Tag: noindex, follow
+
+/status-candidatura.html
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store, private
+
+/privacidade-studio.html
+  X-Robots-Tag: noindex, follow
+
+/proposta.html
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store, private
