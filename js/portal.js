@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
    const body=node('tbody');rows.forEach((r,i)=>{const row=node('tr');r.forEach(x=>row.append(node('td',x)));if(actions){const cell=node('td');actions(cell,i);row.append(cell)}body.append(row)});t.append(body);wrap.append(t);parent.append(wrap);
  };
  const setNavigation=role=>{
-   const allowed=role==='admin'?['overview','leads','guide','applications','studio','partners','projects','commissions']:role==='representante'?['overview','leads','guide','commissions']:['overview','projects','commissions'];
+   const allowed=role==='admin'?['overview','leads','guide','applications','studio','partners','projects','commissions','billing']:role==='representante'?['overview','leads','guide','commissions']:['overview','projects','commissions'];
    document.querySelectorAll('#portal-nav button').forEach(b=>b.classList.toggle('hidden',!allowed.includes(b.dataset.view)));
    el('lead-create').classList.toggle('hidden',role!=='representante');el('goal-panel').classList.add('hidden');el('action-center').classList.toggle('hidden',role!=='admin');
    el('project-create').classList.toggle('hidden',role!=='admin');
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
    view=name;document.querySelectorAll('.view').forEach(x=>x.classList.add('hidden'));el('view-'+name).classList.remove('hidden');
    el('developer-payments-admin').classList.toggle('hidden',!(name==='projects'&&user.role==='admin'));
    document.querySelectorAll('#portal-nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===name));
-   el('panel-title').textContent=({overview:'Visão geral',leads:'Oportunidades',guide:'Guia comercial',applications:'Candidaturas',studio:'Solicitações Studio',partners:'Parceiros',projects:'Projetos',commissions:'Comissões'})[name];
+   el('panel-title').textContent=({overview:'Visão geral',leads:'Oportunidades',guide:'Guia comercial',applications:'Candidaturas',studio:'Solicitações Studio',partners:'Parceiros',projects:'Projetos',commissions:'Comissões',billing:'Financeiro'})[name];
    try{await load(name);message('Dados atualizados a partir do servidor.');}catch(e){message(e.message,true);}
  };
  document.querySelectorAll('#portal-nav button').forEach(x=>x.addEventListener('click',()=>open(x.dataset.view)));
@@ -244,7 +244,122 @@ document.addEventListener('DOMContentLoaded',async()=>{
      }));
    });
  };
+
+ let billingAgreements=[],billingCharges=[];
+ const amountCents=(value)=>{
+   const raw=String(value??'').trim();
+   if(!/^\d{1,8}(?:[.,]\d{1,2})?$/.test(raw))return null;
+   const [whole,decimal='']=raw.replace(',','.').split('.');
+   const cents=Number(whole)*100+Number((decimal+'00').slice(0,2));
+   return Number.isSafeInteger(cents)&&cents>0&&cents<=100000000?cents:null;
+ };
+ const isoLocal=()=>{
+   const z=n=>String(n).padStart(2,'0'),d=new Date();
+   return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());
+ };
+ const billingStatus={active:'Ativo',paused:'Pausado',cancelled:'Cancelado',pending:'Pendente',partially_paid:'Recebido parcialmente',paid:'Recebido'};
+ const billingKind={support:'Suporte USBRIN',hosting:'Domínio USBRIN / hospedagem'};
+ const billingCycle={monthly:'Mensal',annual:'Anual'};
+ const loadBilling=async()=>{
+   const data=await request('admin/billing/overview');
+   billingAgreements=data.agreements;billingCharges=data.charges;
+   const m=el('billing-metrics');m.replaceChildren();
+   [
+     ['Contratos ativos',data.totals.agreementsActive],
+     ['Saldo previsto em aberto',currency(data.totals.openCents)],
+     ['Saldo vencido',currency(data.totals.overdueCents)],
+     ['Total efetivamente recebido',currency(data.totals.receivedCents)]
+   ].forEach(([label,value])=>{const item=node('div',null,'billing-stat');item.append(node('strong',value),node('span',label));m.append(item)});
+   const saleSelect=el('billing-sale');const oldSale=saleSelect.value;
+   saleSelect.replaceChildren(new Option('Selecione uma venda integralmente recebida',''));
+   data.eligibleSales.forEach(x=>saleSelect.add(new Option(x.company+' · '+currency(x.gross_cents)+' recebidos',x.id)));
+   if([...saleSelect.options].some(x=>x.value===oldSale))saleSelect.value=oldSale;
+   el('billing-agreement-warning').textContent=data.eligibleSales.length
+     ?'Somente contratos novos e documentos realmente assinados devem ser cadastrados.'
+     :'Não há vendas integralmente recebidas para vincular novos contratos. O acesso não registra nenhuma transação de teste.';
+   const agreementSelect=el('billing-active-agreement'),oldAgreement=agreementSelect.value;
+   agreementSelect.replaceChildren(new Option('Selecione um contrato ativo',''));
+   billingAgreements.filter(x=>x.status==='active').forEach(x=>
+     agreementSelect.add(new Option(x.company+' · '+billingKind[x.kind]+' · '+currency(x.amount_cents)+' / '+billingCycle[x.cadence],x.id))
+   );
+   if([...agreementSelect.options].some(x=>x.value===oldAgreement))agreementSelect.value=oldAgreement;
+   agreementSelect.dispatchEvent(new Event('change'));
+   const outstanding=billingCharges.filter(x=>x.status!=='paid'),chargeSelect=el('billing-open-charge'),prior=chargeSelect.value;
+   chargeSelect.replaceChildren(new Option('Selecione uma cobrança com saldo',''));
+   outstanding.forEach(x=>chargeSelect.add(new Option(x.company+' · '+billingKind[x.kind]+' · competência '+x.period+' · saldo '+currency(x.amount_cents-x.received_cents),x.id)));
+   if([...chargeSelect.options].some(x=>x.value===prior))chargeSelect.value=prior;
+   chargeSelect.dispatchEvent(new Event('change'));
+   table(el('billing-agreements'),['Cliente','Serviço','Valor por período','Vigência','Referência contratual','Status'],
+     billingAgreements.map(x=>[x.company,billingKind[x.kind]+' · '+billingCycle[x.cadence],currency(x.amount_cents),x.start_on,x.contract_reference,billingStatus[x.status]||x.status]),
+     (cell,i)=>{
+       const a=billingAgreements[i];if(a.status==='cancelled')return;
+       const opts=a.status==='active'?['paused','cancelled']:['active','cancelled'];
+       opts.forEach(next=>cell.append(btn(next==='paused'?'Pausar':next==='active'?'Reativar':'Cancelar',async()=>{
+         const reason=prompt('Justificativa para '+(billingStatus[next]||next)+' o serviço de '+a.company+':');
+         if(reason===null)return;
+         if(reason.trim().length<8)return message('Informe uma justificativa com pelo menos 8 caracteres.',true);
+         if(!confirm('Confirma a alteração '+billingStatus[a.status]+' → '+billingStatus[next]+'? O histórico de cobranças permanece intacto.'))return;
+         try{await request('admin/billing/agreement-status',{id:a.id,status:next,reason:reason.trim(),confirmedReview:true});await loadBilling();message('Status atualizado e auditado.');}
+         catch(e){message(e.message,true)}
+       })));
+     });
+   table(el('billing-charges'),['Cliente / serviço','Competência','Vencimento','Valor previsto','Recebido','Saldo','Situação'],
+     billingCharges.map(x=>[x.company+' · '+billingKind[x.kind],x.period,x.due_on,currency(x.amount_cents),currency(x.received_cents),currency(x.amount_cents-x.received_cents),x.status==='paid'?'Recebido':x.due_on<data.today?'Vencido · '+(billingStatus[x.status]||x.status):billingStatus[x.status]||x.status]));
+   table(el('billing-receipts'),['Identificador','Cobrança','Valor conciliado','Data de registro','Operador'],
+     data.receipts.map(x=>[x.reference,x.charge_id,currency(x.amount_cents),x.received_at,x.actor_name||'Admin USBRIN']));
+ };
+ el('billing-active-agreement').addEventListener('change',()=>{
+   const a=billingAgreements.find(x=>x.id===el('billing-active-agreement').value),period=el('billing-period');
+   period.placeholder=a?.cadence==='annual'?'AAAA (ex.: 2027)':'AAAA-MM (ex.: 2027-01)';
+   period.maxLength=a?.cadence==='annual'?4:7;
+   if(a){
+     const day=isoLocal();
+     if(!period.value||period.value.length!==period.maxLength)period.value=day.slice(0,period.maxLength);
+     if(!el('billing-charge-form').elements.dueOn.value)el('billing-charge-form').elements.dueOn.value=day;
+   }
+ });
+ el('billing-open-charge').addEventListener('change',()=>{
+   const item=billingCharges.find(x=>x.id===el('billing-open-charge').value);
+   const amount=el('billing-receipt-form').elements.amount;
+   amount.placeholder=item?'Saldo '+currency(item.amount_cents-item.received_cents):'Valor recebido (R$)';
+   amount.max=item?String((item.amount_cents-item.received_cents)/100):'';
+ });
+ el('billing-agreement-form').addEventListener('submit',async e=>{
+   e.preventDefault();
+   const form=e.target,data=new FormData(form),amount=amountCents(data.get('amount'));
+   if(!amount)return message('Informe um valor monetário válido com até duas casas decimais.',true);
+   if(!confirm('O contrato de serviço realmente foi assinado e a venda foi integralmente recebida? Nenhuma cobrança será enviada.'))return;
+   try{
+     await request('admin/billing/agreement',{
+       saleId:data.get('saleId'),kind:data.get('kind'),cadence:data.get('cadence'),amountCents:amount,
+       startOn:data.get('startOn'),contractReference:data.get('contractReference'),termsSummary:data.get('termsSummary'),
+       confirmedSigned:data.get('confirmedSigned')==='on'
+     });
+     form.reset();await loadBilling();message('Contrato registrado. Nenhuma cobrança ou receita foi criada.');
+   }catch(err){message(err.message,true)}
+ });
+ el('billing-charge-form').addEventListener('submit',async e=>{
+   e.preventDefault();
+   const form=e.target,data=new FormData(form);
+   if(!confirm('Confirma apenas o registro interno do vencimento? Nenhum boleto ou Pix será enviado.'))return;
+   try{
+     await request('admin/billing/charge',{agreementId:data.get('agreementId'),period:String(data.get('period')).trim(),dueOn:data.get('dueOn'),confirmedManual:data.get('confirmedManual')==='on'});
+     form.reset();await loadBilling();message('Cobrança prevista registrada; não foi contabilizada como recebida.');
+   }catch(err){message(err.message,true)}
+ });
+ el('billing-receipt-form').addEventListener('submit',async e=>{
+   e.preventDefault();
+   const form=e.target,data=new FormData(form),amount=amountCents(data.get('amount'));
+   if(!amount)return message('Informe um valor monetário válido.',true);
+   if(!confirm('CONFIRMAÇÃO FINANCEIRA: verificou efetivamente este crédito no extrato da USBRIN? O recibo não pode ser apagado.'))return;
+   try{
+     await request('admin/billing/receipt',{chargeId:data.get('chargeId'),amountCents:amount,reference:String(data.get('reference')).trim(),confirmedBank:data.get('confirmedBank')==='on'});
+     form.reset();await loadBilling();message('Recebimento conciliado e preservado no histórico.');
+   }catch(err){message(err.message,true)}
+ });
+
  const load=async(name)=>{
+   if(name==='billing'&&user.role==='admin')await loadBilling();
    if(name==='guide'&&(user.role==='admin'||user.role==='representante'))await loadBriefLeads();
    if(name==='overview'){
      const info=user.role==='admin'?await request('admin/overview'):user.role==='representante'?await request('representante/dashboard'):await request('desenvolvedor/dashboard');
