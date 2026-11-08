@@ -115,7 +115,52 @@ BEGIN
  ) THEN RAISE(ABORT,'refund approval requires bank-matched original receipt') END;
  SELECT CASE WHEN NEW.status='settled' AND NOT EXISTS(
   SELECT 1 FROM bank_entries b WHERE b.id=NEW.bank_entry_id AND b.amount_cents=-OLD.amount_cents
- ) THEN RAISE(ABORT,'settled refund needs matching imported bank debit') END;
+    AND b.account_alias=(
+       SELECT source.account_alias FROM bank_receipt_matches m
+       JOIN bank_entries source ON source.id=m.entry_id
+       WHERE m.receipt_kind=OLD.receipt_kind AND m.receipt_id=OLD.receipt_id
+    )
+ ) THEN RAISE(ABORT,'refund must match imported bank debit from the original receipt account') END;
+ SELECT CASE WHEN NEW.status IN ('approved','rejected') AND (NEW.approved_by IS NULL OR NEW.reviewed_at IS NULL)
+   THEN RAISE(ABORT,'refund review requires reviewer') END;
+ SELECT CASE WHEN NEW.status='settled' AND (NEW.settled_by IS NULL OR NEW.settled_at IS NULL)
+   THEN RAISE(ABORT,'refund settlement requires verified operator and date') END;
 END;
 CREATE TRIGGER IF NOT EXISTS trg_bank_refund_no_delete
 BEFORE DELETE ON bank_refunds BEGIN SELECT RAISE(ABORT,'refund history immutable'); END;
+
+CREATE TRIGGER IF NOT EXISTS trg_bank_refund_metadata_guard
+BEFORE UPDATE OF approved_by,reviewed_at,settled_by,bank_entry_id,settled_at ON bank_refunds
+WHEN NEW.status=OLD.status
+BEGIN SELECT RAISE(ABORT,'refund review metadata cannot change without status transition'); END;
+
+CREATE TRIGGER IF NOT EXISTS trg_bank_import_audit
+AFTER INSERT ON bank_imports
+BEGIN
+ INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at)
+ VALUES(lower(hex(randomblob(16))),NEW.imported_by,'bank.import','bank_import',NEW.id,
+ 'account='+NEW.account_alias+' rows='+NEW.row_count+' hash='+NEW.sha256,datetime('now'));
+END;
+CREATE TRIGGER IF NOT EXISTS trg_bank_match_audit
+AFTER INSERT ON bank_receipt_matches
+BEGIN
+ INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at)
+ VALUES(lower(hex(randomblob(16))),NEW.matched_by,'bank.match','bank_match',NEW.id,
+ NEW.receipt_kind+' receipt='+NEW.receipt_id+' bank_entry='+NEW.entry_id,datetime('now'));
+END;
+CREATE TRIGGER IF NOT EXISTS trg_bank_refund_request_audit
+AFTER INSERT ON bank_refunds
+BEGIN
+ INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at)
+ VALUES(lower(hex(randomblob(16))),NEW.requested_by,'bank.refund.request','bank_refund',NEW.id,
+ NEW.receipt_kind+' receipt='+NEW.receipt_id+' amount='+NEW.amount_cents+' reason='+NEW.reason,datetime('now'));
+END;
+CREATE TRIGGER IF NOT EXISTS trg_bank_refund_status_audit
+AFTER UPDATE OF status ON bank_refunds
+BEGIN
+ INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at)
+ VALUES(lower(hex(randomblob(16))),CASE WHEN NEW.status='settled' THEN NEW.settled_by ELSE NEW.approved_by END,
+ 'bank.refund.status','bank_refund',NEW.id,
+ OLD.status||' -> '||NEW.status||' amount='||NEW.amount_cents||
+  CASE WHEN NEW.bank_entry_id IS NOT NULL THEN ' bank_entry='||NEW.bank_entry_id ELSE '' END,datetime('now'));
+END;
