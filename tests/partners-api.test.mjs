@@ -13,7 +13,7 @@ import {readBody,checkOrigin} from "../functions/_lib/security.js";
 class TestD1{
  constructor(){
    this.sqlite=new DatabaseSync(":memory:");
-   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql","migrations/0004_studio_inquiries.sql","migrations/0005_studio_assignments.sql","migrations/0006_sale_project_links.sql","migrations/0007_atomic_receipts.sql","migrations/0008_crm_followups.sql"]){
+   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql","migrations/0004_studio_inquiries.sql","migrations/0005_studio_assignments.sql","migrations/0006_sale_project_links.sql","migrations/0007_atomic_receipts.sql","migrations/0008_crm_followups.sql","migrations/0009_proposal_drafts.sql"]){
      this.sqlite.exec(readFileSync(new URL("../"+migration,import.meta.url),"utf8"));
    }
  }
@@ -239,6 +239,47 @@ test("CRM follow-ups and activities are private, ordered and never turn into a s
  const recorded=db.sqlite.prepare("SELECT stage,lost_reason,next_action_at FROM opportunities WHERE id=?").get(id);
  assert.equal(recorded.stage,"lost");assert.equal(recorded.lost_reason,"Cliente decidiu adiar o projeto");assert.equal(recorded.next_action_at,null);
  assert.equal((await call(rep1,"crm/followup",{opportunityId:id,action:"Nova tarefa",date:"2026-12-20"})).status,409);
+});
+
+test("quote drafts require administrator approval and never create sales or disclose internal costs",async()=>{
+ const rep=users[1][1],other=users[2][1],dev=users[3][1],admin=users[0][1];
+ const lead=await call(rep,"representante/lead",{company:"Cliente teste propostas",contact:"Contato demonstração",estimatedCents:119000});
+ assert.equal(lead.status,201);
+ const id=lead.data.id,base={opportunityId:id,product:"business",scope:"Site institucional com cinco páginas, responsividade, contato e até duas rodadas de revisão.",priceCents:119000,durationDays:20,validUntil:"2027-02-20",terms:"Proposta sujeita a formalização e aceite."};
+ assert.equal((await call(rep,"crm/proposal-draft",{...base,priceCents:0})).status,400);
+ assert.equal((await call(other,"crm/proposal-draft",base)).status,404);
+ assert.equal((await call(dev,"crm/proposal-draft",base)).status,404);
+ const create=await call(rep,"crm/proposal-draft",base);
+ assert.equal(create.status,201);assert.match(create.data.code,/^Q[A-F0-9]{13}$/);
+ const proposalId=create.data.id;
+ assert.equal((await call(other,"crm/proposals?id="+id)).status,404);
+ assert.equal((await call(dev,"crm/proposals?id="+id)).status,404);
+ const before=await call(rep,"crm/proposals?id="+id);
+ assert.equal(before.status,200);assert.equal(before.data.proposals[0].status,"draft");
+ assert.equal(Object.hasOwn(before.data.proposals[0],"cost_dev_cents"),false);
+ const denied=await call(rep,"admin/proposal-review",{id:proposalId,decision:"approved",developerCents:20000,commissionCents:10000,taxCents:10000,otherCents:10000});
+ assert.equal(denied.status,404);
+ const over=await call(admin,"admin/proposal-review",{id:proposalId,decision:"approved",developerCents:110000,commissionCents:12000,taxCents:10000,otherCents:5000});
+ assert.equal(over.status,409);
+ const noCosts=await call(admin,"admin/proposal-review",{id:proposalId,decision:"approved",developerCents:35000});
+ assert.equal(noCosts.status,400);
+ const approve=await call(admin,"admin/proposal-review",{id:proposalId,decision:"approved",developerCents:35000,commissionCents:12000,taxCents:10000,otherCents:5000,note:"Custos revisados em homologação"});
+ assert.equal(approve.status,200);assert.equal(approve.data.marginCents,57000);
+ assert.equal((await call(admin,"admin/proposal-review",{id:proposalId,decision:"rejected",note:"Tentativa dupla"})).status,409);
+ const visible=(await call(rep,"crm/proposals?id="+id)).data.proposals[0];
+ assert.equal(visible.status,"approved");assert.equal(visible.customer_company,"Cliente teste propostas");
+ assert.equal(Object.hasOwn(visible,"cost_commission_cents"),false);
+ assert.equal((await call(admin,"admin/proposal-mark-sent",{id:proposalId})).status,400);
+ assert.equal((await call(rep,"admin/proposal-mark-sent",{id:proposalId,confirmedExternally:true})).status,404);
+ assert.equal((await call(admin,"admin/proposal-mark-sent",{id:proposalId,confirmedExternally:true})).status,200);
+ assert.equal((await call(admin,"admin/proposal-mark-sent",{id:proposalId,confirmedExternally:true})).status,409);
+ assert.equal(db.sqlite.prepare("SELECT COUNT(*) n FROM sales WHERE opportunity_id=?").get(id).n,0);
+ const declinedDraft=await call(rep,"crm/proposal-draft",{...base,priceCents:150000});
+ assert.equal(declinedDraft.status,201);
+ const decline=await call(admin,"admin/proposal-review",{id:declinedDraft.data.id,decision:"rejected",note:"Refazer escopo e custos"});
+ assert.equal(decline.status,200);
+ const rows=db.sqlite.prepare("SELECT status FROM proposals WHERE opportunity_id=?").all(id).map(x=>x.status).sort();
+ assert.deepEqual(rows,["rejected","sent"]);
 });
 
 test("JWT requires a valid Cloudflare signature, correct audience and active user",async()=>{
