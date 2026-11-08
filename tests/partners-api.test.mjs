@@ -451,7 +451,7 @@ test("admin-only recurring-service ledger reconciles real receipts, blocks dupli
 
 
 test("bank statement parser rejects ambiguous money, invalid dates, repeated transaction IDs and unsupported CSV",()=>{
- const csv="data;valor;descricao;identificador\\n07/11/2026;1.190,00;Pagamento site;PIX-TEST-PARSER-001\\n2026-11-08;-120,50;Reembolso parcial;DEBIT-PARSER-001";
+ const csv="data;valor;descricao;identificador\n07/11/2026;1.190,00;Pagamento site;PIX-TEST-PARSER-001\n2026-11-08;-120,50;Reembolso parcial;DEBIT-PARSER-001";
  const parsed=parseBankCSV(csv);assert.equal(parsed.length,2);
  assert.equal(parsed[0].amountCents,119000);assert.equal(parsed[0].postedOn,"2026-11-07");
  assert.equal(parsed[1].amountCents,-12050);assert.equal(parsed[1].postedOn,"2026-11-08");
@@ -461,8 +461,8 @@ test("bank statement parser rejects ambiguous money, invalid dates, repeated tra
  assert.equal(bankDate("29/02/2028"),"2028-02-29");
  assert.throws(()=>bankDate("29/02/2027"),/data inexistente/);
  for(const raw of ["1,234.56","1.234,5","0,00","-0,00","5.000.00","1e6"])assert.throws(()=>bankCents(raw));
- assert.throws(()=>parseBankCSV(csv+"\\n2026-11-09;1,00;Pagamento duplicado;PIX-TEST-PARSER-001"),/duplicado/);
- assert.throws(()=>parseBankCSV("date;amount;description;reference\\n2026-11-07;100,00;Teste referencia;PIX-TEST-ABCD"),/Cabeçalho obrigatório/);
+ assert.throws(()=>parseBankCSV(csv+"\n2026-11-09;1,00;Pagamento duplicado;PIX-TEST-PARSER-001"),/duplicado/);
+ assert.throws(()=>parseBankCSV("date;amount;description;reference\n2026-11-07;100,00;Teste referencia;PIX-TEST-ABCD"),/Cabeçalho obrigatório/);
 });
 
 test("bank evidence requires exact receipt reference, protects imported statements and safely reconciles refunds",async()=>{
@@ -475,10 +475,10 @@ test("bank evidence requires exact receipt reference, protects imported statemen
  assert.ok(receipt);
  for(const actor of [rep,developer]){
    assert.equal((await call(actor,"admin/bank/overview")).status,404);
-   assert.equal((await call(actor,"admin/bank/import",{accountAlias:"QA-PRINCIPAL",filename:"bank.csv",csv:"data;valor;descricao;identificador\\n2026-11-07;1190,00;Pagamento site;BANK-CSV-TEST-001",confirmedSource:true})).status,404);
+   assert.equal((await call(actor,"admin/bank/import",{accountAlias:"QA-PRINCIPAL",filename:"bank.csv",csv:"data;valor;descricao;identificador\n2026-11-07;1190,00;Pagamento site;BANK-CSV-TEST-001",confirmedSource:true})).status,404);
    assert.equal((await call(actor,"admin/bank/refund-request",{receiptKind:"sale",receiptId:receipt.id,amountCents:12000,reason:"Pagamento feito incorretamente pelo cliente",confirmedCase:true})).status,404);
  }
- const file="data;valor;descricao;identificador\\n2026-11-07;1190,00;Crédito de cliente;BANK-CSV-TEST-001\\n2026-11-08;-120,00;Devolução ao cliente;REFUND-CSV-TEST-001";
+ const file="data;valor;descricao;identificador\n2026-11-07;1190,00;Crédito de cliente;BANK-CSV-TEST-001\n2026-11-08;-120,00;Devolução ao cliente;REFUND-CSV-TEST-001";
  assert.equal((await call(admin,"admin/bank/import",{accountAlias:"QA-PRINCIPAL",filename:"novembro.csv",csv:file,confirmedSource:false})).status,400);
  const loaded=await call(admin,"admin/bank/import",{accountAlias:"QA-PRINCIPAL",filename:"novembro.csv",csv:file,confirmedSource:true});
  assert.equal(loaded.status,201);assert.equal(loaded.data.rows,2);
@@ -497,7 +497,7 @@ test("bank evidence requires exact receipt reference, protects imported statemen
  assert.equal((await call(admin,"admin/bank/match",{entryId:bankIn.id,receiptKind:"sale",receiptId:receipt.id,confirmedComparison:true})).status,409);
  assert.equal((await call(admin,"admin/bank/refund-review",{id:refundId,decision:"approved",confirmedReview:true})).status,200);
  assert.equal((await call(admin,"admin/bank/refund-settle",{id:refundId,bankEntryId:bankIn.id,confirmedBankDebit:true})).status,409);
- const otherCSV="data;valor;descricao;identificador\\n2026-11-08;-120,00;Devolução outra conta;REFUND-OTHER-ACCOUNT-001";
+ const otherCSV="data;valor;descricao;identificador\n2026-11-08;-120,00;Devolução outra conta;REFUND-OTHER-ACCOUNT-001";
  assert.equal((await call(admin,"admin/bank/import",{accountAlias:"QA-SECUNDARIA",filename:"other.csv",csv:otherCSV,confirmedSource:true})).status,201);
  const otherEntry=db.sqlite.prepare("SELECT id FROM bank_entries WHERE external_id='REFUND-OTHER-ACCOUNT-001'").get();
  assert.equal((await call(admin,"admin/bank/refund-settle",{id:refundId,bankEntryId:otherEntry.id,confirmedBankDebit:true})).status,409);
