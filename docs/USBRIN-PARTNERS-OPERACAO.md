@@ -169,3 +169,14 @@ O site oficial `usbrin-site.pages.dev` permanece com a versão anterior, sem pub
 3. Suspender cada conta e verificar que solicitações ao backend passam a retornar 403; remover identidades da política Access quando houver encerramento permanente.
 4. Verificar manualmente os avisos de privacidade, a base legal e o período de retenção antes da abertura pública de candidaturas reais.
 5. Manter o PR como rascunho e a produção intacta até liberação expressa.
+
+## Homologação de login por e-mail OTP — 07/11/2026
+
+- Identidades de teste: `usbrin.redes+teste-representante@gmail.com` (representante), `usbrin.redes+teste-desenvolvedor@gmail.com` (desenvolvedor). São aliases da caixa administrada pela USBRIN, **exclusivamente para testes**; não representam profissionais contratados.
+- Contas criadas **somente no D1 Preview** com `status='active'`, `contract_reference=NULL` e `contract_verified_at=NULL`. O indicador de contrato do painel aparecerá como **Não**; é intencional. Esse tipo de conta não pode ser reativado pela interface sem verificação de contrato. **Nunca migrar esses registros para produção.**
+- Política Access adicional `USBRIN Homologacao - Perfis Teste`, `allow`, precedência 2, inclui **somente** os dois aliases de teste e mantém a política administrativa existente; login por One-time PIN, sem adicionar provedores externos.
+- Processo manual: abrir `/portal.html` em sessão isolada; inserir alias de representante; inserir o código recebido na caixa de e-mail principal; verificar que identidade/menus mostram representante. Repetir com alias de desenvolvedor em outro perfil ou janela privativa, sem cookies compartilhados; verificar dashboard individual e recusa de endpoints administrativos.
+- Confirmar separação de clientes: criar oportunidade fictícia pela conta representante, confirmar que desenvolvedor não consegue vê-la; criar projeto fictício pelo admin atribuído ao desenvolvedor, confirmar que representante não consegue visualizar projeto privado. **Não usar dados reais nem registrar pagamentos fictícios sem marcação explícita.**
+- Testar suspensão no Admin e conferir erro HTTP 403 com JWT ainda válido. Lembrar: a suspensão no D1 não elimina a identidade da lista Access; retirar alias do Access quando não for mais necessário.
+- Descarte obrigatório após homologação: excluir a política adicional Access e os dois registros fictícios no D1 Preview **somente depois** de excluir registros de teste que os referenciem, preservando integridade e logs. Não remover conta administrativa nem política Access principal. Alternativamente, manter suspensos temporariamente e nunca habilitar candidaturas/vendas reais na homologação.
+- A autenticação **real de ponta a ponta** ainda depende do operador concluir os logins One-time PIN e registrar evidência; confirmação da API de configuração e dos registros D1 não equivale a login validado no navegador.
