@@ -9,6 +9,7 @@ import {onRequestGet as publicConfig} from "../functions/api/public-config.js";
 import {onRequestPost as statusLookup} from "../functions/api/application-status.js";
 import {authenticatedUser} from "../functions/_lib/auth.js";
 import {readBody,checkOrigin} from "../functions/_lib/security.js";
+import {parseBankCSV,bankCents,bankDate} from "../functions/_lib/bank-csv.js";
 
 class TestD1{
  constructor(){
@@ -446,6 +447,72 @@ test("admin-only recurring-service ledger reconciles real receipts, blocks dupli
  const yearly=await call(admin,"admin/billing/charge",{agreementId:hosting.data.id,period:"2027",dueOn:"2027-01-15",confirmedManual:true});
  assert.equal(yearly.status,201);assert.equal(yearly.data.amountCents,12000);
  assert.equal(db.sqlite.prepare("SELECT COUNT(*) n FROM sales WHERE opportunity_id=?").get(lead.data.id).n,1,"recurring charges cannot create new website sales");
+});
+
+
+test("bank statement parser rejects ambiguous money, invalid dates, repeated transaction IDs and unsupported CSV",()=>{
+ const csv="data;valor;descricao;identificador\\n07/11/2026;1.190,00;Pagamento site;PIX-TEST-PARSER-001\\n2026-11-08;-120,50;Reembolso parcial;DEBIT-PARSER-001";
+ const parsed=parseBankCSV(csv);assert.equal(parsed.length,2);
+ assert.equal(parsed[0].amountCents,119000);assert.equal(parsed[0].postedOn,"2026-11-07");
+ assert.equal(parsed[1].amountCents,-12050);assert.equal(parsed[1].postedOn,"2026-11-08");
+ assert.equal(bankCents("1.190,00"),119000);
+ assert.equal(bankCents("1190.00"),119000);
+ assert.equal(bankCents("-150,00"),-15000);
+ assert.equal(bankDate("29/02/2028"),"2028-02-29");
+ assert.throws(()=>bankDate("29/02/2027"),/data inexistente/);
+ for(const raw of ["1,234.56","1.234,5","0,00","-0,00","5.000.00","1e6"])assert.throws(()=>bankCents(raw));
+ assert.throws(()=>parseBankCSV(csv+"\\n2026-11-09;1,00;Pagamento duplicado;PIX-TEST-PARSER-001"),/duplicado/);
+ assert.throws(()=>parseBankCSV("date;amount;description;reference\\n2026-11-07;100,00;Teste referencia;PIX-TEST-ABCD"),/Cabeçalho obrigatório/);
+});
+
+test("bank evidence requires exact receipt reference, protects imported statements and safely reconciles refunds",async()=>{
+ const admin=users[0][1],rep=users[1][1],developer=users[3][1];
+ const lead=await call(rep,"representante/lead",{company:"TESTE CONCILIAÇÃO EXTRATO",contact:"Cliente de QA",estimatedCents:119000});
+ assert.equal(lead.status,201);
+ const sale=await call(admin,"admin/sale",{opportunityId:lead.data.id,grossCents:119000,receivedCents:119000,reference:"BANK-CSV-TEST-001"});
+ assert.equal(sale.status,200);
+ const receipt=db.sqlite.prepare("SELECT id,amount_cents FROM sale_receipts WHERE reference='BANK-CSV-TEST-001'").get();
+ assert.ok(receipt);
+ for(const actor of [rep,developer]){
+   assert.equal((await call(actor,"admin/bank/overview")).status,404);
+   assert.equal((await call(actor,"admin/bank/import",{accountAlias:"QA-PRINCIPAL",filename:"bank.csv",csv:"data;valor;descricao;identificador\\n2026-11-07;1190,00;Pagamento site;BANK-CSV-TEST-001",confirmedSource:true})).status,404);
+   assert.equal((await call(actor,"admin/bank/refund-request",{receiptKind:"sale",receiptId:receipt.id,amountCents:12000,reason:"Pagamento feito incorretamente pelo cliente",confirmedCase:true})).status,404);
+ }
+ const file="data;valor;descricao;identificador\\n2026-11-07;1190,00;Crédito de cliente;BANK-CSV-TEST-001\\n2026-11-08;-120,00;Devolução ao cliente;REFUND-CSV-TEST-001";
+ assert.equal((await call(admin,"admin/bank/import",{accountAlias:"QA-PRINCIPAL",filename:"novembro.csv",csv:file,confirmedSource:false})).status,400);
+ const loaded=await call(admin,"admin/bank/import",{accountAlias:"QA-PRINCIPAL",filename:"novembro.csv",csv:file,confirmedSource:true});
+ assert.equal(loaded.status,201);assert.equal(loaded.data.rows,2);
+ assert.equal((await call(admin,"admin/bank/import",{accountAlias:"QA-PRINCIPAL",filename:"novembro.csv",csv:file,confirmedSource:true})).status,409);
+ const bankIn=db.sqlite.prepare("SELECT id FROM bank_entries WHERE external_id='BANK-CSV-TEST-001'").get();
+ const bankOut=db.sqlite.prepare("SELECT id FROM bank_entries WHERE external_id='REFUND-CSV-TEST-001'").get();
+ assert.ok(bankIn&&bankOut);
+ const wrong=await call(admin,"admin/bank/match",{entryId:bankOut.id,receiptKind:"sale",receiptId:receipt.id,confirmedComparison:true});
+ assert.equal(wrong.status,409);
+ const refundReq=await call(admin,"admin/bank/refund-request",{receiptKind:"sale",receiptId:receipt.id,amountCents:12000,reason:"Pedido de estorno de item cobrado incorretamente",confirmedCase:true});
+ assert.equal(refundReq.status,201);const refundId=refundReq.data.id;
+ assert.equal((await call(admin,"admin/bank/refund-request",{receiptKind:"sale",receiptId:receipt.id,amountCents:119000,reason:"Tentativa de exceder o saldo original do recibo",confirmedCase:true})).status,409);
+ assert.equal((await call(admin,"admin/bank/refund-review",{id:refundId,decision:"approved",confirmedReview:true})).status,409);
+ const valid=await call(admin,"admin/bank/match",{entryId:bankIn.id,receiptKind:"sale",receiptId:receipt.id,confirmedComparison:true});
+ assert.equal(valid.status,200);
+ assert.equal((await call(admin,"admin/bank/match",{entryId:bankIn.id,receiptKind:"sale",receiptId:receipt.id,confirmedComparison:true})).status,409);
+ assert.equal((await call(admin,"admin/bank/refund-review",{id:refundId,decision:"approved",confirmedReview:true})).status,200);
+ assert.equal((await call(admin,"admin/bank/refund-settle",{id:refundId,bankEntryId:bankIn.id,confirmedBankDebit:true})).status,409);
+ const otherCSV="data;valor;descricao;identificador\\n2026-11-08;-120,00;Devolução outra conta;REFUND-OTHER-ACCOUNT-001";
+ assert.equal((await call(admin,"admin/bank/import",{accountAlias:"QA-SECUNDARIA",filename:"other.csv",csv:otherCSV,confirmedSource:true})).status,201);
+ const otherEntry=db.sqlite.prepare("SELECT id FROM bank_entries WHERE external_id='REFUND-OTHER-ACCOUNT-001'").get();
+ assert.equal((await call(admin,"admin/bank/refund-settle",{id:refundId,bankEntryId:otherEntry.id,confirmedBankDebit:true})).status,409);
+ const settled=await call(admin,"admin/bank/refund-settle",{id:refundId,bankEntryId:bankOut.id,confirmedBankDebit:true});
+ assert.equal(settled.status,200);assert.equal(settled.data.status,"settled");
+ assert.equal((await call(admin,"admin/bank/refund-settle",{id:refundId,bankEntryId:bankOut.id,confirmedBankDebit:true})).status,409);
+ const overview=await call(admin,"admin/bank/overview");
+ assert.equal(overview.status,200);
+ assert.ok(overview.data.totals.matched_credits>=1);
+ assert.ok(overview.data.totals.settled_refund_cents>=12000);
+ assert.equal(db.sqlite.prepare("SELECT amount_cents FROM sale_receipts WHERE id=?").get(receipt.id).amount_cents,119000,"original receipt stays untouched");
+ assert.ok(db.sqlite.prepare("SELECT COUNT(*) n FROM audit_events WHERE entity='bank_refund' AND entity_id=?").get(refundId).n>=3);
+ assert.throws(()=>db.sqlite.prepare("DELETE FROM bank_entries WHERE id=?").run(bankOut.id),/immutable/);
+ assert.throws(()=>db.sqlite.prepare("UPDATE bank_receipt_matches SET receipt_id='other' WHERE receipt_id=?").run(receipt.id),/immutable/);
+ assert.throws(()=>db.sqlite.prepare("DELETE FROM bank_refunds WHERE id=?").run(refundId),/immutable/);
 });
 
 test("JWT requires a valid Cloudflare signature, correct audience and active user",async()=>{
