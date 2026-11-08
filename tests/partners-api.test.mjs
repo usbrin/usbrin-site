@@ -13,7 +13,7 @@ import {readBody,checkOrigin} from "../functions/_lib/security.js";
 class TestD1{
  constructor(){
    this.sqlite=new DatabaseSync(":memory:");
-   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql","migrations/0004_studio_inquiries.sql","migrations/0005_studio_assignments.sql","migrations/0006_sale_project_links.sql","migrations/0007_atomic_receipts.sql","migrations/0008_crm_followups.sql","migrations/0009_proposal_drafts.sql","migrations/0010_project_proposal_handoff.sql"]){
+   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql","migrations/0004_studio_inquiries.sql","migrations/0005_studio_assignments.sql","migrations/0006_sale_project_links.sql","migrations/0007_atomic_receipts.sql","migrations/0008_crm_followups.sql","migrations/0009_proposal_drafts.sql","migrations/0010_project_proposal_handoff.sql","migrations/0011_optional_services.sql"]){
      this.sqlite.exec(readFileSync(new URL("../"+migration,import.meta.url),"utf8"));
    }
  }
@@ -334,6 +334,43 @@ test("special unpriced feature requests cannot be approved as standard-priced pr
  assert.equal(approval.status,409);
  const check=await call(admin,"crm/proposals?id="+lead.data.id);
  assert.equal(check.data.proposals[0].status,"draft");
+});
+
+test("optional hosting and R$250 support remain outside setup revenue; only USBRIN admin handles payments",async()=>{
+ const rep=users[1][1],other=users[2][1],dev=users[3][1],admin=users[0][1];
+ const lead=await call(rep,"representante/lead",{company:"CLIENTE TESTE POS VENDA",contact:"Comprador Exemplo",estimatedCents:119000});
+ assert.equal(lead.status,201);
+ const payload={opportunityId:lead.data.id,product:"business",scope:"Site institucional com cinco páginas, formulário e materiais aprovados. Hospedagem e suporte à parte.",priceCents:119000,durationDays:15,validUntil:"2027-03-30",hostingRequested:true,supportRequested:true};
+ assert.equal((await call(rep,"crm/proposal-draft",{...payload,hostingRequested:"true"})).status,400);
+ const draft=await call(rep,"crm/proposal-draft",{...payload,supportMonthlyCents:999999});
+ assert.equal(draft.status,201);
+ const p=db.sqlite.prepare("SELECT price_cents,hosting_requested,support_requested,support_reference_monthly_cents,status FROM proposals WHERE id=?").get(draft.data.id);
+ assert.equal(p.price_cents,119000);
+ assert.equal(p.hosting_requested,1);assert.equal(p.support_requested,1);
+ assert.equal(p.support_reference_monthly_cents,25000);
+ assert.equal(p.status,"draft");
+ const visible=await call(rep,"crm/proposals?id="+lead.data.id);
+ assert.equal(visible.status,200);
+ assert.equal(visible.data.proposals[0].support_reference_monthly_cents,25000);
+ assert.equal(Object.hasOwn(visible.data.proposals[0],"cost_dev_cents"),false);
+ assert.equal((await call(other,"crm/proposals?id="+lead.data.id)).status,404);
+ assert.equal((await call(dev,"crm/proposals?id="+lead.data.id)).status,404);
+ // Front-end field hiding is not sufficient: server authorization denies all payment routes.
+ for(const endpoint of ["admin/sale","admin/sale-receipt","admin/commission-status","admin/developer-payment-status"]){
+   assert.equal((await call(rep,endpoint,{})).status,404,"representative cannot act on "+endpoint);
+   assert.equal((await call(dev,endpoint,{})).status,404,"developer cannot act on "+endpoint);
+ }
+ const finance=await call(admin,"admin/finance");
+ assert.equal(finance.status,200);
+ assert.equal(db.sqlite.prepare("SELECT COUNT(*) total FROM sales WHERE opportunity_id=?").get(lead.data.id).total,0);
+ const approved=await call(admin,"admin/proposal-review",{id:draft.data.id,decision:"approved",developerCents:35000,commissionCents:12000,taxCents:10000,otherCents:3000});
+ assert.equal(approved.status,200);
+ assert.equal(db.sqlite.prepare("SELECT COUNT(*) total FROM sales WHERE opportunity_id=?").get(lead.data.id).total,0);
+ assert.equal(db.sqlite.prepare("SELECT support_reference_monthly_cents FROM proposals WHERE id=?").get(draft.data.id).support_reference_monthly_cents,25000);
+ const plain=await call(rep,"crm/proposal-draft",{...payload,hostingRequested:false,supportRequested:false});
+ assert.equal(plain.status,201);
+ const standard=db.sqlite.prepare("SELECT hosting_requested,support_requested,support_reference_monthly_cents FROM proposals WHERE id=?").get(plain.data.id);
+ assert.deepEqual([standard.hosting_requested,standard.support_requested,standard.support_reference_monthly_cents],[0,0,0]);
 });
 
 test("JWT requires a valid Cloudflare signature, correct audience and active user",async()=>{
