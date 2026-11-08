@@ -6,6 +6,9 @@ on:
     paths:
       - tests/responsive-ui.smoke.mjs
       - .github/workflows/preview-responsive-ui.yml
+      - css/parceiros.css
+      - portal.html
+      - js/portal.js
   workflow_dispatch:
 permissions:
   contents: read
