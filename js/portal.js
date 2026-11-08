@@ -42,6 +42,50 @@ document.addEventListener('DOMContentLoaded',async()=>{
  guideChecks.forEach(x=>x.addEventListener('change',guideProgress));
  el('lead-open-guide').addEventListener('click',()=>open('guide'));
  el('guide-goto-leads').addEventListener('click',()=>open('leads'));
+ const studioPricing=window.USBRIN_PRICING;
+ const guideProduct=el('guide-estimate-product'),guidePages=el('guide-estimate-pages'),guideTotal=el('guide-estimate-total');
+ const guideDescription=el('guide-estimate-description');
+ const guideFeatureChecks=[...document.querySelectorAll('#guide-estimate-features input[type="checkbox"]')];
+ const formatGuidePrice=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0}).format(n);
+ if(studioPricing&&studioPricing.PRODUCTS&&studioPricing.FEATURES){
+   document.querySelectorAll('[data-guide-feature]').forEach(element=>{
+     const item=studioPricing.FEATURES[element.dataset.guideFeature];
+     element.textContent=item?(item.price?'+ '+formatGuidePrice(item.price):'Incluso'):'Consultar USBRIN';
+   });
+   el('guide-extra-page-price').textContent='+ '+formatGuidePrice(studioPricing.PAGE_PRICE)+' por página';
+   document.querySelectorAll('.sales-plan').forEach((card,index)=>{
+     const key=['landing','business','catalogo'][index],item=studioPricing.PRODUCTS[key];
+     if(item){const label=card.querySelector('.sales-price');if(label)label.textContent='A partir de '+formatGuidePrice(item.base);}
+   });
+   const updateEstimate=()=>{
+     const item=studioPricing.PRODUCTS[guideProduct.value];
+     if(!item)return;
+     guidePages.min=String(item.pages);guidePages.max=String(item.maxPages);
+     guidePages.disabled=item.maxPages===item.pages;
+     let pages=Number(guidePages.value);
+     if(!Number.isSafeInteger(pages)||pages<item.pages||pages>item.maxPages){
+       pages=item.pages;guidePages.value=String(pages);
+     }
+     const features=['whatsapp',...guideFeatureChecks.filter(input=>input.checked).map(input=>input.value)];
+     const quote=studioPricing.calculate({product:guideProduct.value,pages,features});
+     guideTotal.textContent=formatGuidePrice(quote.estimate);
+     const extras=quote.lineItems.filter(line=>line.amount>0&&line.label!==item.label).map(line=>line.label+' ('+formatGuidePrice(line.amount)+')');
+     guideDescription.textContent=extras.length
+       ?'Plano '+item.label+': '+formatGuidePrice(item.base)+' + '+extras.join(' + ')+'. Estimativa sujeita à análise.'
+       :'Plano '+item.label+': '+formatGuidePrice(item.base)+'. Sem adicionais pagos selecionados.';
+   };
+   guideProduct.addEventListener('change',()=>{
+     guidePages.value=String(studioPricing.PRODUCTS[guideProduct.value].pages);updateEstimate();
+   });
+   guidePages.addEventListener('input',updateEstimate);
+   guideFeatureChecks.forEach(input=>input.addEventListener('change',updateEstimate));
+   updateEstimate();
+ }else{
+   guideTotal.textContent='Valores indisponíveis';
+   guideDescription.textContent='A tabela de preços não foi carregada. Consulte o USBRIN Studio antes de apresentar valores.';
+   guideProduct.disabled=true;guidePages.disabled=true;guideFeatureChecks.forEach(input=>input.disabled=true);
+ }
+
  for(const id of ['lead-search','lead-filter-stage','lead-filter-due'])el(id).addEventListener(id==='lead-search'?'input':'change',()=>{if(user&&view==='leads')load('leads').catch(e=>message(e.message,true))});
  for(const id of ['studio-status-filter','studio-search','app-type-filter','app-status-filter','app-search']){
    el(id).addEventListener(id==='studio-search'||id==='app-search'?'input':'change',()=>{
