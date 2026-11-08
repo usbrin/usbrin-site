@@ -42,6 +42,9 @@ document.addEventListener('DOMContentLoaded',async()=>{
  guideChecks.forEach(x=>x.addEventListener('change',guideProgress));
  el('lead-open-guide').addEventListener('click',()=>open('guide'));
  el('guide-goto-leads').addEventListener('click',()=>open('leads'));
+ let currentGuideQuote=null;
+ const guideBriefIds=new Set();
+ const guideBriefLead=el('guide-brief-lead'),guideBriefForm=el('guide-brief-form'),guideBriefFeedback=el('guide-brief-feedback');
  const studioPricing=window.USBRIN_PRICING;
  const guideProduct=el('guide-estimate-product'),guidePages=el('guide-estimate-pages'),guideTotal=el('guide-estimate-total');
  const guideDescription=el('guide-estimate-description');
@@ -68,6 +71,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
      }
      const features=['whatsapp',...guideFeatureChecks.filter(input=>input.checked).map(input=>input.value)];
      const quote=studioPricing.calculate({product:guideProduct.value,pages,features});
+     currentGuideQuote=quote;
+     el('guide-brief-total').textContent=formatGuidePrice(quote.estimate);
      guideTotal.textContent=formatGuidePrice(quote.estimate);
      const extras=quote.lineItems.filter(line=>line.amount>0&&line.label!==item.label).map(line=>line.label+' ('+formatGuidePrice(line.amount)+')');
      guideDescription.textContent=extras.length
@@ -85,6 +90,76 @@ document.addEventListener('DOMContentLoaded',async()=>{
    guideDescription.textContent='A tabela de preços não foi carregada. Consulte o USBRIN Studio antes de apresentar valores.';
    guideProduct.disabled=true;guidePages.disabled=true;guideFeatureChecks.forEach(input=>input.disabled=true);
  }
+
+ const calendarDay=(addDays=0)=>{
+   const date=new Date();date.setDate(date.getDate()+addDays);
+   const z=n=>String(n).padStart(2,'0');
+   return date.getFullYear()+'-'+z(date.getMonth()+1)+'-'+z(date.getDate());
+ };
+ el('guide-brief-validity').value=calendarDay(7);
+ const loadBriefLeads=async()=>{
+   const data=user.role==='admin'?await request('admin/opportunities'):await request('representante/dashboard');
+   const rows=(user.role==='admin'?data.opportunities:data.leads).filter(lead=>!['lost','paid','cancelled'].includes(lead.stage));
+   guideBriefIds.clear();
+   guideBriefLead.replaceChildren(new Option('Selecione uma oportunidade cadastrada',''));
+   rows.forEach(lead=>{
+     guideBriefIds.add(lead.id);
+     guideBriefLead.add(new Option(lead.company+' · '+lead.contact+' · '+lead.stage,lead.id));
+   });
+   const empty=!rows.length;
+   el('guide-brief-empty').hidden=!empty;
+   el('guide-brief-submit').disabled=empty||!studioPricing;
+ };
+ guideBriefForm.addEventListener('submit',async event=>{
+   event.preventDefault();
+   if(!currentGuideQuote||!studioPricing)return message('A tabela de preços está indisponível.',true);
+   if(!guideBriefIds.has(guideBriefLead.value))return message('Escolha uma oportunidade sua antes de gerar o rascunho.',true);
+   const objective=el('guide-brief-objective').value.trim(),
+     sections=el('guide-brief-sections').value.trim(),
+     visual=el('guide-brief-visual').value.trim(),
+     materials=el('guide-brief-materials').value.trim(),
+     notes=el('guide-brief-notes').value.trim(),
+     special=el('guide-brief-special').checked,
+     duration=Number(el('guide-brief-duration').value),
+     validity=el('guide-brief-validity').value;
+   if(objective.length<15||sections.length<15||!Number.isSafeInteger(duration)||duration<1||duration>180||validity<calendarDay())
+     return message('Preencha objetivo, conteúdo, prazo e validade corretamente.',true);
+   const item=studioPricing.PRODUCTS[currentGuideQuote.product];
+   const extras=currentGuideQuote.lineItems.filter(x=>x.label!==item.label);
+   const scope=[
+     'BRIEFING COMERCIAL USBRIN — CONFERIR ANTES DA PRODUÇÃO',
+     'Plano: '+item.label,
+     'Páginas: '+currentGuideQuote.pages+(currentGuideQuote.product==='landing'?' (até 6 seções)':''),
+     'Adicionais solicitados: '+(extras.length?extras.map(x=>x.label).join('; '):'nenhum adicional pago'),
+     'Contato por WhatsApp: incluso',
+     'Objetivo e público: '+objective,
+     'Páginas/seções e conteúdo: '+sections,
+     'Visual e referências: '+(visual||'A definir com o cliente'),
+     'Materiais entregues/pedidos: '+(materials||'A confirmar com o cliente'),
+     'Outros requisitos: '+(notes||'Nenhum indicado'),
+     'Recurso fora do configurador: '+(special?'SIM — REVISÃO E PRECIFICAÇÃO MANUAL OBRIGATÓRIAS':'Não'),
+     'Briefing sujeito a validação do escopo, prazo e condições pela administração.'
+   ].join('\n');
+   const terms=special
+     ?'Pré-orçamento parcial: adicionais especiais não estão incluídos no valor estimado. Exige novo preço autorizado e uma proposta substituta antes de envio ao cliente.'
+     :'Valor estimado sujeito à aprovação administrativa. O envio, aceite, contratação e início do desenvolvimento dependem de formalização.';
+   const priceCents=Math.round(currentGuideQuote.estimate*100);
+   if(scope.length>4000||!Number.isSafeInteger(priceCents)||priceCents<=0)return message('Revise o briefing ou os valores; o conteúdo ultrapassa o limite.',true);
+   const button=el('guide-brief-submit');
+   button.disabled=true;guideBriefFeedback.textContent='Registrando rascunho interno...';
+   try{
+     const outcome=await request('crm/proposal-draft',{
+       opportunityId:guideBriefLead.value,
+       product:special?'personalizado':currentGuideQuote.product,
+       scope,priceCents,durationDays:duration,validUntil:validity,terms
+     });
+     guideBriefFeedback.textContent='Rascunho '+outcome.code+' salvo. Abra Oportunidades → Acompanhar para consultar a proposta. A aprovação cabe à administração.';
+     message('Pré-orçamento registrado, sem gerar venda nem enviar proposta ao cliente.');
+   }catch(err){
+     guideBriefFeedback.textContent='Não foi possível salvar: '+err.message;
+     message(err.message,true);
+   }finally{button.disabled=false}
+ });
 
  for(const id of ['lead-search','lead-filter-stage','lead-filter-due'])el(id).addEventListener(id==='lead-search'?'input':'change',()=>{if(user&&view==='leads')load('leads').catch(e=>message(e.message,true))});
  for(const id of ['studio-status-filter','studio-search','app-type-filter','app-status-filter','app-search']){
@@ -150,6 +225,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
    });
  };
  const load=async(name)=>{
+   if(name==='guide'&&(user.role==='admin'||user.role==='representante'))await loadBriefLeads();
    if(name==='overview'){
      const info=user.role==='admin'?await request('admin/overview'):user.role==='representante'?await request('representante/dashboard'):await request('desenvolvedor/dashboard');
      if(user.role==='admin'){const people=await request('admin/users');const reps=people.users.filter(x=>x.role==='representante'&&x.status==='active');const target=el('goal-partner');target.replaceChildren(new Option('Selecione um representante',''));reps.forEach(x=>target.add(new Option(x.name+' — '+x.email,x.id)));el('goal-panel').classList.toggle('hidden',reps.length===0);renderActionCenter(info.tasks||{});}
