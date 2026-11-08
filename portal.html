@@ -12,6 +12,37 @@
     <article class="sales-plan"><span class="kicker">02 · PRESENÇA INSTITUCIONAL</span><h3>USBRIN Business</h3><strong class="sales-price">A partir de R$ 1.190</strong><p><strong>Inclui:</strong> site institucional com até 5 páginas.</p><p><strong>Indique quando:</strong> a empresa precisa mostrar serviços, informações e portfólio em páginas separadas.</p></article>
     <article class="sales-plan"><span class="kicker">03 · VITRINE DE PRODUTOS</span><h3>USBRIN Catálogo</h3><strong class="sales-price">A partir de R$ 1.790</strong><p><strong>Inclui:</strong> catálogo digital com até 20 itens.</p><p><strong>Indique quando:</strong> o cliente deseja apresentar produtos e receber contatos.</p><p><strong>Atenção:</strong> não inclui carrinho, checkout ou pagamento online.</p></article>
   </div>
+  <section class="sales-addons" aria-labelledby="addons-title">
+    <div class="section-heading"><div><span class="kicker">ADICIONAIS DO STUDIO</span><h3 id="addons-title">O que pode aumentar o orçamento?</h3><p class="muted">Valores de referência para apresentar ao cliente. Confirme a viabilidade e a proposta final com a administração.</p></div></div>
+    <div class="sales-addon-grid" id="guide-addon-list">
+      <div class="sales-addon-row"><strong>Botão de WhatsApp</strong><span data-guide-feature="whatsapp">Incluso</span><small>Atalho de contato com a empresa.</small></div>
+      <div class="sales-addon-row"><strong>Formulário avançado</strong><span data-guide-feature="formulario">Consulte valor</span><small>Campos extras e validação.</small></div>
+      <div class="sales-addon-row"><strong>Galeria de projetos</strong><span data-guide-feature="galeria">Consulte valor</span><small>Fotos e trabalhos organizados.</small></div>
+      <div class="sales-addon-row"><strong>Blog gerenciável</strong><span data-guide-feature="blog">Consulte valor</span><small>Publicação e administração de conteúdo.</small></div>
+      <div class="sales-addon-row"><strong>Página adicional</strong><span id="guide-extra-page-price">Consulte valor</span><small>Business/Catálogo, acima das 5 páginas iniciais.</small></div>
+    </div>
+    <div class="sales-quick-estimate" aria-labelledby="estimate-title">
+      <div><h4 id="estimate-title">Estimativa rápida de investimento</h4><p class="muted">Selecione o plano e os opcionais. O valor não é proposta aprovada.</p></div>
+      <div class="sales-estimate-controls">
+        <label>Plano
+          <select id="guide-estimate-product">
+            <option value="landing">USBRIN Landing</option><option value="business" selected>USBRIN Business</option><option value="catalogo">USBRIN Catálogo</option>
+          </select>
+        </label>
+        <label>Páginas no total
+          <input id="guide-estimate-pages" type="number" min="1" max="15" step="1" value="5">
+        </label>
+      </div>
+      <div class="sales-estimate-features" id="guide-estimate-features">
+        <label><input type="checkbox" value="formulario"> Formulário avançado</label>
+        <label><input type="checkbox" value="galeria"> Galeria de projetos</label>
+        <label><input type="checkbox" value="blog"> Blog gerenciável</label>
+      </div>
+      <div class="sales-estimate-result"><span>Estimativa inicial</span><strong id="guide-estimate-total" aria-live="polite">Carregando preços...</strong></div>
+      <p id="guide-estimate-description" class="muted">Os valores e limites são calculados pela mesma tabela de preços do USBRIN Studio.</p>
+    </div>
+    <p class="muted"><strong>Orçamento sob análise:</strong> mais de 20 itens no catálogo, loja com checkout, área restrita, agendamentos, sistemas externos ou recursos personalizados. Não atribua um preço fechado sem aprovação.</p>
+  </section>
   <p class="notice"><strong>Não prometa sem aprovação:</strong> funcionalidades extras, descontos, hospedagem ou domínio incluídos, posição no Google, número de vendas, prazo de entrega ou suporte contínuo. Pedidos fora do escopo exigem orçamento da USBRIN.</p>
 </div>
 <div class="panel">
@@ -36,4 +67,4 @@
 <section id="view-projects" class="view hidden"><div class="panel" id="project-create"><h2>Novo projeto</h2><p class="muted">Você pode vincular o projeto a uma venda já recebida ou criar um projeto avulso. Confirme o escopo e a margem antes de atribuir.</p><form id="project-form" class="mini-form"><input name="title" required minlength="3" placeholder="Título do projeto"><select id="project-sale" name="saleId"><option value="">Projeto avulso — sem venda vinculada</option></select><select id="project-developer" name="developerId" required><option value="">Selecione um desenvolvedor aprovado</option></select><input name="compensation" type="number" min="0" step=".01" required placeholder="Remuneração (R$)"><input name="dueAt" type="date"><textarea name="description" required minlength="15" placeholder="Escopo e critérios de aceite"></textarea><button class="btn primary" type="submit">Criar projeto</button></form></div><div class="panel"><h2>Projetos</h2><div id="project-list"></div></div></section>
 <section id="developer-payments-admin" class="panel hidden"><h2>Remuneração de desenvolvedores</h2><p class="muted">Registre obrigações somente de projetos aprovados, e marque como pago somente após conciliação financeira.</p><form id="developer-payment-form" class="mini-form"><select id="developer-payment-project" name="projectId" required><option value="">Selecione um projeto aprovado</option></select><input name="amount" type="number" min="0.01" step=".01" placeholder="Valor (BRL)" required><button class="btn primary" type="submit">Registrar valor previsto</button></form><div id="developer-payment-list"></div></section>
 <section id="view-commissions" class="view hidden"><div class="panel"><h2>Remuneração e pagamentos</h2><p class="muted">Valores estimados, aprovados e efetivamente pagos são apresentados separadamente.</p><div id="commission-list"></div></div></section>
-</main></div><script defer src="js/portal.js"></script></body></html>
+</main></div><script defer src="js/studio-pricing.js"></script><script defer src="js/portal.js"></script></body></html>
