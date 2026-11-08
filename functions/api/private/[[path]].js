@@ -42,8 +42,8 @@ export async function onRequest(context){
       const lead=await permittedOpportunity(db,user,id);
       if(!lead)return error("Oportunidade inexistente ou sem permissão.",404);
       const select=user.role==="admin"
-        ?"SELECT p.*,u.name author_name FROM proposals p LEFT JOIN users u ON u.id=p.created_by WHERE p.opportunity_id=? ORDER BY p.created_at DESC,p.rowid DESC LIMIT 60"
-        :"SELECT p.id,p.code,p.opportunity_id,p.product,p.scope,p.price_cents,p.duration_days,p.valid_until,p.terms,p.status,p.approved_at,p.sent_at,p.created_at,u.name author_name FROM proposals p LEFT JOIN users u ON u.id=p.created_by WHERE p.opportunity_id=? ORDER BY p.created_at DESC,p.rowid DESC LIMIT 60";
+        ?"SELECT p.*,u.name author_name,o.company customer_company,o.contact customer_contact FROM proposals p LEFT JOIN users u ON u.id=p.created_by JOIN opportunities o ON o.id=p.opportunity_id WHERE p.opportunity_id=? ORDER BY p.created_at DESC,p.rowid DESC LIMIT 60"
+        :"SELECT p.id,p.code,p.opportunity_id,p.product,p.scope,p.price_cents,p.duration_days,p.valid_until,p.terms,p.status,p.approved_at,p.sent_at,p.created_at,u.name author_name,o.company customer_company,o.contact customer_contact FROM proposals p LEFT JOIN users u ON u.id=p.created_by JOIN opportunities o ON o.id=p.opportunity_id WHERE p.opportunity_id=? ORDER BY p.created_at DESC,p.rowid DESC LIMIT 60";
       const rows=await query(db,select,id).all();
       return respond({ok:true,proposals:rows.results});
     }
