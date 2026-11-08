@@ -43,14 +43,17 @@ export async function onRequest(context){
       if(!lead)return error("Oportunidade inexistente ou sem permissão.",404);
       const select=user.role==="admin"
         ?"SELECT p.*,u.name author_name,o.company customer_company,o.contact customer_contact FROM proposals p LEFT JOIN users u ON u.id=p.created_by JOIN opportunities o ON o.id=p.opportunity_id WHERE p.opportunity_id=? ORDER BY p.created_at DESC,p.rowid DESC LIMIT 60"
-        :"SELECT p.id,p.code,p.opportunity_id,p.product,p.scope,p.price_cents,p.duration_days,p.valid_until,p.terms,p.status,p.approved_at,p.sent_at,p.created_at,u.name author_name,o.company customer_company,o.contact customer_contact FROM proposals p LEFT JOIN users u ON u.id=p.created_by JOIN opportunities o ON o.id=p.opportunity_id WHERE p.opportunity_id=? ORDER BY p.created_at DESC,p.rowid DESC LIMIT 60";
+        :"SELECT p.id,p.code,p.opportunity_id,p.product,p.scope,p.price_cents,p.duration_days,p.valid_until,p.terms,p.status,p.approved_at,p.sent_at,p.created_at,p.hosting_requested,p.support_requested,p.support_reference_monthly_cents,u.name author_name,o.company customer_company,o.contact customer_contact FROM proposals p LEFT JOIN users u ON u.id=p.created_by JOIN opportunities o ON o.id=p.opportunity_id WHERE p.opportunity_id=? ORDER BY p.created_at DESC,p.rowid DESC LIMIT 60";
       const rows=await query(db,select,id).all();
       return respond({ok:true,proposals:rows.results});
     }
     if(route==="crm/proposal-draft"&&method==="POST"&&allowed(user,"admin","representante")){
       const b=await readBody(request),opportunityId=str(b.opportunityId,60),product=str(b.product,30).toLowerCase(),
         scope=str(b.scope,4000),price=b.priceCents,days=b.durationDays,
-        validUntil=str(b.validUntil,10),terms=str(b.terms,500);
+        validUntil=str(b.validUntil,10),terms=str(b.terms,750),
+        hostingRequested=b.hostingRequested===true,supportRequested=b.supportRequested===true;
+      if(![undefined,true,false].includes(b.hostingRequested)||![undefined,true,false].includes(b.supportRequested))
+        return error("Opções de serviços adicionais inválidas.",400);
       if(!["landing","business","catalogo","personalizado"].includes(product)||scope.length<30||!Number.isSafeInteger(price)||price<=0||price>100000000||
         !Number.isSafeInteger(days)||days<1||days>180||!isoDate(validUntil)||validUntil<new Date().toISOString().slice(0,10))
           return error("Revise escopo, preço, prazo e validade da proposta.",400);
@@ -59,7 +62,7 @@ export async function onRequest(context){
       if(["lost","cancelled","paid"].includes(lead.stage))return error("Oportunidade encerrada: não é possível criar proposta.",409);
       const id=fresh(),code="Q"+id.replace(/-/g,"").slice(0,13).toUpperCase();
       await db.batch([
-        query(db,"INSERT INTO proposals(id,code,opportunity_id,created_by,product,scope,price_cents,duration_days,valid_until,terms,status) VALUES (?,?,?,?,?,?,?,?,?,?,'draft')",id,code,opportunityId,user.id,product,scope,price,days,validUntil,terms||null),
+        query(db,"INSERT INTO proposals(id,code,opportunity_id,created_by,product,scope,price_cents,duration_days,valid_until,terms,status,hosting_requested,support_requested,support_reference_monthly_cents) VALUES (?,?,?,?,?,?,?,?,?,?,'draft',?,?,?)",id,code,opportunityId,user.id,product,scope,price,days,validUntil,terms||null,hostingRequested?1:0,supportRequested?1:0,supportRequested?25000:0),
         query(db,"INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at) VALUES (?,?,?,?,?,?,datetime('now'))",fresh(),user.id,"proposal.draft","proposal",id,"draft "+code)
       ]);
       return respond({ok:true,id,code,status:"draft"},201);
