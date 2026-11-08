@@ -24,16 +24,17 @@ export async function handleBilling({request,db,user,route}){
       db.prepare("SELECT r.id,r.charge_id,r.amount_cents,r.reference,r.received_at,u.name actor_name FROM service_receipts r LEFT JOIN users u ON u.id=r.actor_id ORDER BY r.received_at DESC LIMIT 400"),
       db.prepare("SELECT s.id,o.company,s.gross_cents,s.received_cents FROM sales s JOIN opportunities o ON o.id=s.opportunity_id WHERE s.status='paid' ORDER BY s.created_at DESC LIMIT 200")
     ]);
-    const date=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Porto_Velho',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-    const rows=charges.results;
+    const parts=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'America/Porto_Velho',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).filter(x=>x.type!=='literal').map(x=>[x.type,x.value]));
+    const date=parts.year+'-'+parts.month+'-'+parts.day;
+    const summary=await query(db,"SELECT (SELECT COUNT(*) FROM service_agreements WHERE status='active') agreements_active,COALESCE(SUM(CASE WHEN status<>'paid' THEN amount_cents-received_cents ELSE 0 END),0) open_cents,COALESCE(SUM(CASE WHEN status<>'paid' AND due_on<? THEN amount_cents-received_cents ELSE 0 END),0) overdue_cents,COALESCE(SUM(received_cents),0) received_cents,COALESCE(SUM(CASE WHEN status='paid' THEN 1 ELSE 0 END),0) paid_count FROM service_charges",date).first();
     const totals={
-      agreementsActive:agreements.results.filter(x=>x.status==="active").length,
-      openCents:rows.filter(x=>x.status!=="paid").reduce((n,x)=>n+x.amount_cents-x.received_cents,0),
-      overdueCents:rows.filter(x=>x.status!=="paid"&&x.due_on<date).reduce((n,x)=>n+x.amount_cents-x.received_cents,0),
-      receivedCents:rows.reduce((n,x)=>n+x.received_cents,0),
-      paidCount:rows.filter(x=>x.status==="paid").length
+      agreementsActive:summary.agreements_active,
+      openCents:summary.open_cents,
+      overdueCents:summary.overdue_cents,
+      receivedCents:summary.received_cents,
+      paidCount:summary.paid_count
     };
-    return respond({ok:true,agreements:agreements.results,charges:rows,receipts:receipts.results,eligibleSales:eligible.results,totals,today:date,metricsLimitedTo:400});
+    return respond({ok:true,agreements:agreements.results,charges:charges.results,receipts:receipts.results,eligibleSales:eligible.results,totals,today:date,listsLimitedTo:400});
   }
   if(route==="admin/billing/agreement"&&method==="POST"){
     const b=await readBody(request),saleId=str(b.saleId,60),kind=str(b.kind,12),cadence=str(b.cadence,12),
