@@ -262,7 +262,108 @@ document.addEventListener('DOMContentLoaded',async()=>{
  const billingStatus={active:'Ativo',paused:'Pausado',cancelled:'Cancelado',pending:'Pendente',partially_paid:'Recebido parcialmente',paid:'Recebido'};
  const billingKind={support:'Suporte USBRIN',hosting:'Domínio USBRIN / hospedagem'};
  const billingCycle={monthly:'Mensal',annual:'Anual'};
+ const financeCategory={
+   infrastructure:'Infraestrutura',software:'Software',marketing:'Marketing',tax:'Impostos/taxas',
+   contractor:'Terceirizados',office:'Administrativo',other:'Outros'
+ };
+ let financeExpenses=[],financeUnassignedBankDebits=[];
+ const localMonth=()=>isoLocal().slice(0,7);
+ el('finance-month').value=localMonth();
+ const financeMetric=(target,label,value)=>{
+   const card=node('div',null,'billing-stat');card.append(node('strong',value),node('span',label));target.append(card);
+ };
+ const loadFinanceControl=async()=>{
+   const month=el('finance-month').value||localMonth();
+   const [summary,detail]=await Promise.all([request('admin/control/overview?month='+encodeURIComponent(month)),request('admin/control/expenses')]);
+   financeExpenses=detail.expenses;financeUnassignedBankDebits=detail.unassignedBankDebits;
+   const m=el('finance-main-metrics');m.replaceChildren();
+   [
+     ['Vendas contratadas',currency(summary.metrics.grossContractedCents)],
+     ['A receber por sites',currency(summary.metrics.siteOutstandingCents)],
+     ['A receber em serviços',currency(summary.metrics.serviceOutstandingCents)],
+     ['Contas a pagar',currency(summary.metrics.expensePayableCents)],
+     ['Despesas vencidas',currency(summary.metrics.expenseOverdueCents)],
+     ['Comissões a provisionar',currency(summary.metrics.pendingCommissionsCents)],
+     ['Desenvolvedores a provisionar',currency(summary.metrics.pendingDevelopersCents)],
+     ['Créditos associados a extratos',currency(summary.metrics.verifiedByImportedStatementCents)],
+     ['Despesas associadas a débitos',currency(summary.metrics.matchedExpenseDebitsCents)],
+     ['Devoluções associadas a débitos',currency(summary.metrics.matchedRefundDebitsCents)]
+   ].forEach(([label,value])=>financeMetric(m,label,value));
+   const mm=el('finance-month-metrics');mm.replaceChildren();
+   [
+     ['Créditos classificados no mês',currency(summary.monthly.bankMatchedInCents)],
+     ['Despesas classificadas no mês',currency(summary.monthly.bankMatchedExpenseOutCents)],
+     ['Devoluções classificadas no mês',currency(summary.monthly.bankMatchedRefundOutCents)],
+     ['Movimento líquido classificado',currency(summary.monthly.netClassifiedCents)],
+     ['Despesas em aberto com vencimento no mês',currency(summary.monthly.pendingSupplierBillsDueCents)],
+     ['Serviços a receber com vencimento no mês',currency(summary.monthly.pendingServiceInvoicesDueCents)]
+   ].forEach(([label,value])=>financeMetric(mm,label,value));
+   table(el('finance-project-margin'),['Cliente','Valor contratado','Custos alocados','Contribuição parcial','Aviso'],
+     summary.projects.map(x=>{
+       const sum=x.commission_allocated_cents+x.developer_allocated_cents+x.direct_expense_cents;
+       const percent=x.gross_cents>0?((x.estimatedContributionCents*100)/x.gross_cents).toFixed(1):'-';
+       return [x.company,currency(x.gross_cents),currency(sum),currency(x.estimatedContributionCents)+' ('+percent+'%)','Não equivale a lucro líquido'];
+     }));
+   const salesSelect=el('finance-expense-sale'),oldSale=salesSelect.value;
+   salesSelect.replaceChildren(new Option('Despesa geral, sem vínculo com venda',''));
+   detail.eligibleSales.forEach(x=>salesSelect.add(new Option(x.company+' · '+currency(x.gross_cents),x.id)));
+   if([...salesSelect.options].some(o=>o.value===oldSale))salesSelect.value=oldSale;
+   table(el('finance-expense-list'),['Fornecedor','Categoria','Documento','Vencimento','Previsto','Pago com extrato','Saldo','Situação'],
+     financeExpenses.map(x=>[
+       x.supplier+' · '+x.label,financeCategory[x.category]||x.category,x.document_reference,x.due_on,
+       currency(x.amount_cents),currency(x.paid_cents),currency(x.amount_cents-x.paid_cents),
+       ({approved:'Em aberto',partially_paid:'Parcial',paid:'Pago',cancelled:'Cancelada'})[x.status]||x.status
+     ]),(cell,i)=>{
+       const expense=financeExpenses[i];
+       const remaining=expense.amount_cents-expense.paid_cents;
+       if(['approved','partially_paid'].includes(expense.status)){
+         const debits=financeUnassignedBankDebits.filter(x=>-x.amount_cents<=remaining);
+         if(debits.length){
+           const select=node('select');select.setAttribute('aria-label','Débito bancário para '+expense.document_reference);
+           select.add(new Option('Selecione débito já realizado',''));
+           debits.forEach(x=>select.add(new Option(x.account_alias+' · '+x.posted_on+' · '+x.external_id+' · '+currency(x.amount_cents),x.id)));
+           const settle=btn('Conciliar despesa',async()=>{
+             if(!select.value)return message('Selecione o débito do extrato.',true);
+             if(!confirm('Este débito foi verificado no banco e realmente corresponde à despesa? O registro ficará imutável.'))return;
+             try{await request('admin/control/expense-payment',{expenseId:expense.id,bankEntryId:select.value,confirmedBankDebit:true});
+               await loadFinanceControl();message('Pagamento associado ao débito importado.');}
+             catch(e){message(e.message,true)}
+           });
+           cell.append(select,settle);
+         }else cell.append(node('span','Nenhum débito de valor compatível ainda não utilizado.','muted'));
+       }
+       if(expense.status==='approved'&&expense.paid_cents===0){
+         cell.append(btn('Cancelar obrigação',async()=>{
+           const reason=prompt('Justifique o cancelamento da obrigação '+expense.document_reference+':');
+           if(reason===null)return;
+           if(reason.trim().length<12)return message('Informe pelo menos 12 caracteres.',true);
+           if(!confirm('Cancelar apenas esta obrigação ainda não paga? O histórico permanecerá.'))return;
+           try{await request('admin/control/expense-cancel',{id:expense.id,reason:reason.trim(),confirmedCancel:true});
+             await loadFinanceControl();message('Obrigação cancelada com justificativa e histórico.');}
+           catch(e){message(e.message,true)}
+         }));
+       }
+     });
+ };
+ el('finance-month').addEventListener('change',()=>{
+   if(user?.role==='admin'&&view==='billing')loadFinanceControl().catch(e=>message(e.message,true));
+ });
+ el('finance-expense-form').addEventListener('submit',async ev=>{
+   ev.preventDefault();const form=ev.target,data=new FormData(form),amount=amountCents(data.get('amount'));
+   if(!amount)return message('Informe valor válido em reais, até duas casas decimais.',true);
+   if(!confirm('O documento do fornecedor foi conferido? Este registro cria obrigação, não transfere dinheiro.'))return;
+   try{
+     await request('admin/control/expense',{
+       supplier:String(data.get('supplier')||'').trim(),label:String(data.get('label')||'').trim(),
+       documentReference:String(data.get('documentReference')||'').trim(),category:data.get('category'),
+       amountCents:amount,dueOn:data.get('dueOn'),saleId:data.get('saleId')||'',
+       confirmedDocument:data.get('confirmedDocument')==='on'
+     });
+     form.reset();await loadFinanceControl();message('Obrigação registrada com documento e vencimento, sem pagamento.');
+   }catch(e){message(e.message,true)}
+ });
  const loadBilling=async()=>{
+   await loadFinanceControl();
    const data=await request('admin/billing/overview');
    billingAgreements=data.agreements;billingCharges=data.charges;
    const m=el('billing-metrics');m.replaceChildren();
