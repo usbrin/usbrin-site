@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
    const body=node('tbody');rows.forEach((r,i)=>{const row=node('tr');r.forEach(x=>row.append(node('td',x)));if(actions){const cell=node('td');actions(cell,i);row.append(cell)}body.append(row)});t.append(body);wrap.append(t);parent.append(wrap);
  };
  const setNavigation=role=>{
-   const allowed=role==='admin'?['overview','leads','guide','applications','studio','partners','projects','commissions','billing']:role==='representante'?['overview','leads','guide','commissions']:['overview','projects','commissions'];
+   const allowed=role==='admin'?['overview','leads','guide','applications','studio','partners','projects','commissions','billing','bank']:role==='representante'?['overview','leads','guide','commissions']:['overview','projects','commissions'];
    document.querySelectorAll('#portal-nav button').forEach(b=>b.classList.toggle('hidden',!allowed.includes(b.dataset.view)));
    el('lead-create').classList.toggle('hidden',role!=='representante');el('goal-panel').classList.add('hidden');el('action-center').classList.toggle('hidden',role!=='admin');
    el('project-create').classList.toggle('hidden',role!=='admin');
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
    view=name;document.querySelectorAll('.view').forEach(x=>x.classList.add('hidden'));el('view-'+name).classList.remove('hidden');
    el('developer-payments-admin').classList.toggle('hidden',!(name==='projects'&&user.role==='admin'));
    document.querySelectorAll('#portal-nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===name));
-   el('panel-title').textContent=({overview:'Visão geral',leads:'Oportunidades',guide:'Guia comercial',applications:'Candidaturas',studio:'Solicitações Studio',partners:'Parceiros',projects:'Projetos',commissions:'Comissões',billing:'Financeiro'})[name];
+   el('panel-title').textContent=({overview:'Visão geral',leads:'Oportunidades',guide:'Guia comercial',applications:'Candidaturas',studio:'Solicitações Studio',partners:'Parceiros',projects:'Projetos',commissions:'Comissões',billing:'Financeiro',bank:'Conciliação'})[name];
    try{await load(name);message('Dados atualizados a partir do servidor.');}catch(e){message(e.message,true);}
  };
  document.querySelectorAll('#portal-nav button').forEach(x=>x.addEventListener('click',()=>open(x.dataset.view)));
@@ -360,7 +360,119 @@ document.addEventListener('DOMContentLoaded',async()=>{
    }catch(err){message(err.message,true)}
  });
 
+ // Imported bank evidence never generates a payment or transfer. Reconciliation is one-to-one.
+ let bankSnapshot={entries:[],matches:[],refunds:[],unmatchedReceipts:[]};
+ const bankLabel={sale:'Venda de site',service:'Serviço recorrente',
+   requested:'Solicitado',approved:'Aprovado, sem devolução',rejected:'Rejeitado',settled:'Devolução registrada no extrato'};
+ const loadBank=async()=>{
+   const info=await request('admin/bank/overview');
+   bankSnapshot=info;
+   const m=el('bank-metrics');m.replaceChildren();
+   [
+     ['Créditos no extrato',info.totals.credits_imported],
+     ['Créditos associados a recibos',info.totals.matched_credits],
+     ['Créditos sem associação',info.totals.unmatched_credits],
+     ['Recibos sem extrato',info.totals.unmatched_sale_receipts+info.totals.unmatched_service_receipts],
+     ['Devoluções em análise',info.totals.pending_refunds],
+     ['Débitos de devolução conciliados',currency(info.totals.settled_refund_cents)]
+   ].forEach(([label,value])=>{const item=node('div',null,'billing-stat');item.append(node('strong',value),node('span',label));m.append(item)});
+   const candidateFor=entry=>info.unmatchedReceipts.filter(x=>entry.amount_cents>0&&x.amount_cents===entry.amount_cents
+     &&String(x.reference).toUpperCase()===String(entry.external_id).toUpperCase());
+   table(el('bank-entries'),['Data','Conta','Identificador','Descrição','Valor','Situação'],info.entries.map(e=>[
+     e.posted_on,e.account_alias,e.external_id,e.description,currency(e.amount_cents),
+     e.match_status==='matched-receipt'?'Associado a recibo':e.match_status==='settled-refund'?'Devolução conciliada':
+       e.amount_cents>0?'Crédito não conciliado':'Débito ainda não associado'
+   ]),(cell,i)=>{
+     const e=info.entries[i];if(e.amount_cents<=0||e.match_status!=='unmatched')return;
+     const candidates=candidateFor(e);if(!candidates.length){cell.append(node('span','Sem recibo de mesmo valor e ID bancário.','muted'));return}
+     const sel=node('select');sel.setAttribute('aria-label','Recibo para '+e.external_id);
+     candidates.forEach(x=>sel.add(new Option(bankLabel[x.receipt_kind]+' · '+x.company+' · '+currency(x.amount_cents),x.receipt_kind+':'+x.id)));
+     cell.append(sel,btn('Conferir associação',async()=>{
+       const [kind,id]=sel.value.split(':');
+       if(!confirm('Você conferiu valor e identificador bancário com o recibo original? Uma associação não pode ser desfeita sem procedimento de auditoria.'))return;
+       try{await request('admin/bank/match',{entryId:e.id,receiptKind:kind,receiptId:id,confirmedComparison:true});
+         await loadBank();message('Recibo associado ao extrato importado.');}
+       catch(err){message(err.message,true)}
+     }));
+   });
+   table(el('bank-unmatched-receipts'),['Tipo','Cliente','Referência','Valor','Registro'],info.unmatchedReceipts.map(x=>[
+     bankLabel[x.receipt_kind],x.company,x.reference,currency(x.amount_cents),x.received_at
+   ]));
+   table(el('bank-imports'),['Conta','Arquivo','Linhas','SHA256 (início)','Importado em'],info.batches.map(x=>[
+     x.account_alias,x.filename,x.row_count,x.sha_prefix,x.created_at
+   ]));
+   const select=el('bank-refund-receipt'),previous=select.value;
+   select.replaceChildren(new Option('Selecione um recibo associado ao extrato',''));
+   info.matches.forEach(x=>select.add(new Option(bankLabel[x.receipt_kind]+' · '+x.external_id+' · '+currency(x.amount_cents),x.receipt_kind+':'+x.receipt_id)));
+   if([...select.options].some(o=>o.value===previous))select.value=previous;
+   table(el('bank-refunds'),['Referência original','Valor','Justificativa','Estado'],info.refunds.map(x=>[
+     x.original_reference,currency(x.amount_cents),x.reason,bankLabel[x.status]||x.status
+   ]),(cell,i)=>{
+     const item=info.refunds[i];
+     if(item.status==='requested'){
+       cell.append(btn('Aprovar análise',async()=>{
+         if(!confirm('A aprovação exige que o recibo original esteja associado ao extrato. Confirma a análise do caso, sem transferir dinheiro?'))return;
+         try{await request('admin/bank/refund-review',{id:item.id,decision:'approved',confirmedReview:true});
+           await loadBank();message('Devolução aprovada para execução externa, sem transferência feita.');}
+         catch(err){message(err.message,true)}
+       }));
+     }
+     if(['requested','approved'].includes(item.status)){
+       cell.append(btn('Rejeitar pedido',async()=>{
+         if(!confirm('Confirma a rejeição da devolução? O histórico será preservado.'))return;
+         try{await request('admin/bank/refund-review',{id:item.id,decision:'rejected',confirmedReview:true});
+           await loadBank();message('Solicitação rejeitada com histórico preservado.');}
+         catch(err){message(err.message,true)}
+       }));
+     }
+     if(item.status==='approved'){
+       const source=info.matches.find(x=>x.receipt_kind===item.receipt_kind&&x.receipt_id===item.receipt_id);
+       const debitCandidates=info.entries.filter(x=>x.amount_cents===-item.amount_cents&&x.match_status==='unmatched'&&x.account_alias===source?.account_alias);
+       if(debitCandidates.length){
+         const sel=node('select');sel.setAttribute('aria-label','Débito bancário para a devolução '+item.original_reference);
+         debitCandidates.forEach(e=>sel.add(new Option(e.posted_on+' · '+e.external_id+' · '+currency(e.amount_cents),e.id)));
+         cell.append(sel,btn('Conciliar débito já efetuado',async()=>{
+           if(!confirm('ATENÇÃO: você verificou no banco o débito efetivo desta devolução? O sistema não executa pagamento. A liquidação é irreversível.'))return;
+           try{await request('admin/bank/refund-settle',{id:item.id,bankEntryId:sel.value,confirmedBankDebit:true});
+             await loadBank();message('Devolução associada ao débito no extrato importado.');}
+           catch(err){message(err.message,true)}
+         }));
+       }else cell.append(node('span','Aguardando débito correspondente no extrato.','muted'));
+     }
+   });
+ };
+ el('bank-import-form').addEventListener('submit',async ev=>{
+   ev.preventDefault();
+   const form=ev.target,params=new FormData(form),file=el('bank-import-file').files?.[0];
+   if(!file||file.size<25||file.size>110000)return message('Selecione um CSV UTF-8 de até 110 KB.',true);
+   if(!/\.csv$/i.test(file.name))return message('Somente extrato CSV com cabeçalho padronizado.',true);
+   const submit=form.querySelector('button[type="submit"]');submit.disabled=true;
+   el('bank-import-feedback').textContent='Lendo extrato para conferência...';
+   try{
+     const csv=await file.text();
+     if(!confirm('Confirma que este CSV foi obtido diretamente do banco e corresponde à conta identificada? Nenhum pagamento será criado.'))return;
+     const out=await request('admin/bank/import',{accountAlias:params.get('accountAlias'),filename:file.name,
+       csv,confirmedSource:params.get('confirmedSource')==='on'});
+     form.reset();
+     el('bank-import-feedback').textContent='Lote registrado: '+out.rows+' transações ('+out.credits+' créditos, '+out.debits+' débitos).';
+     await loadBank();message('Extrato importado; associações ainda precisam de conferência.');
+   }catch(e){el('bank-import-feedback').textContent='Falha ao importar: '+e.message;message(e.message,true)}
+   finally{submit.disabled=false}
+ });
+ el('bank-refund-form').addEventListener('submit',async ev=>{
+   ev.preventDefault();const form=ev.target,data=new FormData(form),[kind,id]=String(data.get('source')||'').split(':'),
+     amount=amountCents(data.get('amount'));
+   if(!amount||!id)return message('Escolha um recibo e valor de devolução válidos.',true);
+   if(!confirm('Registrar apenas pedido de devolução interna, sem executar Pix, TED ou outra transferência?'))return;
+   try{
+     await request('admin/bank/refund-request',{receiptKind:kind,receiptId:id,amountCents:amount,
+       reason:String(data.get('reason')||'').trim(),confirmedCase:data.get('confirmedCase')==='on'});
+     form.reset();await loadBank();message('Pedido de devolução registrado; nenhum dinheiro foi movimentado.');
+   }catch(e){message(e.message,true)}
+ });
+
  const load=async(name)=>{
+   if(name==='bank'&&user.role==='admin')await loadBank();
    if(name==='billing'&&user.role==='admin')await loadBilling();
    if(name==='guide'&&(user.role==='admin'||user.role==='representante'))await loadBriefLeads();
    if(name==='overview'){
