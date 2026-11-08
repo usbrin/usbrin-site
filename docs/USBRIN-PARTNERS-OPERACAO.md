@@ -279,3 +279,20 @@ O site oficial `usbrin-site.pages.dev` permanece com a versão anterior, sem pub
 - Exceções visíveis: devolução de cliente com comissão ainda ativa, pedido de estorno pendente e créditos bancários importados sem recibo correspondente.
 - **Atenção:** CSV importado manualmente não comprova a origem bancária; marcações de comissões/desenvolvedores legados não têm conciliação independente; documentos fiscais só são registrados, nunca emitidos/cancelados no órgão oficial.
 - Consulte o documento de critérios completos e bloqueios: `docs/USBRIN-FINANCEIRO-RELEASE-GATES.md`. **Não considerar produção liberada** até restauração efetiva de backup, conferência bancária independente e validação fiscal/jurídica.
+
+## USBRIN Command — representante e comissão fixa (08/11/2026)
+
+**Comissão comercial:** 15% (`rate_bps=1500`) do valor final contratado para **criação do site**, incluindo adicionais pontuais aprovados na venda. Suporte e hospedagem gerenciada têm contratação independente e não integram automaticamente essa base. A API `admin/commission` recusa percentuais distintos; propostas novas aprovadas reservam o custo de 15% diretamente no servidor, ignorando valores manuais inconsistentes. A comissão só pode ser cadastrada pela administração depois de a venda estar integralmente recebida. Seu status é registrado separadamente como `estimated → approved → due → paid`, com referência para o pagamento pela administração. Histórico já registrado continua preservado; não reescrever comissões antigas nem pagar duas vezes.
+
+**Painel:** o dashboard do papel `representante` foi substituído pelo **USBRIN Command**, com identidade grafite, branco e lilás. Admin e desenvolvedor mantêm as visões anteriores. O Command foi implementado como componente isolado em `js/rep-command.js`, montado apenas após autenticação e consulta server-side da carteira pessoal.
+- **Próxima ação:** prioridade baseada em prazo atrasado, retorno hoje, proposta enviada sem acompanhamento, proposta vencida, registro antigo sem acompanhamento e ausência de próximo passo. Não calcula probabilidades de compra sem histórico suficiente.
+- **Meu Dia:** até seis ações priorizadas; botões de contato e retorno permitem salvar em `crm/activity` e `crm/followup`, usando permissões existentes de proprietário.
+- **Carteira:** clientes relevantes, funil clicável filtrando a própria carteira, status de proposta e alertas de nomes repetidos, proposta expirada e falta de retorno.
+- **Resultados:** potencial = simulação de 15% sobre estimativas dos negócios em aberto, não remuneração devida; comissões registradas em análise, liberadas e pagas vêm de `commissions` e são exibidas separadamente. Nunca transformar proposta em recebimento.
+- **Histórico de comissões:** agora mostra nome da empresa, valor base, taxa registrada, valor e estado; não exibe IDs técnicos como referência principal.
+- A API `representante/dashboard` consulta oportunidades, propostas e vendas somente vinculadas ao `partner_id` autenticado. Custos internos de produção, tributos e referências bancárias de clientes não são retornados.
+- Cadastro de oportunidade idêntica (mesma empresa e contato do mesmo representante, ainda ativa) é recusado como possível duplicidade. Não revelar ou bloquear nomes de clientes de outra carteira por mera coincidência.
+- A API limita as listas a 200 oportunidades e contratos, 400 propostas e 100 comissões. Caso o total de oportunidades supere 200, a interface alerta que os cálculos de potencial/agenda usam um subconjunto. Antes de maior volume, criar paginação e indicadores agregados exatos.
+- Operações financeiras e dados de cobrança continuam exclusivamente no Admin. Representante não solicita Pix, não confirma pagamentos, não inicia projetos nem altera comissões.
+
+**Validações necessárias antes de abrir candidaturas:** teste Chrome desktop/tablet/mobile com contas simuladas, permissões e isolamento entre representantes, reversão por estorno, revisão contratual da comissão fixa e piloto comercial. A versão testada segue em PR DRAFT e homologação, sem migração à produção.
