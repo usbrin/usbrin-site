@@ -515,6 +515,59 @@ test("bank evidence requires exact receipt reference, protects imported statemen
  assert.throws(()=>db.sqlite.prepare("DELETE FROM bank_refunds WHERE id=?").run(refundId),/immutable/);
 });
 
+
+test("admin accounts payable preserves invoice history and requires classified bank debit, including partial settlement",async()=>{
+ const admin=users[0][1],rep=users[1][1],dev=users[3][1];
+ for(const actor of [rep,dev]){
+   assert.equal((await call(actor,"admin/control/overview")).status,404);
+   assert.equal((await call(actor,"admin/control/expenses")).status,404);
+   assert.equal((await call(actor,"admin/control/expense",{supplier:"Supplier EX",label:"Paid external bill",category:"software",documentReference:"INVOICE-555",amountCents:3000,dueOn:"2026-11-28",confirmedDocument:true})).status,404);
+ }
+ const lead=await call(rep,"representante/lead",{company:"TESTE CUSTOS POR PROJETO",contact:"Responsável Financeiro QA",estimatedCents:119000});
+ assert.equal(lead.status,201);
+ const sale=await call(admin,"admin/sale",{opportunityId:lead.data.id,grossCents:119000,receivedCents:0,reference:""});
+ assert.equal(sale.status,200);
+ const base={supplier:"CLOUD SOFTWARE QA",label:"Licença de projeto e infraestrutura",category:"software",saleId:sale.data.saleId,
+   documentReference:"INVOICE-QA-2026-001",amountCents:80000,dueOn:"2026-11-20",confirmedDocument:true};
+ assert.equal((await call(admin,"admin/control/expense",{...base,amountCents:0})).status,400);
+ assert.equal((await call(admin,"admin/control/expense",{...base,dueOn:"2026-11-31"})).status,400);
+ const created=await call(admin,"admin/control/expense",base);
+ assert.equal(created.status,201);const expenseId=created.data.id;
+ assert.equal((await call(admin,"admin/control/expense",base)).status,409,"same supplier+document cannot be registered again");
+ const evidence="data;valor;descricao;identificador\n2026-11-09;-300,00;Pagamento licenca parcial;COST-DEBIT-QA-001\n2026-11-18;-500,00;Pagamento licenca final;COST-DEBIT-QA-002\n2026-11-18;-200,00;Outro pagamento diferente;COST-DEBIT-QA-003";
+ assert.equal((await call(admin,"admin/bank/import",{accountAlias:"FINANCE-QA-EXPENSE",filename:"expense_qa.csv",csv:evidence,confirmedSource:true})).status,201);
+ const first=db.sqlite.prepare("SELECT id FROM bank_entries WHERE external_id='COST-DEBIT-QA-001'").get();
+ const second=db.sqlite.prepare("SELECT id FROM bank_entries WHERE external_id='COST-DEBIT-QA-002'").get();
+ const third=db.sqlite.prepare("SELECT id FROM bank_entries WHERE external_id='COST-DEBIT-QA-003'").get();
+ assert.equal((await call(admin,"admin/control/expense-payment",{expenseId,bankEntryId:first.id,confirmedBankDebit:false})).status,400);
+ const partial=await call(admin,"admin/control/expense-payment",{expenseId,bankEntryId:first.id,confirmedBankDebit:true});
+ assert.equal(partial.status,200);assert.equal(partial.data.paidCents,30000);assert.equal(partial.data.status,"partially_paid");
+ assert.equal((await call(admin,"admin/control/expense-payment",{expenseId,bankEntryId:first.id,confirmedBankDebit:true})).status,409);
+ assert.equal((await call(admin,"admin/control/expense-payment",{expenseId,bankEntryId:third.id,confirmedBankDebit:true})).status,200);
+ assert.equal((await call(admin,"admin/control/expense-payment",{expenseId,bankEntryId:second.id,confirmedBankDebit:true})).status,409,"overpayment must fail");
+ const remainder=db.sqlite.prepare("SELECT paid_cents,amount_cents,status FROM expense_obligations WHERE id=?").get(expenseId);
+ assert.deepEqual([remainder.paid_cents,remainder.amount_cents,remainder.status],[50000,80000,"partially_paid"]);
+ assert.equal((await call(admin,"admin/control/expense-cancel",{id:expenseId,reason:"Cancel after payment not allowed",confirmedCancel:true})).status,409);
+ const separate=await call(admin,"admin/control/expense",{supplier:"SUPPLIER CANCELLED QA",label:"Serviço que não será executado",category:"other",
+   documentReference:"INVOICE-CANCEL-QA-002",amountCents:13000,dueOn:"2026-12-20",confirmedDocument:true});
+ assert.equal(separate.status,201);
+ const cancelled=await call(admin,"admin/control/expense-cancel",{id:separate.data.id,reason:"Fornecedor não entregará o serviço contratado",confirmedCancel:true});
+ assert.equal(cancelled.status,200);
+ assert.equal((await call(admin,"admin/control/expense-cancel",{id:separate.data.id,reason:"Cancela novamente o serviço",confirmedCancel:true})).status,409);
+ assert.equal((await call(admin,"admin/control/expense-payment",{expenseId:separate.data.id,bankEntryId:second.id,confirmedBankDebit:true})).status,409);
+ const overview=await call(admin,"admin/control/overview?month=2026-11");
+ assert.equal(overview.status,200);
+ assert.ok(overview.data.metrics.expensePayableCents>=30000);
+ assert.ok(overview.data.monthly.bankMatchedExpenseOutCents>=50000);
+ assert.ok(overview.data.projects.some(x=>x.id===sale.data.saleId&&x.direct_expense_cents===80000));
+ const expenseList=await call(admin,"admin/control/expenses");
+ assert.equal(expenseList.status,200);
+ assert.ok(expenseList.data.expenses.some(x=>x.id===expenseId&&x.paid_cents===50000));
+ assert.throws(()=>db.sqlite.prepare("DELETE FROM expense_payments WHERE expense_id=?").run(expenseId),/immutable/);
+ assert.throws(()=>db.sqlite.prepare("UPDATE expense_obligations SET amount_cents=1 WHERE id=?").run(expenseId),/immutable/);
+ assert.throws(()=>db.sqlite.prepare("UPDATE expense_obligations SET status='cancelled' WHERE id=?").run(expenseId),/cancellation requires/);
+});
+
 test("JWT requires a valid Cloudflare signature, correct audience and active user",async()=>{
  const missing=new Request("https://usbrin-preview.pages.dev/api/private/me");
  const response=await privateAPI({request:missing,env});
