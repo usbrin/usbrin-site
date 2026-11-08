@@ -13,7 +13,7 @@ import {readBody,checkOrigin} from "../functions/_lib/security.js";
 class TestD1{
  constructor(){
    this.sqlite=new DatabaseSync(":memory:");
-   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql","migrations/0004_studio_inquiries.sql","migrations/0005_studio_assignments.sql","migrations/0006_sale_project_links.sql","migrations/0007_atomic_receipts.sql"]){
+   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql","migrations/0004_studio_inquiries.sql","migrations/0005_studio_assignments.sql","migrations/0006_sale_project_links.sql","migrations/0007_atomic_receipts.sql","migrations/0008_crm_followups.sql"]){
      this.sqlite.exec(readFileSync(new URL("../"+migration,import.meta.url),"utf8"));
    }
  }
@@ -204,6 +204,41 @@ test("authorization matrix isolates representatives, developers, and customer da
    body:JSON.stringify({company:"CSRF Teste",contact:"Contato Teste",estimatedCents:10000})
  });
  assert.equal((await privateAPI({request:foreignOrigin,env})).status,403);
+});
+
+
+test("CRM follow-ups and activities are private, ordered and never turn into a sale",async()=>{
+ const rep1=users[1][1],rep2=users[2][1],dev=users[3][1],admin=users[0][1];
+ const lead=await call(rep1,"representante/lead",{company:"Empresa Teste CRM",contact:"Contato Responsável",estimatedCents:69000,nextAction:"Conversar sobre objetivos",nextActionAt:"2026-12-15"});
+ assert.equal(lead.status,201);
+ const id=lead.data.id;
+ const invalidDate=await call(rep1,"crm/followup",{opportunityId:id,action:"Retorno futuro",date:"2026-02-30"});
+ assert.equal(invalidDate.status,400);
+ const update=await call(rep1,"crm/followup",{opportunityId:id,action:"Enviar demonstração inicial",date:"2026-12-16"});
+ assert.equal(update.status,200);
+ assert.equal((await call(rep2,"crm/followup",{opportunityId:id,action:"Tomar contato indevido",date:"2026-12-17"})).status,404);
+ assert.equal((await call(dev,"crm/followup",{opportunityId:id,action:"Tentar contato",date:"2026-12-17"})).status,404);
+ const note=await call(rep1,"crm/activity",{opportunityId:id,kind:"contact",note:"Cliente demonstrativo demonstrou interesse na landing."});
+ assert.equal(note.status,201);
+ assert.equal((await call(rep2,"crm/activity",{opportunityId:id,kind:"note",note:"Tentativa indevida"})).status,404);
+ const history=await call(rep1,"crm/history?id="+id);
+ assert.equal(history.status,200);
+ assert.ok(history.data.activities.length>=2);
+ assert.ok(history.data.activities.some(x=>x.kind==="contact"));
+ assert.ok(history.data.activities.some(x=>x.kind==="followup"));
+ assert.equal((await call(rep2,"crm/history?id="+id)).status,404);
+ assert.equal((await call(dev,"crm/history?id="+id)).status,404);
+ assert.equal((await call(admin,"crm/history?id="+id)).status,200);
+ const row=db.sqlite.prepare("SELECT next_action,next_action_at,last_contact_at FROM opportunities WHERE id=?").get(id);
+ assert.equal(row.next_action,"Enviar demonstração inicial");assert.equal(row.next_action_at,"2026-12-16");assert.ok(row.last_contact_at);
+ assert.equal(db.sqlite.prepare("SELECT COUNT(*) total FROM sales WHERE opportunity_id=?").get(id).total,0);
+ const won=await call(rep1,"representante/lead-stage",{id,stage:"lost"});
+ assert.equal(won.status,400);
+ const lost=await call(rep1,"representante/lead-stage",{id,stage:"lost",lostReason:"Cliente decidiu adiar o projeto"});
+ assert.equal(lost.status,200);
+ const recorded=db.sqlite.prepare("SELECT stage,lost_reason,next_action_at FROM opportunities WHERE id=?").get(id);
+ assert.equal(recorded.stage,"lost");assert.equal(recorded.lost_reason,"Cliente decidiu adiar o projeto");assert.equal(recorded.next_action_at,null);
+ assert.equal((await call(rep1,"crm/followup",{opportunityId:id,action:"Nova tarefa",date:"2026-12-20"})).status,409);
 });
 
 test("JWT requires a valid Cloudflare signature, correct audience and active user",async()=>{
