@@ -42,7 +42,7 @@ jobs:
           echo "Public candidate submission while closed => $form_status"
           test "$form_status" = '503'
           grep -q 'Inscrições ainda não estão abertas' /tmp/candidate-response
-          for route in '/portal.html' '/api/private/me'; do
+          for route in '/portal.html' '/proposta.html' '/api/private/me'; do
             status=$(curl -sS --max-time 25 -o /tmp/private-response -w '%{http_code}' "$BASE$route")
             echo "Private $route without login => $status"
             test "$status" != '200'
