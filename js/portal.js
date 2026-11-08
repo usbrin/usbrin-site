@@ -495,13 +495,40 @@ document.addEventListener('DOMContentLoaded',async()=>{
        target.replaceChildren(new Option('Selecione um desenvolvedor aprovado',''));
        people.users.filter(x=>x.role==='desenvolvedor'&&x.status==='active').forEach(x=>target.add(new Option(x.name+' — '+x.email,x.id)));
        const salesSelect=el('project-sale');salesSelect.replaceChildren(new Option('Projeto avulso — sem venda vinculada',''));
-       availableSales.sales.forEach(x=>salesSelect.add(new Option(x.company+' · contrato '+currency(x.gross_cents)+' · recebido '+currency(x.received_cents),x.id)));
+       const salesById=new Map(availableSales.sales.map(x=>[x.id,x]));
+       availableSales.sales.forEach(x=>salesSelect.add(new Option(x.company+' · contrato '+currency(x.gross_cents)+' · recebido '+currency(x.received_cents)+(x.approved_proposal_code?' · '+x.approved_proposal_code:''),x.id)));
+       salesSelect.onchange=()=>{
+         const selected=salesById.get(salesSelect.value),scope=el('project-form').elements.description;
+         const proposed=el('project-proposal-id'),briefStatus=el('project-brief-status');
+         proposed.value='';
+         scope.readOnly=false;
+         if(!selected){
+           scope.value='';briefStatus.textContent='Projeto avulso: descreva manualmente os requisitos de desenvolvimento.';
+           return;
+         }
+         const title=el('project-form').elements.title;
+         if(!title.value.trim()||title.value.startsWith('Site — '))title.value='Site — '+selected.company;
+         if(selected.approved_proposal_id&&selected.approved_scope){
+           proposed.value=selected.approved_proposal_id;
+           scope.value=selected.approved_scope;
+           scope.readOnly=true;
+           briefStatus.textContent='Escopo importado da proposta aprovada '+selected.approved_proposal_code+'. O desenvolvedor recebe exatamente esse briefing ao ser atribuído. Para alterar o conteúdo, revise a proposta e o contrato.';
+         }else{
+           scope.value='';
+           briefStatus.textContent='Esta venda não tem proposta aprovada vinculada. Informe um briefing técnico manual e confira o escopo contratado antes de criar o projeto.';
+         }
+       };
      }
      const data=user.role==='admin'?await request('admin/projects'):await request('desenvolvedor/dashboard'),projects=data.projects;
      table(el('project-list'),['Projeto','Cliente','Etapa','Remuneração','Prazo','Prévia'],projects.map(x=>[x.title,x.client_company||'Avulso',x.stage,currency(x.compensation_cents),x.due_at||'-',x.preview_url||'-']),(cell,i)=>{
        const p=projects[i],allowed=user.role==='admin'?['proposed','accepted','in_progress','review','changes','approved','done','cancelled']:['accepted','in_progress','review'];
        const sel=node('select');allowed.forEach(v=>{const o=new Option(v,v);if(p.stage===v)o.selected=true;sel.add(o)});
        const url=node('input');url.placeholder='https://prévia';url.style.width='180px';cell.append(sel);
+       if(p.description){
+         const brief=node('details',null,'project-approved-brief');
+         brief.append(node('summary',p.proposal_id?'Ver escopo da proposta aprovada':'Ver escopo técnico'),node('pre',p.description,'project-scope'));
+         cell.append(brief);
+       }
        if(user.role==='desenvolvedor')cell.append(url);
        cell.append(btn('Atualizar',async()=>{try{await request(user.role==='admin'?'admin/project-stage':'desenvolvedor/project',{id:p.id,stage:sel.value,previewUrl:url.value});await open('projects')}catch(e){message(e.message,true)}}));
      });
@@ -560,6 +587,6 @@ document.addEventListener('DOMContentLoaded',async()=>{
  });
  el('goal-form').addEventListener('submit',async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));try{await request('admin/goal',{partnerId:d.partnerId,period:d.period,goalCents:Math.round(Number(d.amount)*100)});message('Meta comercial atualizada.')}catch(err){message(err.message,true)}});
  el('lead-form').addEventListener('submit',async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));try{await request('representante/lead',{company:d.company,contact:d.contact,city:d.city,segment:d.segment,product:d.product,estimatedCents:Math.round(Number(d.estimated||0)*100),note:d.note,nextAction:d.nextAction||'',nextActionAt:d.nextActionAt||''});e.target.reset();await open('leads')}catch(err){message(err.message,true)}});
- el('project-form').addEventListener('submit',async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));try{await request('admin/project',{title:d.title,description:d.description,developerId:d.developerId,compensationCents:Math.round(Number(d.compensation)*100),dueAt:d.dueAt,saleId:d.saleId||''});e.target.reset();await open('projects')}catch(err){message(err.message,true)}});
+ el('project-form').addEventListener('submit',async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));try{await request('admin/project',{title:d.title,description:d.description,developerId:d.developerId,compensationCents:Math.round(Number(d.compensation)*100),dueAt:d.dueAt,saleId:d.saleId||'',proposalId:d.proposalId||''});e.target.reset();await open('projects')}catch(err){message(err.message,true)}});
  try{const res=await request('me');user=res.user;el('identity').textContent='Conta: '+user.name+' · '+user.role;setNavigation(user.role);await open('overview');}catch(e){message('Portal indisponível: '+e.message+' O acesso é liberado somente após aprovação e configuração do Cloudflare Access.',true);document.querySelectorAll('#portal-nav button').forEach(x=>x.disabled=true)}
 });
