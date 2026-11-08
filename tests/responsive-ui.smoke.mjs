@@ -86,6 +86,25 @@ try{
          const prices=await page.locator('.sales-price').allTextContents();
          assert.deepEqual(prices,['A partir de R$ 690','A partir de R$ 1.190','A partir de R$ 1.790']);
          assert.equal(await page.locator('#sales-checklist input[type="checkbox"]').count(),5);
+         assert.equal(await page.locator('#guide-addon-list .sales-addon-row').count(),5);
+         assert.ok((await page.locator('[data-guide-feature="blog"]').innerText()).includes('450'));
+         assert.ok((await page.locator('[data-guide-feature="formulario"]').innerText()).includes('150'));
+         assert.ok((await page.locator('[data-guide-feature="galeria"]').innerText()).includes('180'));
+         assert.ok((await page.locator('#guide-extra-page-price').innerText()).includes('120'));
+         const total=page.locator('#guide-estimate-total');
+         assert.ok((await total.innerText()).includes('1.190'),'Business base price should be sourced from Studio');
+         await page.locator('#guide-estimate-features input[value="blog"]').check();
+         assert.ok((await total.innerText()).includes('1.640'),'Business + blog should total 1640');
+         await page.locator('#guide-estimate-features input[value="formulario"]').check();
+         assert.ok((await total.innerText()).includes('1.790'),'Business + blog + form should total 1790');
+         await page.locator('#guide-estimate-pages').fill('7');
+         assert.ok((await total.innerText()).includes('2.030'),'Adding 2 pages should add 240');
+         await page.locator('#guide-estimate-product').selectOption('landing');
+         assert.ok((await total.innerText()).includes('1.290'),'Landing + blog + form should total 1290');
+         assert.equal(await page.locator('#guide-estimate-pages').isDisabled(),true);
+         await page.locator('#guide-estimate-product').selectOption('catalogo');
+         assert.ok((await total.innerText()).includes('2.390'),'Catalog + blog + form should total 2390');
+
          await page.locator('#sales-checklist input[type="checkbox"]').first().check();
          assert.ok((await page.locator('#sales-guide-progress').innerText()).includes('1 de 5'));
          await assertFits(page,role+' guide '+width);
