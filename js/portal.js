@@ -195,6 +195,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
      {name:'Solicitações do Studio',count:tasks.studioNew,desc:'Avaliar novos briefings',view:'studio'},
      {name:'Projetos fora do prazo',count:tasks.overdueProjects,desc:'Revisar entregas',view:'projects'},
      {name:'Vendas com saldo a receber',count:tasks.salesAwaitingPayment,desc:'Conferir conciliação',view:'commissions'},
+     {name:'Mensalidades vencidas',count:tasks.servicesOverdue,desc:'Conferir cobranças',view:'billing'},
+     {name:'Mensalidades vencendo hoje',count:tasks.servicesDueToday,desc:'Ver vencimentos',view:'billing'},
      {name:'Retornos vencidos ou para hoje',count:tasks.dueFollowups,desc:'Atender contatos agendados',view:'leads'},
      {name:'Oportunidades sem atualização há 7 dias',count:tasks.dormantOpportunities,desc:'Retomar contatos',view:'leads'}
    ];
