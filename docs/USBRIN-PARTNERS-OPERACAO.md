@@ -190,3 +190,23 @@ O site oficial `usbrin-site.pages.dev` permanece com a versão anterior, sem pub
 - **Problema identificado e corrigido:** em 375 px a grade do Admin gerava largura horizontal de aproximadamente 900 px. Corrigimos o CSS com trilha `minmax(0,1fr)`, limites `max-width:100%` e scroll horizontal apenas na tabela interna. A suíte Chromium voltou a passar: <https://github.com/usbrin/usbrin-site/actions/runs/42430818888>.
 - **Limites da evidência:** browser automatizado usa HTML/CSS/JS reais de `dist/`, mas APIs de mock. Já houve confirmação humana de login OTP real nos três perfis na conversa; ainda falta teste manual da suspensão efetiva de uma sessão ativa e validação da interface no aparelho de destino. Não confundir smoke responsivo com auditoria completa de acessibilidade.
 - **Critério de publicação permanece:** nenhum merge ou abertura real de candidaturas antes de revisão jurídica/privacidade, provisionamento de D1 de produção independente, plano de acesso permanente e controle de backups.
+
+## CRM e propostas comerciais — 07/11/2026
+
+### Funcionalidades entregues somente em homologação
+- `0008_crm_followups.sql`: adiciona próxima ação, data de contato, último contato, motivo de perda e a tabela `crm_activities`, com histórico vinculado a autor e oportunidade.
+- A área **Oportunidades** permite cadastro já com próximo contato, pesquisa, filtro de etapa, filtro de retornos vencidos, registro de contatos e notas internas, reagendamento e consulta do histórico. O Admin vê apenas as informações segundo seu papel; o representante vê apenas suas oportunidades.
+- `crm/history` é GET privado; `crm/activity` e `crm/followup` são POST privados com proteção JWT, autorização por papel e origem, e vínculo com o responsável. Nenhuma dessas ações cria venda ou movimenta dinheiro.
+- Marcar uma oportunidade como **perdida** exige justificativa e remove o próximo acompanhamento. A administração vê o total de retornos vencidos no painel de prioridades.
+- `0009_proposal_drafts.sql`: prepara propostas com escopo, produto, preço em centavos, prazo, validade e condições, vinculadas à oportunidade e ao autor.
+- Representantes podem **criar rascunhos** apenas para seus leads. Só o administrador pode revisar e aprovar, informando os quatro grupos de custos estimados: produção, comissão, tributos e outros. Custos maiores que o preço bloqueiam a aprovação; oportunidade encerrada também bloqueia.
+- Os custos internos e a margem calculada **não são expostos no retorno da API para representantes**. Propostas aprovadas podem ser abertas em `/proposta.html` e salvas como PDF via impressão do navegador; a página depende de autenticação Access e acesso do usuário à oportunidade.
+- A marcação de proposta como enviada exige confirmação explícita de envio por canal externo. **Não há envio automático por e-mail, aceite eletrônico, geração automática de contrato ou venda**. O preço e o prazo ainda exigem revisão humana antes da aprovação.
+- Uma proposta rejeitada fica no histórico; para revisões é necessário criar novo rascunho. Não confundir `approved` ou `sent` com contratação efetiva e receita realizada.
+
+### Homologação e limites
+- Migrações `0008` e `0009` foram aplicadas à base **Preview** apenas; a produção permanece no branch anterior, e as inscrições continuam desativadas.
+- Testes D1 em memória validam papéis, histórico privado, datas de retorno, motivo da perda, aprovação administrativa, custos inacessíveis ao representante, bloqueio de custos acima do preço, bloqueio de oportunidades encerradas, emissão sem venda e marcação manual de envio.
+- Chromium valida página de proposta aprovada em telas de 375, 768 e 1440 px, além da geração de um arquivo PDF A4 não vazio. Teste: <https://github.com/usbrin/usbrin-site/actions/runs/42433220284>.
+- A análise de margem é estimativa: ainda faltam regras comerciais definitivas para impostos efetivos, custos fixos, despesas de aquisição, provisões de garantia e capital de giro. **Não substituir a decisão financeira do gestor por aprovação automática.**
+- Não abrir candidatura pública nem realizar merge antes de revisão jurídica da privacidade e contratos, controle de backup de produção e teste manual de experiência no dispositivo real.
