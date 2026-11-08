@@ -42,6 +42,13 @@ const fixture={
         amount_cents:-9000,description:'Pagamento de ferramenta'}],
       expenses:[{id:'expense-qa-001',supplier:'Software Exemplo',label:'Ferramenta de trabalho',category:'software',
         document_reference:'NOTA-QA-001',amount_cents:18000,paid_cents:9000,due_on:'2026-11-21',status:'partially_paid'}]},
+    'admin/control/fiscal':{ok:true,
+      documents:[{id:'fiscal-qa-001',source_kind:'sale',source_id:'sale-handoff-demo-001',
+        issuer_name:'USBRIN HOMOLOGACAO',document_number:'NFS-QA-2026-01',issued_on:'2026-11-04',
+        amount_cents:119000,status:'recorded'}],
+      sources:{sale:[{id:'sale-handoff-demo-001',company:'Cliente Homologação UX',gross_cents:119000}],
+        service_charge:[{id:'charge-mock-001',company:'Cliente Homologação UX',kind:'support',period:'2026-10',amount_cents:25000}],
+        expense:[{id:'expense-qa-001',supplier:'Software Exemplo',document_reference:'NOTA-QA-001',amount_cents:18000}]}},
     'admin/bank/overview':{ok:true,batches:[{id:'batch-qa-001',account_alias:'CONTA-QA',filename:'sample.csv',sha_prefix:'123456789abc',row_count:2,created_at:'2026-11-06 00:00:00'}],
       totals:{credits_imported:1,debits_imported:1,matched_credits:1,unmatched_credits:0,pending_refunds:0,
         settled_refund_cents:0,unmatched_sale_receipts:0,unmatched_service_receipts:0},
@@ -202,6 +209,10 @@ try{
          assert.ok((await page.locator('#finance-main-metrics').innerText()).includes('1.190,00'));
          assert.ok((await page.locator('#finance-expense-list').innerText()).includes('Software Exemplo'));
          assert.ok((await page.locator('#finance-project-margin').innerText()).includes('Cliente Homologação UX'));
+         assert.ok((await page.locator('#finance-fiscal-list').innerText()).includes('NFS-QA-2026-01'));
+         assert.equal(await page.locator('#finance-fiscal-source option').count(),2);
+         await page.locator('#finance-fiscal-kind').selectOption('expense');
+         assert.ok((await page.locator('#finance-fiscal-source').innerText()).includes('Software Exemplo'));
          await assertFits(page,'admin finance ledger '+width);
          await page.locator('#portal-nav [data-view="bank"]').click();
          await page.locator('#view-bank').waitFor({state:'visible'});
