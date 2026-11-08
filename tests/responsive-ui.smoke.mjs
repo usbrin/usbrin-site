@@ -13,7 +13,8 @@ const fixture={
   admin: {
     me:{ok:true,user:{name:'HOMOLOGAÇÃO Admin',role:'admin'}},
     'admin/overview':{ok:true,applications:[],users:[],projects:[],opportunities:[],receivedCents:0,commissionsPendingCents:0,studioInquiries:[],tasks:{}},
-    'admin/users':{ok:true,users:[]}
+    'admin/users':{ok:true,users:[]},
+    'crm/proposals':{ok:true,proposals:[{id:'mock-approved-quote-001',code:'Q0123456789ABC',opportunity_id:'mock-quote-op-1234',customer_company:'Empresa Demonstrativa',customer_contact:'Contato Comercial',scope:'Site institucional responsivo com cinco páginas, navegação, formulário de contato, revisão final e publicação orientada.',product:'business',price_cents:119000,duration_days:20,valid_until:'2027-02-20',terms:'O cronograma e o pagamento serão formalizados por contrato.',status:'approved',created_at:'2026-11-07 12:00:00'}]}
   },
   representante:{
     me:{ok:true,user:{name:'HOMOLOGAÇÃO Representante',role:'representante'}},
@@ -27,6 +28,7 @@ const fixture={
 const portalUrl=pathToFileURL(resolve('dist/portal.html')).href;
 const recruitmentUrl=pathToFileURL(resolve('dist/public/parceiros.html')).href;
 const applyUrl=pathToFileURL(resolve('dist/public/candidatura.html')).href+'?area=representante';
+const proposalUrl=pathToFileURL(resolve('dist/proposta.html')).href+'?o=mock-quote-op-1234&p=mock-approved-quote-001';
 
 async function pageFor(role,width,url){
  const context=await browser.newContext({viewport:{width,height:812},deviceScaleFactor:1});
@@ -82,6 +84,22 @@ try{
        console.log('PASS portal',role,width);
      }finally{await context.close();}
    }
+   const printed=await pageFor('admin',width,proposalUrl);
+   try{
+     await printed.page.locator('#proposal-document').waitFor({state:'visible',timeout:15000});
+     assert.ok((await printed.page.locator('#proposal-customer').innerText()).includes('Empresa Demonstrativa'));
+     assert.ok((await printed.page.locator('#proposal-price').innerText()).includes('1.190,00'));
+     assert.equal(await printed.page.locator('#print-proposal').isEnabled(),true);
+     await assertFits(printed.page,'approved-proposal '+width);
+     assert.deepEqual(printed.errors,[],'Proposal page errors '+width);
+     await printed.page.screenshot({path:resolve(outDir,'approved-proposal-'+width+'.png'),fullPage:true});
+     if(width===1440){
+       const pdf=await printed.page.pdf({path:resolve(outDir,'approved-proposal-print.pdf'),format:'A4',printBackground:true});
+       assert.ok(pdf.length>12000,'Browser must generate a nonempty PDF');
+       assert.equal(pdf.subarray(0,4).toString(),'%PDF');
+     }
+     console.log('PASS approved proposal / PDF',width);
+   }finally{await printed.context.close();}
    for(const [name,url] of [['recruitment',recruitmentUrl],['candidate-closed',applyUrl]]){
      const {context,page,errors}=await pageFor('admin',width,url);
      try{
