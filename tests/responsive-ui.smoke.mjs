@@ -18,7 +18,7 @@ const fixture={
     'admin/sales':{ok:true,sales:[{id:'sale-handoff-demo-001',company:'Cliente Homologação UX',gross_cents:179000,received_cents:179000,approved_proposal_id:'proposal-approved-demo-001',approved_proposal_code:'QTESTDEMO001',approved_scope:'BRIEFING APROVADO: cinco páginas, blog gerenciável e contato por WhatsApp.'}]},
     'admin/projects':{ok:true,projects:[]},
     'admin/developer-payments':{ok:true,payments:[]},
-    'crm/proposals':{ok:true,proposals:[{id:'mock-approved-quote-001',code:'Q0123456789ABC',opportunity_id:'mock-quote-op-1234',customer_company:'Empresa Demonstrativa',customer_contact:'Contato Comercial',scope:'Site institucional responsivo com cinco páginas, navegação, formulário de contato, revisão final e publicação orientada.',product:'business',price_cents:119000,duration_days:20,valid_until:'2027-02-20',terms:'O cronograma e o pagamento serão formalizados por contrato.',status:'approved',created_at:'2026-11-07 12:00:00'}]}
+    'crm/proposals':{ok:true,proposals:[{id:'mock-approved-quote-001',code:'Q0123456789ABC',opportunity_id:'mock-quote-op-1234',customer_company:'Empresa Demonstrativa',customer_contact:'Contato Comercial',scope:'Site institucional responsivo com cinco páginas, navegação, formulário de contato, revisão final e publicação orientada.',product:'business',price_cents:119000,duration_days:20,valid_until:'2027-02-20',terms:'O cronograma e o pagamento serão formalizados por contrato.',status:'approved',created_at:'2026-11-07 12:00:00',hosting_requested:1,support_requested:1,support_reference_monthly_cents:25000}]}
   },
   representante:{
     me:{ok:true,user:{name:'HOMOLOGAÇÃO Representante',role:'representante'}},
@@ -92,7 +92,7 @@ try{
          assert.equal(await cards.count(),3,'Three official plans required');
          const prices=await page.locator('.sales-price').allTextContents();
          assert.deepEqual(prices.map(x=>x.replaceAll(String.fromCharCode(160),' ')),['A partir de R$ 690','A partir de R$ 1.190','A partir de R$ 1.790']);
-         assert.equal(await page.locator('#sales-checklist input[type="checkbox"]').count(),5);
+         assert.equal(await page.locator('#sales-checklist input[type="checkbox"]').count(),6);
          assert.equal(await page.locator('#guide-addon-list .sales-addon-row').count(),5);
          assert.ok((await page.locator('[data-guide-feature="blog"]').innerText()).includes('450'));
          assert.ok((await page.locator('[data-guide-feature="formulario"]').innerText()).includes('150'));
@@ -111,6 +111,11 @@ try{
          assert.equal(await page.locator('#guide-estimate-pages').isDisabled(),true);
          await page.locator('#guide-estimate-product').selectOption('catalogo');
          assert.ok((await total.innerText()).includes('2.390'),'Catalog + blog + form should total 2390');
+         await page.locator('#guide-service-hosting').check();
+         await page.locator('#guide-service-support').check();
+         assert.ok((await page.locator('#guide-service-summary').innerText()).includes('R$ 250/mês'));
+         assert.ok((await total.innerText()).includes('2.390'),'Monthly support cannot be added to the one-time quote');
+         assert.ok((await page.locator('.guide-payments-policy').innerText()).includes('Pix'));
 
          await page.locator('#guide-brief-lead option').nth(1).waitFor({state:'attached'});
          await page.locator('#guide-brief-lead').selectOption('op-briefing-demo-001');
@@ -124,11 +129,16 @@ try{
          assert.equal(draft.opportunityId,'op-briefing-demo-001');
          assert.equal(draft.product,'catalogo');
          assert.equal(draft.priceCents,239000);
+         assert.equal(draft.hostingRequested,true);
+         assert.equal(draft.supportRequested,true);
+         assert.ok(draft.scope.includes('hospedagem gerenciada'));
+         assert.ok(draft.scope.includes('Suporte USBRIN mensal'));
+         assert.ok(draft.terms.includes('representantes não estão autorizados a receber valores'));
          assert.ok(draft.scope.includes('Cliente enviará logotipo e fotografias.'));
          assert.ok(draft.scope.includes('Blog gerenciável'));
          await page.waitForFunction(()=>document.querySelector('#guide-brief-feedback')?.textContent?.includes('QTESTGUIDED001'),{timeout:15000});
          await page.locator('#sales-checklist input[type="checkbox"]').first().check();
-         assert.ok((await page.locator('#sales-guide-progress').innerText()).includes('1 de 5'));
+         assert.ok((await page.locator('#sales-guide-progress').innerText()).includes('1 de 6'));
          await assertFits(page,role+' guide '+width);
          await page.locator('#guide-goto-leads').click();
          await page.locator('#view-leads').waitFor({state:'visible'});
@@ -159,6 +169,10 @@ try{
      await printed.page.locator('#proposal-document').waitFor({state:'visible',timeout:15000});
      assert.ok((await printed.page.locator('#proposal-customer').innerText()).includes('Empresa Demonstrativa'));
      assert.ok((await printed.page.locator('#proposal-price').innerText()).includes('1.190,00'));
+     await printed.page.locator('#proposal-optional-services').waitFor({state:'visible'});
+     assert.ok((await printed.page.locator('#proposal-optional-services').innerText()).includes('R$ 250 por mês'));
+     assert.ok((await printed.page.locator('#proposal-optional-services').innerText()).includes('preço e condições a definir'));
+     assert.ok((await printed.page.locator('.payment-policy').innerText()).includes('Representantes comerciais não estão autorizados'));
      assert.equal(await printed.page.locator('#print-proposal').isEnabled(),true);
      await assertFits(printed.page,'approved-proposal '+width);
      assert.deepEqual(printed.errors,[],'Proposal page errors '+width);
