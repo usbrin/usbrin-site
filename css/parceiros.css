@@ -151,3 +151,20 @@
 #project-brief-status{font-size:12px}
 #project-form textarea:read-only{border-color:#6e5393;background:#231c2d}
 @media(max-width:620px){.sales-brief-form{grid-template-columns:minmax(0,1fr)}.sales-brief-result{flex-direction:column;align-items:flex-start}.sales-brief-form>button{width:100%}}
+
+/* Optional post-delivery services, independent of website build pricing. */
+.guide-postsale{border-top:1px solid var(--line);margin-top:23px;padding-top:21px}
+.guide-postsale h3{font-size:21px;margin:8px 0}
+.guide-postsale-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin:17px 0}
+.guide-postsale-option{display:flex;align-items:flex-start;gap:12px;padding:18px;min-width:0;background:#201a2b;border:1px solid #4d4064;border-radius:13px;cursor:pointer}
+.guide-postsale-option:has(input:checked){background:#2a2137;border-color:#9771df}
+.guide-postsale-option input{margin:3px 0 0;flex:none;width:18px;height:18px;accent-color:var(--purple)}
+.guide-postsale-option>span{display:flex;flex-direction:column;gap:8px;min-width:0}
+.guide-postsale-option strong{color:#f6f0ff;font-size:15px}
+.guide-postsale-option small{color:var(--muted);font-size:12px;line-height:1.55}
+.guide-postsale-option b{font-size:13px;color:#dacbff}
+.guide-postsale-note{font-size:12px;color:var(--muted);line-height:1.5}
+.guide-payments-policy{margin:24px 0 12px;padding:16px 18px;background:#1d1a24;border:1px solid #5f4b6f;border-left:3px solid var(--purple);border-radius:10px}
+.guide-payments-policy h3{font-size:17px;margin:0 0 7px}
+.guide-payments-policy p{margin:0;font-size:13px;line-height:1.65;color:var(--text)}
+@media(max-width:760px){.guide-postsale-grid{grid-template-columns:1fr}}
