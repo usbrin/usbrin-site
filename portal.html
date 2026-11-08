@@ -108,6 +108,45 @@
 <section id="developer-payments-admin" class="panel hidden"><h2>Remuneração de desenvolvedores</h2><p class="muted">Registre obrigações somente de projetos aprovados, e marque como pago somente após conciliação financeira.</p><form id="developer-payment-form" class="mini-form"><select id="developer-payment-project" name="projectId" required><option value="">Selecione um projeto aprovado</option></select><input name="amount" type="number" min="0.01" step=".01" placeholder="Valor (BRL)" required><button class="btn primary" type="submit">Registrar valor previsto</button></form><div id="developer-payment-list"></div></section>
 <section id="view-billing" class="view hidden">
   <div class="panel">
+    <span class="kicker">PAINEL FINANCEIRO USBRIN · ADMIN</span>
+    <h2>Visão financeira consolidada</h2>
+    <p class="muted">Vendas, serviços recorrentes, obrigações, comissões e desenvolvedores. Valores previstos, registrados e associados a extratos são exibidos separadamente.</p>
+    <label class="finance-month-select">Competência do fluxo classificado <input type="month" id="finance-month" aria-label="Mês da análise financeira"></label>
+    <div id="finance-main-metrics" class="billing-metrics"></div>
+    <h3>Movimentos classificados no mês</h3>
+    <div id="finance-month-metrics" class="billing-metrics"></div>
+    <p class="notice">O fluxo classificado <strong>não é saldo bancário, lucro líquido nem demonstração contábil</strong>. Extratos CSV importados precisam ter a origem confirmada independentemente no banco. Pagamentos informados de comissões/desenvolvedores ainda requerem conciliação externa.</p>
+    <h3>Contribuição estimada por contrato</h3>
+    <p class="muted">Receita contratada menos custos alocados registrados. Não representa lucro efetivo; impostos, despesas fixas e obrigações não vinculadas podem estar ausentes.</p>
+    <div id="finance-project-margin"></div>
+  </div>
+  <div class="panel">
+    <h2>Contas a pagar e fornecedores</h2>
+    <p class="muted">Cadastre obrigações somente após conferir o documento do fornecedor. O pagamento só será classificado quando houver um débito compatível no extrato importado. A administração não transfere dinheiro por este portal.</p>
+    <form id="finance-expense-form" class="billing-form">
+      <label>Fornecedor <input name="supplier" maxlength="160" minlength="3" required placeholder="Nome do fornecedor"></label>
+      <label>Referência do documento <input name="documentReference" maxlength="160" minlength="5" required placeholder="Número da nota ou contrato"></label>
+      <label class="billing-wide">Descrição do custo <input name="label" maxlength="260" minlength="8" required placeholder="O que foi contratado ou comprado"></label>
+      <label>Categoria
+        <select name="category" required>
+          <option value="infrastructure">Infraestrutura e hospedagem</option>
+          <option value="software">Software e ferramentas</option>
+          <option value="marketing">Marketing e captação</option>
+          <option value="tax">Impostos e taxas</option>
+          <option value="contractor">Fornecedor terceirizado (não duplicar folha de desenvolvedores)</option>
+          <option value="office">Administrativo e escritório</option>
+          <option value="other">Outros custos</option>
+        </select>
+      </label>
+      <label>Valor previsto (R$) <input name="amount" type="number" step="0.01" min="0.01" required></label>
+      <label>Vencimento <input name="dueOn" type="date" required></label>
+      <label>Projeto ou contrato relacionado (opcional) <select id="finance-expense-sale" name="saleId"><option value="">Custo geral, não vinculado a uma venda</option></select></label>
+      <label class="billing-wide billing-confirm"><input name="confirmedDocument" type="checkbox" required><span>Conferi o documento e estou registrando apenas uma obrigação financeira, ainda não um pagamento.</span></label>
+      <button type="submit" class="btn primary">Registrar obrigação</button>
+    </form>
+    <div id="finance-expense-list"></div>
+  </div>
+  <div class="panel">
     <span class="kicker">CONTROLE ADMINISTRATIVO · SOMENTE USBRIN</span>
     <h2>Financeiro dos serviços recorrentes</h2>
     <p class="muted">Hospedagem gerenciada e Suporte USBRIN. Contrato, cobrança prevista e recebimento conciliado são registros diferentes. Nenhuma cobrança é enviada automaticamente e nenhuma mensalidade é reconhecida como recebida sem confirmação bancária.</p>
