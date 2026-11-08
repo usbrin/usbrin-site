@@ -354,18 +354,26 @@ export async function onRequest(context){
       return respond({ok:true});
     }
     if(route==="representante/dashboard"&&method==="GET"&&allowed(user,"representante")){
-      const [leads,commissions,goals,sales]=await db.batch([
+      const [leads,commissions,goals,sales,proposals,contracts,leadCount]=await db.batch([
         query(db,"SELECT * FROM opportunities WHERE partner_id=? ORDER BY updated_at DESC LIMIT 200",user.id),
-        query(db,"SELECT c.*,s.gross_cents,s.received_cents FROM commissions c JOIN sales s ON s.id=c.sale_id WHERE c.partner_id=? ORDER BY c.created_at DESC LIMIT 100",user.id),
+        query(db,"SELECT c.*,s.gross_cents,s.received_cents,o.company customer_company,o.id opportunity_id FROM commissions c JOIN sales s ON s.id=c.sale_id JOIN opportunities o ON o.id=s.opportunity_id WHERE c.partner_id=? AND o.partner_id=? ORDER BY c.created_at DESC LIMIT 100",user.id,user.id),
         query(db,"SELECT period,goal_cents FROM goals WHERE partner_id=? ORDER BY period DESC LIMIT 12",user.id),
-        query(db,"SELECT r.amount_cents,r.received_at FROM sale_receipts r JOIN sales s ON s.id=r.sale_id JOIN opportunities o ON o.id=s.opportunity_id WHERE o.partner_id=? AND s.status!='reversed' ORDER BY r.received_at DESC LIMIT 500",user.id)
+        query(db,"SELECT r.amount_cents,r.received_at FROM sale_receipts r JOIN sales s ON s.id=r.sale_id JOIN opportunities o ON o.id=s.opportunity_id WHERE o.partner_id=? AND s.status!='reversed' ORDER BY r.received_at DESC LIMIT 500",user.id),
+        query(db,"SELECT p.id,p.opportunity_id,p.code,p.status,p.price_cents,p.valid_until,p.created_at,p.sent_at,p.approved_at FROM proposals p JOIN opportunities o ON o.id=p.opportunity_id WHERE o.partner_id=? ORDER BY p.created_at DESC,p.rowid DESC LIMIT 400",user.id),
+        query(db,"SELECT s.id,s.opportunity_id,s.gross_cents,s.received_cents,s.status FROM sales s JOIN opportunities o ON o.id=s.opportunity_id WHERE o.partner_id=? ORDER BY s.created_at DESC LIMIT 200",user.id),
+        query(db,"SELECT COUNT(*) total FROM opportunities WHERE partner_id=?",user.id)
       ]);
-      return respond({ok:true,leads:leads.results,commissions:commissions.results,goals:goals.results,sales:sales.results});
+      return respond({ok:true,leads:leads.results,commissions:commissions.results,goals:goals.results,sales:sales.results,
+        proposals:proposals.results,contracts:contracts.results,commissionRateBps:1500,
+        leadCount:leadCount.results[0]?.total||0,leadsTruncated:(leadCount.results[0]?.total||0)>200});
     }
     if(route==="representante/lead"&&method==="POST"&&allowed(user,"representante")){
       const b=await readBody(request),company=str(b.company,160),contact=str(b.contact,160),value=Number(b.estimatedCents||0),action=str(b.nextAction,160),day=str(b.nextActionAt,10);
       if(company.length<3||contact.length<3||!positive(value))return error("Empresa, contato e valor precisam ser válidos.");
       if((action||day)&&(!isoDate(day)||action.length<3))return error("Informe a próxima ação e uma data válida.");
+      // Prevent duplicate entries in the same representative portfolio without revealing other partners' clients.
+      const duplicate=await query(db,"SELECT id FROM opportunities WHERE partner_id=? AND lower(trim(company))=lower(trim(?)) AND lower(trim(contact))=lower(trim(?)) AND stage NOT IN ('lost','cancelled') LIMIT 1",user.id,company,contact).first();
+      if(duplicate)return error("Esta empresa e contato já estão cadastrados na sua carteira. Consulte Oportunidades.",409);
       const id=fresh();
       await query(db,"INSERT INTO opportunities(id,partner_id,company,contact,city,segment,product,estimated_cents,stage,note,next_action,next_action_at) VALUES (?,?,?,?,?,?,?,?, 'new',?,?,?)",id,user.id,company,contact,str(b.city,120),str(b.segment,120),str(b.product,80),value,str(b.note,1200),action||null,day||null).run();
       await audit(db,user,"lead.create","opportunity",id);return respond({ok:true,id},201);
