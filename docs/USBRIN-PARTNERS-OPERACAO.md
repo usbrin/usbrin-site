@@ -210,3 +210,12 @@ O site oficial `usbrin-site.pages.dev` permanece com a versão anterior, sem pub
 - Chromium valida página de proposta aprovada em telas de 375, 768 e 1440 px, além da geração de um arquivo PDF A4 não vazio. Teste: <https://github.com/usbrin/usbrin-site/actions/runs/42433220284>.
 - A análise de margem é estimativa: ainda faltam regras comerciais definitivas para impostos efetivos, custos fixos, despesas de aquisição, provisões de garantia e capital de giro. **Não substituir a decisão financeira do gestor por aprovação automática.**
 - Não abrir candidatura pública nem realizar merge antes de revisão jurídica da privacidade e contratos, controle de backup de produção e teste manual de experiência no dispositivo real.
+
+## Guia comercial para representantes — 07/11/2026
+
+- A seção **Guia comercial** está disponível apenas na navegação do administrador e do representante. Não faz parte da área pública nem da visão do desenvolvedor. Há um atalho na área **Oportunidades**.
+- Referências alinhadas ao USBRIN Studio atual: Landing **a partir de R$690** (1 página, até 6 seções); Business **a partir de R$1.190** (site institucional, até 5 páginas); Catálogo **a partir de R$1.790** (vitrine de até 20 itens, sem carrinho/checkout/pagamento online). A palavra **a partir de** é obrigatória; escopos adicionais exigem aprovação.
+- O checklist de 5 itens orienta a conversa: identificar o objetivo, explicar limites, avisar que preços são iniciais, levantar materiais e funcionalidades, registrar oportunidade/retorno/briefing. Os checks são apenas temporários na tela e **não geram certificação ou aprovação comercial**; a proposta segue submetida à análise do Admin.
+- Limites comerciais: nenhum representante deve garantir resultados em vendas ou busca, prazo, desconto, domínio/hospedagem incluídos, suporte recorrente ou integrações além do escopo sem confirmação documental da USBRIN.
+- Controle de manutenção: ao atualizar os valores ou escopo oficiais do Studio, atualizar o guia na mesma revisão. No estado atual não há sincronização automática das tabelas de preço.
+- Testes Chromium incluem preços e visibilidade nos três perfis e telas de 375/768/1440 px.
