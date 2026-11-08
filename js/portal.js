@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
    const body=node('tbody');rows.forEach((r,i)=>{const row=node('tr');r.forEach(x=>row.append(node('td',x)));if(actions){const cell=node('td');actions(cell,i);row.append(cell)}body.append(row)});t.append(body);wrap.append(t);parent.append(wrap);
  };
  const setNavigation=role=>{
-   const allowed=role==='admin'?['overview','leads','applications','studio','partners','projects','commissions']:role==='representante'?['overview','leads','commissions']:['overview','projects','commissions'];
+   const allowed=role==='admin'?['overview','leads','guide','applications','studio','partners','projects','commissions']:role==='representante'?['overview','leads','guide','commissions']:['overview','projects','commissions'];
    document.querySelectorAll('#portal-nav button').forEach(b=>b.classList.toggle('hidden',!allowed.includes(b.dataset.view)));
    el('lead-create').classList.toggle('hidden',role!=='representante');el('goal-panel').classList.add('hidden');el('action-center').classList.toggle('hidden',role!=='admin');
    el('project-create').classList.toggle('hidden',role!=='admin');
@@ -31,10 +31,17 @@ document.addEventListener('DOMContentLoaded',async()=>{
    view=name;document.querySelectorAll('.view').forEach(x=>x.classList.add('hidden'));el('view-'+name).classList.remove('hidden');
    el('developer-payments-admin').classList.toggle('hidden',!(name==='projects'&&user.role==='admin'));
    document.querySelectorAll('#portal-nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===name));
-   el('panel-title').textContent=({overview:'Visão geral',leads:'Oportunidades',applications:'Candidaturas',studio:'Solicitações Studio',partners:'Parceiros',projects:'Projetos',commissions:'Comissões'})[name];
+   el('panel-title').textContent=({overview:'Visão geral',leads:'Oportunidades',guide:'Guia comercial',applications:'Candidaturas',studio:'Solicitações Studio',partners:'Parceiros',projects:'Projetos',commissions:'Comissões'})[name];
    try{await load(name);message('Dados atualizados a partir do servidor.');}catch(e){message(e.message,true);}
  };
  document.querySelectorAll('#portal-nav button').forEach(x=>x.addEventListener('click',()=>open(x.dataset.view)));
+ const guideChecks=[...document.querySelectorAll('#sales-checklist input[type="checkbox"]')];
+ const guideProgress=()=>{const checked=guideChecks.filter(x=>x.checked).length;
+   el('sales-guide-progress').textContent=checked+' de '+guideChecks.length+' pontos conferidos'+(checked===guideChecks.length?'. Checklist concluído.':'.');
+ };
+ guideChecks.forEach(x=>x.addEventListener('change',guideProgress));
+ el('lead-open-guide').addEventListener('click',()=>open('guide'));
+ el('guide-goto-leads').addEventListener('click',()=>open('leads'));
  for(const id of ['lead-search','lead-filter-stage','lead-filter-due'])el(id).addEventListener(id==='lead-search'?'input':'change',()=>{if(user&&view==='leads')load('leads').catch(e=>message(e.message,true))});
  for(const id of ['studio-status-filter','studio-search','app-type-filter','app-status-filter','app-search']){
    el(id).addEventListener(id==='studio-search'||id==='app-search'?'input':'change',()=>{
