@@ -280,6 +280,12 @@ test("quote drafts require administrator approval and never create sales or disc
  assert.equal(decline.status,200);
  const rows=db.sqlite.prepare("SELECT status FROM proposals WHERE opportunity_id=?").all(id).map(x=>x.status).sort();
  assert.deepEqual(rows,["rejected","sent"]);
+ const cancelledLead=await call(rep,"representante/lead",{company:"Cliente encerrado teste",contact:"Contato encerrado",estimatedCents:69000});
+ assert.equal(cancelledLead.status,201);
+ const pending=await call(rep,"crm/proposal-draft",{...base,opportunityId:cancelledLead.data.id});
+ assert.equal(pending.status,201);
+ assert.equal((await call(rep,"representante/lead-stage",{id:cancelledLead.data.id,stage:"lost",lostReason:"Contato desistiu do projeto"})).status,200);
+ assert.equal((await call(admin,"admin/proposal-review",{id:pending.data.id,decision:"approved",developerCents:0,commissionCents:0,taxCents:0,otherCents:0})).status,409);
 });
 
 test("JWT requires a valid Cloudflare signature, correct audience and active user",async()=>{
