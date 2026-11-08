@@ -13,7 +13,7 @@ import {readBody,checkOrigin} from "../functions/_lib/security.js";
 class TestD1{
  constructor(){
    this.sqlite=new DatabaseSync(":memory:");
-   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql","migrations/0004_studio_inquiries.sql","migrations/0005_studio_assignments.sql","migrations/0006_sale_project_links.sql","migrations/0007_atomic_receipts.sql","migrations/0008_crm_followups.sql","migrations/0009_proposal_drafts.sql"]){
+   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql","migrations/0004_studio_inquiries.sql","migrations/0005_studio_assignments.sql","migrations/0006_sale_project_links.sql","migrations/0007_atomic_receipts.sql","migrations/0008_crm_followups.sql","migrations/0009_proposal_drafts.sql","migrations/0010_project_proposal_handoff.sql"]){
      this.sqlite.exec(readFileSync(new URL("../"+migration,import.meta.url),"utf8"));
    }
  }
@@ -286,6 +286,54 @@ test("quote drafts require administrator approval and never create sales or disc
  assert.equal(pending.status,201);
  assert.equal((await call(rep,"representante/lead-stage",{id:cancelledLead.data.id,stage:"lost",lostReason:"Contato desistiu do projeto"})).status,200);
  assert.equal((await call(admin,"admin/proposal-review",{id:pending.data.id,decision:"approved",developerCents:0,commissionCents:0,taxCents:0,otherCents:0})).status,409);
+});
+
+
+test("approved client scope becomes the developer briefing only after received sale and admin assignment",async()=>{
+ const rep=users[1][1],admin=users[0][1],dev=users[3][1];
+ const lead=await call(rep,"representante/lead",{company:"HOMOLOGAÇÃO Cliente Integração",contact:"Contato Comercial",estimatedCents:119000});
+ assert.equal(lead.status,201);
+ const scope="BRIEFING COMERCIAL USBRIN — CONFERIR ANTES DA PRODUÇÃO\\nPlano: USBRIN Business\\nPáginas: 5\\nAdicionais: Blog gerenciável\\nObjetivo: apresentar os serviços\\nMateriais: identidade visual e textos serão entregues pelo cliente.";
+ const payload={opportunityId:lead.data.id,product:"business",scope,priceCents:119000,durationDays:20,validUntil:"2027-03-01",terms:"Aprovação não é contrato."};
+ const draft=await call(rep,"crm/proposal-draft",payload);assert.equal(draft.status,201);
+ const approval=await call(admin,"admin/proposal-review",{id:draft.data.id,decision:"approved",developerCents:25000,commissionCents:10000,taxCents:10000,otherCents:5000});
+ assert.equal(approval.status,200);
+ const sale=await call(admin,"admin/sale",{opportunityId:lead.data.id,grossCents:119000,receivedCents:119000,reference:"BANK-TEST-HANDOFF-01"});
+ assert.equal(sale.status,200);
+ const eligible=await call(admin,"admin/sales");
+ assert.equal(eligible.status,200);
+ const listed=eligible.data.sales.find(s=>s.id===sale.data.saleId);
+ assert.ok(listed);
+ assert.equal(listed.approved_proposal_id,draft.data.id);
+ assert.equal(listed.approved_scope,scope);
+ const rejected=await call(rep,"admin/project",{title:"Indevido",description:scope,developerId:"d1",compensationCents:20000,saleId:sale.data.saleId,proposalId:draft.data.id});
+ assert.equal(rejected.status,404);
+ assert.equal((await call(admin,"admin/project",{title:"Projeto sem venda",description:scope,developerId:"d1",compensationCents:20000,proposalId:draft.data.id})).status,400);
+ const anotherLead=await call(rep,"representante/lead",{company:"Outra empresa para teste",contact:"Outro contato",estimatedCents:119000});
+ const otherDraft=await call(rep,"crm/proposal-draft",{...payload,opportunityId:anotherLead.data.id});
+ assert.equal(otherDraft.status,201);
+ assert.equal((await call(admin,"admin/proposal-review",{id:otherDraft.data.id,decision:"approved",developerCents:25000,commissionCents:10000,taxCents:10000,otherCents:5000})).status,200);
+ assert.equal((await call(admin,"admin/project",{title:"Vinculo incorreto",description:scope,developerId:"d1",compensationCents:30000,saleId:sale.data.saleId,proposalId:otherDraft.data.id})).status,409);
+ const project=await call(admin,"admin/project",{title:"Site institucional com blog",description:"TEXTO MODIFICADO NA INTERFACE",developerId:"d1",compensationCents:25000,saleId:sale.data.saleId,proposalId:draft.data.id});
+ assert.equal(project.status,201);
+ const technical=await call(dev,"desenvolvedor/dashboard");
+ assert.equal(technical.status,200);
+ const assigned=technical.data.projects.find(p=>p.id===project.data.id);
+ assert.ok(assigned);assert.equal(assigned.description,scope);
+ assert.equal(assigned.proposal_id,draft.data.id);
+ assert.equal((await call(rep,"desenvolvedor/dashboard")).status,404);
+ assert.equal((await call(admin,"admin/project",{title:"Duplicado",description:scope,developerId:"d1",compensationCents:25000,saleId:sale.data.saleId,proposalId:draft.data.id})).status,409);
+});
+
+test("special unpriced feature requests cannot be approved as standard-priced proposals",async()=>{
+ const rep=users[1][1],admin=users[0][1];
+ const lead=await call(rep,"representante/lead",{company:"Cliente com integração especial",contact:"Responsável CRM",estimatedCents:69000});
+ const draft=await call(rep,"crm/proposal-draft",{opportunityId:lead.data.id,product:"personalizado",scope:"Loja com login, checkout e integração externa. Demanda precificação manual antes do envio.",priceCents:69000,durationDays:30,validUntil:"2027-03-01"});
+ assert.equal(draft.status,201);
+ const approval=await call(admin,"admin/proposal-review",{id:draft.data.id,decision:"approved",developerCents:0,commissionCents:0,taxCents:0,otherCents:0});
+ assert.equal(approval.status,409);
+ const check=await call(admin,"crm/proposals?id="+lead.data.id);
+ assert.equal(check.data.proposals[0].status,"draft");
 });
 
 test("JWT requires a valid Cloudflare signature, correct audience and active user",async()=>{
