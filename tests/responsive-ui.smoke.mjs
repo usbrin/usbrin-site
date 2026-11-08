@@ -34,6 +34,7 @@ const fixture={
         separatelyReportedPaidDevelopersCents:0,matchedCount:2},
       monthly:{bankMatchedInCents:144000,bankMatchedExpenseOutCents:9000,bankMatchedRefundOutCents:0,
         netClassifiedCents:135000,pendingSupplierBillsDueCents:9000,pendingServiceInvoicesDueCents:25000},
+      exceptions:{commissionsWithRefunds:0,refundReviewsPending:0,unmatchedBankCredits:0},
       projects:[{id:'sale-handoff-demo-001',company:'Cliente Homologação UX',gross_cents:119000,received_cents:119000,
         commission_allocated_cents:11900,developer_allocated_cents:35000,direct_expense_cents:18000,estimatedContributionCents:54100}]},
     'admin/control/expenses':{ok:true,
@@ -207,6 +208,7 @@ try{
          assert.ok((await page.locator('#billing-receipts').innerText()).includes('BANK-MOCK-001'));
          assert.equal(await page.locator('#billing-agreement-form').isVisible(),true);
          assert.ok((await page.locator('#finance-main-metrics').innerText()).includes('1.190,00'));
+         assert.ok((await page.locator('#finance-exceptions').innerText()).includes('Sem pendências identificadas'));
          assert.ok((await page.locator('#finance-expense-list').innerText()).includes('Software Exemplo'));
          assert.ok((await page.locator('#finance-project-margin').innerText()).includes('Cliente Homologação UX'));
          assert.ok((await page.locator('#finance-fiscal-list').innerText()).includes('NFS-QA-2026-01'));
