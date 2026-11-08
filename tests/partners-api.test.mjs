@@ -858,3 +858,48 @@ test("admin can immediately revoke a partner session; only signed-contract partn
  assert.ok(history.some(x=>x.details.includes("active -> suspended")));
  assert.ok(history.some(x=>x.details.includes("suspended -> active")));
 });
+
+test("Gestão de Acessos audits role assignment and a prepared invitation without exposing it to partners",async()=>{
+ const [admin,representative,,developer]=users.map(u=>u[1]);
+ const route="admin/access";
+ const applicantId="qa-access-management",mail="partner-access-qa@usbrin.test";
+ db.sqlite.prepare("INSERT INTO applications(id,protocol,type,name,email,phone,city,state,experience,motivation,status,created_at,updated_at) VALUES (?,?,'representante','Parceiro Gestão QA',?,'69999999999','Porto Velho','RO','Experiência profissional','Interesse em colaborar','documentation',datetime('now'),datetime('now'))").run(applicantId,"UACCESSQA00001",mail);
+ for(const identity of [representative,developer]){
+   assert.equal((await call(identity,route)).status,404);
+   assert.equal((await call(identity,route+"/invitation",{userId:"a1"})).status,404);
+   assert.equal((await call(identity,"admin/activate",{applicationId:applicantId,role:"admin"})).status,404);
+ }
+ const access=()=>call(admin,route+"?q="+encodeURIComponent(mail));
+ assert.equal((await access()).data.candidates.length,0);
+ assert.equal((await call(admin,"admin/review",{id:applicantId,status:"approved",note:"QA aprovada"})).status,200);
+ assert.equal((await access()).data.candidates[0].id,applicantId);
+ const details={applicationId:applicantId,contractVerified:true,contractReference:"CONTRATO-QA-2026"};
+ assert.equal((await call(admin,"admin/activate",{...details,role:"admin"})).status,400);
+ assert.equal((await call(admin,"admin/activate",{...details,role:"desenvolvedor"})).status,200);
+ const after=await access();
+ assert.equal(after.data.candidates.length,0);
+ assert.equal(after.data.users[0].role,"desenvolvedor");
+ const id=after.data.users[0].id;
+ assert.equal((await call(mail,"me")).data.user.role,"desenvolvedor");
+ assert.equal((await call(admin,route+"/invitation",{userId:"a1"})).status,404);
+ assert.equal((await call(admin,route+"/invitation",{userId:"r1"})).status,409);
+ const invitation=await call(admin,route+"/invitation",{userId:id,redirectUrl:"https://outside.example"});
+ assert.equal(invitation.status,200);
+ assert.equal(invitation.data.invitation.email,mail);
+ assert.match(invitation.data.invitation.message,/https:\/\/usbrin-preview\.pages\.dev\/portal/);
+ assert.doesNotMatch(invitation.data.invitation.message,/outside\.example/);
+ const token=await signed(mail);
+ const check=()=>privateAPI({request:new Request("https://usbrin-preview.pages.dev/api/private/desenvolvedor/dashboard",
+   {headers:{"Cf-Access-Jwt-Assertion":token}}),env});
+ assert.equal((await check()).status,200);
+ assert.equal((await call(admin,"admin/partner-access",{userId:id,status:"suspended",reason:"Suspensão QA em homologação"})).status,200);
+ const suspended=await check();
+ assert.equal(suspended.status,403);
+ assert.equal((await suspended.json()).code,"account_suspended");
+ assert.equal((await call(admin,route+"/invitation",{userId:id})).status,409);
+ const final=await access();
+ assert.deepEqual(final.data.history.map(x=>x.action),["partner.access","user.invite_prepared","user.activate","application.review"]);
+ assert.ok(final.data.history.every(x=>x.actor_name==="Administrador"&&x.target_name==="Parceiro Gestão QA"));
+ assert.equal((await call(admin,route+"?page=0")).status,400);
+ assert.equal((await call(admin,route+"?q=%25")).data.users.length,0);
+});

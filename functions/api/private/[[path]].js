@@ -4,6 +4,7 @@ import {handleBilling} from "../../_lib/billing.js";
 import {handleBank} from "../../_lib/bank-reconcile.js";
 import {handleFinanceControl} from "../../_lib/finance-control.js";
 const statuses=new Set(["received","review","requested","interview","preapproved","documentation","approved","rejected","withdrawn"]);
+const partnerRoles=new Set(["representante","desenvolvedor"]);
 const repStages=new Set(["new","contact","interested","qualified","proposal","negotiation","lost"]);
 const projectStages=new Set(["proposed","accepted","in_progress","review","changes","approved","done","cancelled"]);
 const query=(db,sql,...args)=>db.prepare(sql).bind(...args);
@@ -233,9 +234,14 @@ export async function onRequest(context){
         approved:[],rejected:[],withdrawn:[]
       };
       if(!(transitions[original.status]||[]).includes(status))return error("Etapa de seleção inválida. Siga o processo de avaliação e formalização.",409);
-      const updated=await query(db,"UPDATE applications SET status=?,reviewer_note=?,updated_at=datetime('now') WHERE id=? AND status=?",status,note,id,original.status).run();
+      const [,updated]=await db.batch([
+        query(db,`INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at)
+          SELECT ?,?,'application.review','application',id,?,datetime('now') FROM applications WHERE id=? AND status=?`,
+          fresh(),user.id,original.status+" -> "+status,id,original.status),
+        query(db,"UPDATE applications SET status=?,reviewer_note=?,updated_at=datetime('now') WHERE id=? AND status=?",status,note,id,original.status)
+      ]);
       if(updated.meta?.changes!==1)return error("Candidatura já foi alterada. Atualize a lista.",409);
-      await audit(db,user,"application.review","application",id,original.status+" -> "+status);return respond({ok:true});
+      return respond({ok:true});
     }
     if(route==="admin/application-note"&&method==="POST"&&allowed(user,"admin")){
       const b=await readBody(request),id=str(b.id,60),note=str(b.note,1200);
@@ -251,11 +257,13 @@ export async function onRequest(context){
       if(b.contractVerified!==true||contractReference.length<5)return error("Confirme a assinatura e informe a referência documental do contrato.");
       const a=await query(db,"SELECT id,name,email,type,status FROM applications WHERE id=?",id).first();
       if(!a||a.status!=="approved")return error("A candidatura ainda não está aprovada.");
+      const role=b.role===undefined?a.type:b.role;
+      if(!partnerRoles.has(role))return error("Escolha um perfil de parceiro autorizado.",400);
       const userId=fresh();
       const [result]=await db.batch([
         query(db,`INSERT INTO users(id,email,name,role,status,application_id,contract_reference,contract_verified_at,created_at)
-          SELECT ?,email,name,type,'active',id,?,datetime('now'),datetime('now')
-          FROM applications WHERE id=? AND status='approved' ON CONFLICT(email) DO NOTHING`,userId,contractReference,id),
+          SELECT ?,email,name,?,'active',id,?,datetime('now'),datetime('now')
+          FROM applications WHERE id=? AND status='approved' ON CONFLICT(email) DO NOTHING`,userId,role,contractReference,id),
         query(db,`INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at)
           SELECT ?,?,'user.activate','user',id,role,datetime('now') FROM users WHERE id=?`,fresh(),user.id,userId)
       ]);
@@ -273,6 +281,50 @@ export async function onRequest(context){
     if(route==="admin/users"&&method==="GET"&&allowed(user,"admin")){
       const rows=await db.prepare("SELECT id,name,email,role,status, CASE WHEN contract_verified_at IS NOT NULL AND length(contract_reference)>=5 THEN 1 ELSE 0 END contract_ready FROM users ORDER BY created_at DESC LIMIT 250").all();
       return respond({ok:true,users:rows.results});
+    }
+    if(route==="admin/access"&&method==="GET"&&allowed(user,"admin")){
+      const params=new URL(request.url).searchParams;
+      const search=str(params.get("q"),120).toLowerCase();
+      const page=Number(params.get("page")||1);
+      if(!Number.isSafeInteger(page)||page<1||page>1000)return error("Página inválida.",400);
+      const offset=(page-1)*50;
+      const [users,candidates,history]=await db.batch([
+        query(db,`SELECT id,name,email,role,status,
+          CASE WHEN contract_verified_at IS NOT NULL AND length(contract_reference)>=5 THEN 1 ELSE 0 END contract_ready
+          FROM users WHERE instr(lower(name),?)>0 OR instr(lower(email),?)>0
+          ORDER BY created_at DESC,id DESC LIMIT 51 OFFSET ?`,search,search,offset),
+        query(db,`SELECT a.id,a.protocol,a.name,a.email,a.type FROM applications a
+          WHERE a.status='approved' AND NOT EXISTS (SELECT 1 FROM users u WHERE u.email=a.email COLLATE NOCASE)
+          AND (instr(lower(a.name),?)>0 OR instr(lower(a.email),?)>0 OR instr(lower(a.protocol),?)>0)
+          ORDER BY a.updated_at DESC,a.id DESC LIMIT 51 OFFSET ?`,search,search,search,offset),
+        query(db,`SELECT ev.action,ev.details,ev.created_at,actor.name AS actor_name,
+            COALESCE(target.name,a.name) AS target_name
+          FROM audit_events ev
+          LEFT JOIN users actor ON actor.id=ev.actor_id
+          LEFT JOIN users target ON ev.entity='user' AND target.id=ev.entity_id
+          LEFT JOIN applications a ON ev.entity='application' AND a.id=ev.entity_id
+          WHERE ev.action IN ('application.review','user.activate','partner.access','user.invite_prepared')
+          AND (?='' OR instr(lower(COALESCE(target.name,a.name,'')),?)>0
+            OR instr(lower(COALESCE(target.email,a.email,'')),?)>0)
+          ORDER BY ev.created_at DESC,ev.rowid DESC LIMIT 51 OFFSET ?`,search,search,search,offset)
+      ]);
+      return respond({ok:true,users:users.results.slice(0,50),candidates:candidates.results.slice(0,50),
+        history:history.results.slice(0,50),hasNext:[users,candidates,history].some(x=>x.results.length>50)});
+    }
+    if(route==="admin/access/invitation"&&method==="POST"&&allowed(user,"admin")){
+      const b=await readBody(request),id=str(b.userId,60);
+      if(!id)return error("Selecione um parceiro.",400);
+      const partner=await query(db,"SELECT name,email,role FROM users WHERE id=?",id).first();
+      if(!partner||!partnerRoles.has(partner.role))return error("Parceiro não encontrado.",404);
+      const event=await query(db,`INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at)
+        SELECT ?,?,'user.invite_prepared','user',id,role,datetime('now')
+        FROM users WHERE id=? AND role IN ('representante','desenvolvedor') AND status='active'
+          AND contract_verified_at IS NOT NULL AND length(contract_reference)>=5`,fresh(),user.id,id).run();
+      if(event.meta?.changes!==1)return error("O convite exige conta ativa e contrato verificado.",409);
+      const url=new URL("/portal",request.url).href;
+      const role=partner.role==="representante"?"representante comercial":"parceiro de desenvolvimento";
+      const message=`Olá, ${partner.name}. Seu perfil de ${role} foi aprovado na USBRIN. Acesse ${url} com ${partner.email} depois que confirmarmos a liberação no Cloudflare Access. Na tela da Cloudflare, siga a verificação por e-mail e use seu aplicativo autenticador se solicitado.`;
+      return respond({ok:true,invitation:{email:partner.email,message}});
     }
     if(route==="admin/partner-access"&&method==="POST"&&allowed(user,"admin")){
       const b=await readBody(request),id=str(b.userId,60),next=str(b.status,15),reason=str(b.reason,500);

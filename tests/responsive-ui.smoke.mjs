@@ -15,6 +15,10 @@ const fixture={
     me:{ok:true,user:{name:'HOMOLOGAÇÃO Admin',role:'admin'}},
     'admin/overview':{ok:true,applications:[],users:[],projects:[],opportunities:[],receivedCents:0,commissionsPendingCents:0,studioInquiries:[],tasks:{}},
     'admin/users':{ok:true,users:[]},
+    'admin/access':{ok:true,users:[{id:'qa-partner',name:'Parceiro QA',email:'partner@usbrin.test',role:'representante',status:'active',contract_ready:1}],
+      candidates:[{id:'qa-candidate',name:'Candidato QA',email:'candidate@usbrin.test',type:'representante',protocol:'UQA-00001'}],
+      history:[{action:'user.activate',details:'representante',actor_name:'Admin QA',target_name:'Parceiro QA',created_at:'2026-11-08 18:24:56'}],hasNext:false},
+    'admin/access/invitation':{ok:true,invitation:{email:'partner@usbrin.test',message:'Acesse https://usbrin-preview.pages.dev/portal com seu e-mail.'}},
     'admin/opportunities':{ok:true,opportunities:[{id:'op-briefing-demo-001',company:'Cliente Homologação UX',contact:'Contato Exemplo',stage:'new',product:'Business',estimated_cents:119000}]},
     'admin/sales':{ok:true,sales:[{id:'sale-handoff-demo-001',company:'Cliente Homologação UX',gross_cents:179000,received_cents:179000,approved_proposal_id:'proposal-approved-demo-001',approved_proposal_code:'QTESTDEMO001',approved_scope:'BRIEFING APROVADO: cinco páginas, blog gerenciável e contato por WhatsApp.'}]},
     'admin/projects':{ok:true,projects:[]},
@@ -94,7 +98,9 @@ async function pageFor(role,width,url){
      else if(path.includes('/api/private/')){
        if(role==='expired')return Response.json({ok:false,code:'session_required'},{status:401});
        const endpoint=path.split('/api/private/')[1].split('?')[0];
-       if(endpoint==='crm/proposal-draft'&&options.method==='POST'){
+       if(endpoint==='admin/access/invitation'&&options.method==='POST'){
+         window.__accessInvitation=JSON.parse(options.body);result=fixture[role]?.[endpoint];
+       }else if(endpoint==='crm/proposal-draft'&&options.method==='POST'){
          window.__guideSubmitted=JSON.parse(options.body);
          result={ok:true,code:'QTESTGUIDED001',status:'draft'};
        }else if(endpoint==='crm/activity'&&options.method==='POST'){
@@ -142,7 +148,16 @@ try{
        assert.deepEqual(visible,expected,role+' navigation mismatch');
        if(role==='admin'){
          await page.locator('#portal-nav [data-view="partners"]').click();
-         await page.locator('#partner-list').getByText('Nenhum registro disponível.',{exact:true}).waitFor({timeout:15000});
+         await page.getByRole('heading',{name:'Gestão de Acessos',exact:true}).waitFor();
+         await page.locator('#partner-list').getByText('Parceiro QA',{exact:true}).waitFor();
+         await page.locator('#access-candidates').getByText('UQA-00001',{exact:true}).waitFor();
+         assert.deepEqual(await page.locator('#access-candidates select option').evaluateAll(rows=>rows.map(x=>x.value)),['representante','desenvolvedor']);
+         await page.locator('#access-history').getByText('Conta ativada',{exact:true}).waitFor();
+         await page.getByRole('button',{name:'Preparar convite',exact:true}).click();
+         await page.locator('#access-invitation').waitFor({state:'visible'});
+         assert.match(await page.locator('#access-invite-text').inputValue(),/https:\/\/usbrin-preview\.pages\.dev\/portal/);
+         assert.deepEqual(await page.evaluate(()=>window.__accessInvitation),{userId:'qa-partner'});
+         await assertFits(page,'Gestão de Acessos '+width);
        }else if(role==='representante'){
          await page.locator('#rep-command').waitFor({state:'visible'});
          assert.equal(await page.locator('#cmd-priority-title').textContent(),'Cliente Homologação UX');

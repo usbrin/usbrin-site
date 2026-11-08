@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
    view=name;document.querySelectorAll('.view').forEach(x=>x.classList.add('hidden'));el('view-'+name).classList.remove('hidden');
    el('developer-payments-admin').classList.toggle('hidden',!(name==='projects'&&user.role==='admin'));
    document.querySelectorAll('#portal-nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===name));
-   el('panel-title').textContent=({overview:user?.role==='representante'?'Command':'Visão geral',leads:'Oportunidades',guide:'Guia comercial',applications:'Candidaturas',studio:'Solicitações Studio',partners:'Parceiros',projects:'Projetos',commissions:'Comissões',billing:'Financeiro',bank:'Conciliação'})[name];
+   el('panel-title').textContent=({overview:user?.role==='representante'?'Command':'Visão geral',leads:'Oportunidades',guide:'Guia comercial',applications:'Candidaturas',studio:'Solicitações Studio',partners:'Gestão de Acessos',projects:'Projetos',commissions:'Comissões',billing:'Financeiro',bank:'Conciliação'})[name];
    try{await load(name);message('Dados atualizados a partir do servidor.');}catch(e){message(e.message,true);}
  };
  document.querySelectorAll('#portal-nav button').forEach(x=>x.addEventListener('click',()=>open(x.dataset.view)));
@@ -683,6 +683,34 @@ document.addEventListener('DOMContentLoaded',async()=>{
    }catch(e){message(e.message,true)}
  });
 
+ const accessRoles={admin:'Administração',representante:'Representação comercial',desenvolvedor:'Desenvolvimento'};
+ const accessStatuses={active:'Ativo',pending:'Pendente',suspended:'Suspenso'};
+ const accessActions={'application.review':'Etapa da candidatura','user.activate':'Conta ativada',
+   'partner.access':'Acesso alterado','user.invite_prepared':'Convite preparado'};
+ let accessPage=1,accessQuery='',accessRequest=0;
+ el('access-search-form').addEventListener('submit',event=>{
+   event.preventDefault();
+   accessQuery=el('access-search').value.trim();
+   accessPage=1;
+   open('partners');
+ });
+ for(const [id,step] of [['access-prev',-1],['access-next',1]]){
+   el(id).addEventListener('click',()=>{accessPage+=step;open('partners')});
+ }
+ el('access-open-applications').addEventListener('click',()=>open('applications'));
+ el('access-copy').addEventListener('click',async()=>{
+   const field=el('access-invite-text');
+   try{await navigator.clipboard.writeText(field.value);message('Mensagem copiada.');}
+   catch{field.focus();field.select();message('Mensagem selecionada. Use o comando de copiar do navegador.');}
+ });
+ const activatePartner=async(candidate,role)=>{
+   const reference=prompt('Informe a referência do contrato assinado e conferido:');
+   if(reference===null)return false;
+   if(reference.trim().length<5)throw Error('Informe uma referência documental válida.');
+   if(!confirm('Confirma o contrato de '+candidate.name+' e o perfil '+accessRoles[role]+'?'))return false;
+   await request('admin/activate',{applicationId:candidate.id,role,contractVerified:true,contractReference:reference.trim()});
+   return true;
+ };
  const load=async(name)=>{
    if(name==='bank'&&user.role==='admin')await loadBank();
    if(name==='billing'&&user.role==='admin')await loadBilling();
@@ -702,30 +730,80 @@ document.addEventListener('DOMContentLoaded',async()=>{
    }
    if(name==='studio'&&user.role==='admin'){const entries=await request('admin/studio-inquiries');await renderStudio(entries);}
    if(name==='partners'&&user.role==='admin'){
-     const people=(await request('admin/users')).users.filter(x=>['representante','desenvolvedor'].includes(x.role));
-     table(el('partner-list'),['Profissional','E-mail','Papel','Acesso','Contrato verificado'],
-       people.map(x=>[x.name,x.email,x.role==='representante'?'Comercial':'Desenvolvimento',x.status,x.contract_ready?'Sim':'Não']),
+     const current=++accessRequest;
+     el('access-prev').disabled=true;
+     el('access-next').disabled=true;
+     el('access-invitation').classList.add('hidden');
+     el('access-invite-text').value='';
+     const params=new URLSearchParams({q:accessQuery,page:String(accessPage)});
+     const {users:people,candidates,history,hasNext}=await request('admin/access?'+params);
+     if(current!==accessRequest||view!=='partners')return;
+     el('access-page').textContent='Página '+accessPage;
+     el('access-prev').disabled=accessPage===1;
+     el('access-next').disabled=!hasNext||accessPage>=1000;
+     table(el('partner-list'),['Usuário','E-mail','Perfil','Acesso','Contrato'],
+       people.map(x=>[x.name,x.email,accessRoles[x.role]||x.role,accessStatuses[x.status]||x.status,x.role==='admin'?'—':x.contract_ready?'Verificado':'Pendente']),
        (cell,i)=>{
-         const partner=people[i],next=partner.status==='active'?'suspended':partner.status==='suspended'?'active':null;
+         const partner=people[i];
+         if(partner.role==='admin')return;
+         const next=partner.status==='active'?'suspended':partner.status==='suspended'?'active':null;
          if(!next)return;
-         const reason=node('input');reason.maxLength=500;reason.placeholder='Justificativa obrigatória';reason.setAttribute('aria-label','Justificativa para alterar acesso de '+partner.name);
+         const reason=node('input');
+         reason.maxLength=500;
+         reason.placeholder='Justificativa obrigatória';
+         reason.setAttribute('aria-label','Justificativa para alterar acesso de '+partner.name);
          const action=btn(next==='suspended'?'Suspender acesso':'Reativar acesso',async()=>{
-           if(reason.value.trim().length<8){message('Informe uma justificativa com pelo menos 8 caracteres.',true);return;}
-           if(next==='active'&&!partner.contract_ready){message('A reativação exige contrato assinado e verificado.',true);return;}
-           const warning=next==='suspended'&&!partner.contract_ready?
-             '\n\nATENÇÃO: esta conta não tem contrato verificado; após a suspensão, a interface não permitirá reativá-la. Contas de homologação exigem restauração administrativa controlada.':'';
-           if(!confirm((next==='suspended'?'Bloquear o acesso às APIs de ':'Reativar o acesso às APIs de ')+partner.name+'?'+warning))return;
+           if(reason.value.trim().length<8)return message('Informe uma justificativa com pelo menos 8 caracteres.',true);
+           const warning=next==='suspended'&&!partner.contract_ready?' Esta conta só poderá ser reativada após conferência do contrato.':'';
+           if(!confirm((next==='suspended'?'Suspender o acesso de ':'Reativar o acesso de ')+partner.name+'?'+warning))return;
+           action.disabled=true;
            try{
              await request('admin/partner-access',{userId:partner.id,status:next,reason:reason.value.trim()});
-             await open('partners');
-             message(next==='suspended'?'Acesso bloqueado no servidor. Confirme também a política Cloudflare Access.':'Acesso reativado no servidor. Confirme a autorização de identidade no Cloudflare Access.');
-           }catch(e){message(e.message,true)}
+             await load('partners');
+             message(next==='suspended'?'Acesso bloqueado no servidor.':'Acesso reativado no servidor. Confira também a autorização na Cloudflare.');
+           }catch(e){message(e.message,true);}
+           finally{action.disabled=false;}
          });
          action.disabled=next==='active'&&!partner.contract_ready;
          cell.append(reason,action);
-         if(next==='active'&&!partner.contract_ready)cell.append(node('p','Reativação bloqueada: documentação não verificada.','hint'));
-         if(next==='suspended'&&!partner.contract_ready)cell.append(node('p','Conta sem contrato verificado: a suspensão não poderá ser revertida por esta tela.','hint'));
+         if(next==='active'&&!partner.contract_ready)cell.append(node('p','Reativação exige contrato verificado.','hint'));
+         if(partner.status==='active'&&partner.contract_ready){
+           const invite=btn('Preparar convite',async()=>{
+             invite.disabled=true;
+             try{
+               const {invitation}=await request('admin/access/invitation',{userId:partner.id});
+               await load('partners');
+               if(view!=='partners')return;
+               el('access-invite-text').value=invitation.message;
+               el('access-invitation').classList.remove('hidden');
+               el('access-invite-text').focus();
+               message('Convite preparado. Confira a liberação no Cloudflare Access antes de enviar.');
+             }catch(e){message(e.message,true);}
+             finally{invite.disabled=false;}
+           });
+           cell.append(invite);
+         }
        });
+     table(el('access-candidates'),['Candidato','E-mail','Protocolo'],
+       candidates.map(x=>[x.name,x.email,x.protocol]),(cell,i)=>{
+         const candidate=candidates[i];
+         const label=node('label','Perfil de '+candidate.name,'field-label'),select=node('select');
+         for(const role of ['representante','desenvolvedor']){
+           select.append(new Option(accessRoles[role],role,role===candidate.type,role===candidate.type));
+         }
+         label.append(select);
+         const activate=btn('Ativar parceiro',async()=>{
+           activate.disabled=true;
+           try{if(await activatePartner(candidate,select.value)){await load('partners');message('Conta ativada. Prepare o convite após conferir a autorização na Cloudflare.');}}
+           catch(e){message(e.message,true);}
+           finally{activate.disabled=false;}
+         });
+         cell.append(label,activate);
+       });
+     const dateFormat=new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short',timeZone:'America/Porto_Velho'});
+     table(el('access-history'),['Data e hora','Ação','Conta ou candidatura','Responsável','Detalhes'],
+       history.map(x=>[dateFormat.format(new Date(x.created_at.replace(' ','T')+'Z')),accessActions[x.action],
+         x.target_name||'—',x.actor_name||'—',accessRoles[x.details]||x.details||'—']));
    }
    if(name==='applications'&&user.role==='admin'){
      const data=await request('admin/applications');
@@ -770,11 +848,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
          }));
        }
        if(a.status==='approved')cell.append(btn('Ativar parceiro',async()=>{
-         const reference=prompt('Informe a referência do contrato já assinado e conferido:');
-         if(reference===null)return;
-         if(reference.trim().length<5){message('É necessária uma referência documental válida.',true);return;}
-         if(!confirm('Confirma que o contrato referenciado foi assinado e conferido?'))return;
-         try{await request('admin/activate',{applicationId:a.id,contractVerified:true,contractReference:reference.trim()});await open('applications')}catch(e){message(e.message,true)}
+         try{if(await activatePartner(a,a.type))await open('applications');}
+         catch(e){message(e.message,true);}
        }));
      });
    }
