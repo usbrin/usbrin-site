@@ -254,7 +254,16 @@ export async function onRequest(context){
       return respond({ok:true,opportunityId:oppId});
     }
     if(route==="admin/applications"&&method==="GET"&&allowed(user,"admin")){
-      const records=await db.prepare("SELECT * FROM applications ORDER BY created_at DESC LIMIT 250").all();return respond({ok:true,applications:records.results});
+      const filters=new URL(request.url).searchParams,type=filters.get("type")||"",status=filters.get("status")||"";
+      if((type&&!partnerRoles.has(type))||(status&&status!=="pending"&&!statuses.has(status)))
+        return error("Filtro de candidaturas inválido.");
+      const stage=status==="pending"?[...pendingApplicationStatuses]:status?[status]:[];
+      const conditions=[],values=[];
+      if(type){conditions.push("type=?");values.push(type);}
+      if(stage.length){conditions.push("status IN ("+stage.map(()=>"?").join(",")+")");values.push(...stage);}
+      const where=conditions.length?" WHERE "+conditions.join(" AND "):"";
+      const records=await query(db,"SELECT * FROM applications"+where+" ORDER BY created_at DESC,id DESC LIMIT 250",...values).all();
+      return respond({ok:true,applications:records.results});
     }
     if(route==="admin/review"&&method==="POST"&&allowed(user,"admin")){
       const b=await readBody(request),status=str(b.status,30),id=str(b.id,50),note=str(b.note,1200);

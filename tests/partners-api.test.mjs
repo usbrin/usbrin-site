@@ -130,7 +130,9 @@ test("representative preview is host-scoped, accepts QA-only data and never crea
  const response=await submit(body);
  assert.equal(response.status,201);
  const {protocol}=await response.json();
- const listed=(await call(users[0][1],"admin/applications")).data.applications.find(x=>x.protocol===protocol);
+ const listed=(await call(users[0][1],"admin/applications?type=representante&status=pending")).data.applications.find(x=>x.protocol===protocol);
+ const closed=(await call(users[0][1],"admin/applications?status=approved")).data.applications;
+ assert.equal(closed.some(x=>x.protocol===protocol),false);
  assert.equal(listed.phone,"+5569999999999");
  assert.equal(listed.motivation,body.motivation);
  assert.equal(db.sqlite.prepare("SELECT details FROM audit_events WHERE action='application.privacy' AND entity_id=?").get(listed.id).details,"privacidade-parceiros/v1");

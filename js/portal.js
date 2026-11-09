@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
      card.append(count,description,action);list.append(card);
    });
  };
- let overviewPeriod='',overviewRequest=0;
+ let overviewPeriod='',overviewRequest=0,applicationRequest=0;
  const renderAdminOverview=info=>{
    const {monthly,commissions,performance}=info;
    const snapshot=el('admin-current-metrics'),periodMetrics=el('admin-monthly-metrics');
@@ -323,6 +323,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
      x.goal_cents===null?'Sem meta':currency(x.goal_cents),
      x.goal_cents>0?new Intl.NumberFormat('pt-BR',{style:'percent',maximumFractionDigits:1}).format(x.received_cents/x.goal_cents):'—'
    ]));
+   const goalTable=el('admin-goals').querySelector('.tablewrap');
+   if(goalTable){goalTable.tabIndex=0;goalTable.setAttribute('role','region');goalTable.setAttribute('aria-label','Tabela de metas por representante');}
    const reps=performance.filter(x=>x.status==='active'),target=el('goal-partner'),selection=target.value;
    target.replaceChildren(new Option('Selecione um representante',''),...reps.map(x=>new Option(x.name,x.id)));
    if(reps.some(x=>x.id===selection))target.value=selection;
@@ -908,11 +910,13 @@ document.addEventListener('DOMContentLoaded',async()=>{
          x.target_name||'—',x.actor_name||'—',accessRoles[x.details]||x.details||'—']));
    }
    if(name==='applications'&&user.role==='admin'){
-     const data=await request('admin/applications');
-     const type=el('app-type-filter').value,statusFilter=el('app-status-filter').value,search=el('app-search').value.trim().toLocaleLowerCase('pt-BR');
+     const current=++applicationRequest;
+     const filters=new URLSearchParams({type:el('app-type-filter').value,status:el('app-status-filter').value});
+     const data=await request('admin/applications?'+filters);
+     if(current!==applicationRequest||view!=='applications')return;
+     const search=el('app-search').value.trim().toLocaleLowerCase('pt-BR');
      const applicants=data.applications.filter(x=>
-       (!type||x.type===type)&&(!statusFilter||(statusFilter==='pending'?['received','review','requested','interview','preapproved','documentation'].includes(x.status):x.status===statusFilter))&&
-       (!search||[x.name,x.email,x.protocol,x.city].some(v=>String(v||'').toLocaleLowerCase('pt-BR').includes(search)))
+       !search||[x.name,x.email,x.protocol,x.city].some(v=>String(v||'').toLocaleLowerCase('pt-BR').includes(search))
      );
      const statuses={received:'Recebida',review:'Em análise',requested:'Informações solicitadas',interview:'Entrevista',preapproved:'Pré-aprovada',documentation:'Documentação',approved:'Aprovada',rejected:'Não selecionada',withdrawn:'Encerrada'};
      const transitions={received:['review','rejected','withdrawn'],review:['requested','interview','preapproved','rejected','withdrawn'],requested:['review','rejected','withdrawn'],interview:['preapproved','rejected','withdrawn'],preapproved:['documentation','rejected','withdrawn'],documentation:['approved','rejected','withdrawn'],approved:[],rejected:[],withdrawn:[]};

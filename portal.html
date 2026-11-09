@@ -36,7 +36,7 @@
   <div class="panel hidden" id="admin-performance">
     <div class="section-heading"><div><span class="kicker">DESEMPENHO COMERCIAL</span><h2>Vendas, recebimentos e metas</h2></div></div>
     <form class="toolbar" id="overview-period-form">
-      <label>Mês de referência <input name="month" id="overview-month" type="month" required></label>
+      <label>Mês de referência <input name="month" id="overview-month" type="month" placeholder="AAAA-MM" pattern="[0-9]{4}-(0[1-9]|1[0-2])" required></label>
       <button class="btn" type="submit">Aplicar período</button>
     </form>
     <p id="overview-period-status" class="muted" role="status"></p>
@@ -52,7 +52,7 @@
     <h2>Definir meta comercial</h2>
     <form id="goal-form" class="toolbar">
       <label>Representante <select id="goal-partner" name="partnerId" required><option value="">Selecione um representante</option></select></label>
-      <label>Mês da meta <input name="period" type="month" required></label>
+      <label>Mês da meta <input name="period" type="month" placeholder="AAAA-MM" pattern="[0-9]{4}-(0[1-9]|1[0-2])" required></label>
       <label>Meta (R$) <input name="amount" type="number" min="0" step=".01" required></label>
       <button type="submit" class="btn primary">Salvar meta</button>
     </form>

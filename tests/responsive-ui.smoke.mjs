@@ -470,7 +470,10 @@ try{
    for(const [name,url] of [['recruitment',recruitmentUrl],['candidate-closed',applyUrl]]){
      const {context,page,errors}=await pageFor('admin',width,url);
      try{
-       if(name==='candidate-closed')await page.waitForFunction(()=>document.querySelector('#availability')?.textContent?.includes('ainda não estão abertas'),{timeout:15000});
+       if(name==='candidate-closed'){
+         await page.getByText('As candidaturas desta modalidade estão fechadas no momento.').waitFor();
+         assert.equal(await page.locator('#candidate-form').isVisible(),false);
+       }
        await assertFits(page,name+' '+width);
        assert.deepEqual(errors,[],'Page errors '+name+' '+width);
        await page.screenshot({path:resolve(outDir,name+'-'+width+'.png'),fullPage:true});
