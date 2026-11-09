@@ -1002,3 +1002,30 @@ body.menu-open{overflow:hidden;}
 @media(max-width:860px){.demo-grid{grid-template-columns:none;}}
 @media(min-width:1101px){.mobile-nav{display:none;}}
 @media(max-width:600px){.form-grid,.feature-options{grid-template-columns:1fr;}.header-actions{display:none;}.contact-panel{padding:36px 16px;}.demo-head-row{align-items:flex-start;flex-wrap:wrap;}.quote-result{padding:14px;}.wa-float{width:46px;height:46px;bottom:12px;right:12px;}.channels{grid-template-columns:1fr;}}
+
+/* USBRIN: menu completo em duas linhas no desktop.
+   A navegação móvel mantém o cabeçalho compacto original. */
+@media (min-width:1101px){
+  .site-header .container{
+    height:116px;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-rows:70px 46px;
+    align-items:center;
+    column-gap:24px;
+  }
+  .site-header .brand{grid-column:1;grid-row:1;justify-self:start;}
+  .site-header .header-actions{grid-column:2;grid-row:1;justify-self:end;}
+  .site-header .main-nav{
+    grid-column:1 / -1;
+    grid-row:2;
+    justify-content:center;
+    width:100%;
+    min-width:0;
+    gap:clamp(15px,2vw,30px);
+    border-top:1px solid var(--border);
+    white-space:nowrap;
+  }
+  .site-header .main-nav a{font-size:14px;line-height:1.4;}
+  .hero{padding-top:164px;}
+}
