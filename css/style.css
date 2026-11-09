@@ -1039,3 +1039,50 @@ body.menu-open{overflow:hidden;}
   .site-header .nav-toggle{display:flex;}
   .mobile-nav{display:flex;}
 }
+
+/* USBRIN Studio: apresentacao breve na pagina inicial */
+.studio-home{padding:88px 0;}
+.studio-home-card{
+  padding:clamp(28px,5vw,64px);
+  border:1px solid rgba(129,131,244,.22);
+  border-radius:28px;
+  background:radial-gradient(ellipse at 90% 0%,rgba(99,102,241,.17),transparent 56%),var(--card);
+}
+.studio-home-head{max-width:710px;}
+.studio-home-head h2{
+  font-size:clamp(29px,3.5vw,43px);
+  line-height:1.15;
+  margin-bottom:16px;
+}
+.studio-home-head p{color:var(--text-secondary);font-size:16px;line-height:1.75;}
+.studio-home-steps{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:16px;
+  margin:32px 0 28px;
+}
+.studio-home-step{
+  background:rgba(17,18,23,.55);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:22px;
+  min-width:0;
+}
+.studio-home-step span{
+  display:block;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.08em;
+  color:var(--accent-soft);
+  margin-bottom:14px;
+}
+.studio-home-step h3{font-size:17px;margin-bottom:8px;}
+.studio-home-step p{font-size:14px;line-height:1.6;color:var(--text-secondary);}
+.studio-home-actions{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+.studio-home-note{font-size:13px;line-height:1.6;color:var(--text-secondary);max-width:47ch;}
+@media (max-width:760px){
+  .studio-home{padding:64px 0;}
+  .studio-home-steps{grid-template-columns:1fr;gap:12px;margin:26px 0;}
+  .studio-home-step{padding:18px;}
+  .studio-home-actions .btn{width:100%;white-space:normal;text-align:center;}
+}
