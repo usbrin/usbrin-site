@@ -3,9 +3,11 @@ on:
   push:
     branches:
       - feature/usbrin-partners-platform
+      - feature/usbrin-id
   pull_request:
     branches:
       - feature/usbrin-studio-mvp
+      - feature/usbrin-partners-platform
 permissions:
   contents: read
 jobs:
@@ -34,6 +36,7 @@ jobs:
           node --check functions/public/api/application-status.js
           node --check functions/_lib/security.js
           node --check functions/_lib/auth.js
+          node --check functions/_lib/portal-session.js
           node --check functions/api/public-config.js
           node --check functions/api/applications.js
           node --check 'functions/api/private/[[path]].js'
@@ -42,9 +45,9 @@ jobs:
           python3 - <<'PY'
           import sqlite3
           c=sqlite3.connect(':memory:')
-          for migration in ['0001_partners.sql','0002_financial_integrity.sql','0003_partner_contracts.sql','0004_studio_inquiries.sql','0005_studio_assignments.sql','0006_sale_project_links.sql','0007_atomic_receipts.sql','0008_crm_followups.sql','0009_proposal_drafts.sql','0010_project_proposal_handoff.sql','0011_optional_services.sql','0012_recurring_billing_controls.sql','0013_bank_evidence_and_refunds.sql','0014_expense_obligations.sql','0015_fiscal_evidence.sql']:
+          for migration in ['0001_partners.sql','0002_financial_integrity.sql','0003_partner_contracts.sql','0004_studio_inquiries.sql','0005_studio_assignments.sql','0006_sale_project_links.sql','0007_atomic_receipts.sql','0008_crm_followups.sql','0009_proposal_drafts.sql','0010_project_proposal_handoff.sql','0011_optional_services.sql','0012_recurring_billing_controls.sql','0013_bank_evidence_and_refunds.sql','0014_expense_obligations.sql','0015_fiscal_evidence.sql','0016_portal_sessions.sql']:
               c.executescript(open('migrations/'+migration).read())
-          expected=['users','applications','opportunities','sales','commissions','goals','projects','developer_payments','audit_events']
+          expected=['users','applications','opportunities','sales','commissions','goals','projects','developer_payments','audit_events','portal_sessions','portal_session_challenges']
           for name in expected:
               assert c.execute("select name from sqlite_master where name=?",(name,)).fetchone(),name
           print('Schema OK: '+', '.join(expected))
@@ -79,7 +82,10 @@ jobs:
           test ! -e dist/public/portal.html
           test ! -e dist/public/js/portal.js
           test ! -e dist/public/api/private
-          grep -q 'href="/portal.html"' dist/public/parceiros.html
+          test -f dist/usbrin-id.html
+          test -f dist/public/usbrin-id.html
+          grep -q 'href="usbrin-id.html"' dist/public/parceiros.html
+          grep -q 'href="/portal"' dist/public/usbrin-id.html
           test -f dist/css/parceiros.css
           test -f dist/js/portal.js
           grep -q 'id="studio-form"' dist/studio.html
