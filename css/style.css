@@ -1087,35 +1087,51 @@ body.menu-open{overflow:hidden;}
   .studio-home-actions .btn{width:100%;white-space:normal;text-align:center;}
 }
 
-/* Assinatura USBRIN — opção 1: alinhada ao wordmark, discreta e institucional. */
+/* Assinatura USBRIN: o subtitulo ocupa a area sob o nome, ao lado do simbolo.
+   A altura da marca segue a altura original da imagem e nao altera o cabecalho. */
 .site-header .brand{
-  display:flex;
-  flex-direction:column;
-  align-items:flex-start;
-  justify-content:center;
+  display:grid;
+  grid-template-columns:50px minmax(0,1fr);
+  grid-template-rows:26px 15px;
+  align-items:center;
   gap:0;
   width:170px;
   flex:0 0 170px;
   text-decoration:none;
 }
-.site-header .brand img{display:block;width:170px;max-width:100%;height:auto;}
-.site-header .brand .brand-tagline{
+.site-header .brand img{
+  grid-column:1 / -1;
+  grid-row:1 / 3;
   display:block;
-  width:auto;
-  margin:2px 0 0 46px;
+  width:170px;
+  max-width:100%;
+  height:auto;
+}
+.site-header .brand .brand-tagline{
+  grid-column:2;
+  grid-row:2;
+  align-self:center;
+  display:block;
+  width:max-content;
+  margin:0;
   padding:0;
-  color:rgba(255,255,255,.76);
+  color:rgba(255,255,255,.75);
   font-family:'Inter',sans-serif;
   font-size:9px;
   font-weight:600;
   line-height:1.2;
-  letter-spacing:.13em;
+  letter-spacing:.10em;
   text-transform:uppercase;
   text-align:left;
   white-space:nowrap;
 }
 @media (max-width:420px){
-  .site-header .brand{width:150px;flex-basis:150px;}
+  .site-header .brand{
+    width:150px;
+    flex-basis:150px;
+    grid-template-columns:44px minmax(0,1fr);
+    grid-template-rows:23px 13px;
+  }
   .site-header .brand img{width:150px;}
-  .site-header .brand .brand-tagline{margin-left:40px;font-size:8px;letter-spacing:.12em;}
+  .site-header .brand .brand-tagline{font-size:8px;letter-spacing:.09em;}
 }
