@@ -5,6 +5,8 @@ import {handleBilling} from "../../_lib/billing.js";
 import {handleBank} from "../../_lib/bank-reconcile.js";
 import {handleFinanceControl} from "../../_lib/finance-control.js";
 const statuses=new Set(["received","review","requested","interview","preapproved","documentation","approved","rejected","withdrawn"]);
+const pendingApplicationStatuses=new Set(["received","review","requested","interview","preapproved","documentation"]);
+const validMonth=value=>/^\d{4}-(0[1-9]|1[0-2])$/.test(value)&&value.slice(0,4)!=="0000"&&value.slice(0,4)!=="9999";
 const partnerRoles=new Set(["representante","desenvolvedor"]);
 const repStages=new Set(["new","contact","interested","qualified","proposal","negotiation","lost"]);
 const projectStages=new Set(["proposed","accepted","in_progress","review","changes","approved","done","cancelled"]);
@@ -146,36 +148,64 @@ export async function onRequest(context){
     }
 
     if(route==="admin/overview"&&method==="GET"&&allowed(user,"admin")){
-      const [applicants,reps,devs,opportunities,received,commissions,inquiries,overdue,receivables,staleLeads]=await db.batch([
+      const period=new URL(request.url).searchParams.get("month") ??
+        new Date(Date.now()-4*60*60*1000).toISOString().slice(0,7);
+      if(!validMonth(period))return error("Informe um mês válido.");
+      // Entries are UTC. The monthly window starts at midnight in Porto Velho.
+      const start=period+"-01 04:00:00";
+      const next="datetime(?,'+1 month')";
+      const [applicants,people,projects,opportunities,received,commissions,inquiries,tasks,sales,cash,performance]=await db.batch([
         db.prepare("SELECT status,COUNT(*) total FROM applications GROUP BY status"),
         db.prepare("SELECT role,COUNT(*) total FROM users WHERE status='active' GROUP BY role"),
         db.prepare("SELECT stage,COUNT(*) total FROM projects GROUP BY stage"),
         db.prepare("SELECT stage,COUNT(*) total FROM opportunities GROUP BY stage"),
         db.prepare("SELECT COALESCE(SUM(received_cents),0) total FROM sales WHERE status IN ('paid','partially_paid')"),
-        db.prepare("SELECT COALESCE(SUM(amount_cents),0) total FROM commissions WHERE status IN ('due','approved')"),
+        query(db,`SELECT status,COUNT(*) total,SUM(amount_cents) amount,
+          SUM(CASE WHEN status='paid' AND paid_at>=? AND paid_at<${next} THEN amount_cents ELSE 0 END) paid_in_month
+          FROM commissions WHERE status<>'reversed' GROUP BY status`,start,start),
         db.prepare("SELECT status,COUNT(*) total FROM studio_inquiries GROUP BY status"),
-        db.prepare("SELECT COUNT(*) total FROM projects WHERE due_at IS NOT NULL AND date(due_at)<date('now') AND stage NOT IN ('done','cancelled')"),
-        db.prepare("SELECT COUNT(*) total,COALESCE(SUM(gross_cents-received_cents),0) amount FROM sales WHERE status IN ('pending','partially_paid')"),
-        db.prepare("SELECT COUNT(*) total FROM opportunities WHERE updated_at<datetime('now','-7 days') AND stage NOT IN ('paid','cancelled','lost')")
+        db.prepare(`SELECT
+          (SELECT COUNT(*) FROM projects WHERE due_at IS NOT NULL AND date(due_at)<date('now','-4 hours') AND stage NOT IN ('done','cancelled')) overdueProjects,
+          (SELECT COUNT(*) FROM sales WHERE status IN ('pending','partially_paid')) salesAwaitingPayment,
+          (SELECT COALESCE(SUM(gross_cents-received_cents),0) FROM sales WHERE status IN ('pending','partially_paid')) accountsReceivableCents,
+          (SELECT COUNT(*) FROM opportunities WHERE updated_at<datetime('now','-7 days') AND stage NOT IN ('paid','cancelled','lost','contracted')) dormantOpportunities,
+          (SELECT COUNT(*) FROM opportunities WHERE next_action_at IS NOT NULL AND date(next_action_at)<=date('now','-4 hours') AND stage NOT IN ('paid','lost','cancelled','contracted')) dueFollowups,
+          (SELECT COUNT(*) FROM service_charges WHERE status<>'paid' AND due_on<date('now','-4 hours')) servicesOverdue,
+          (SELECT COUNT(*) FROM service_charges WHERE status<>'paid' AND due_on=date('now','-4 hours')) servicesDueToday,
+          (SELECT COUNT(*) FROM applications a WHERE a.status='approved' AND NOT EXISTS(SELECT 1 FROM users u WHERE u.application_id=a.id)) awaitingActivation,
+          (SELECT COUNT(*) FROM bank_refunds WHERE status='requested') refundReviews`),
+        query(db,`SELECT COUNT(*) count,COALESCE(SUM(gross_cents),0) contractedCents
+          FROM sales WHERE status<>'reversed' AND created_at>=? AND created_at<${next}`,start,start),
+        query(db,`SELECT
+          (SELECT COALESCE(SUM(r.amount_cents),0) FROM sale_receipts r JOIN sales s ON s.id=r.sale_id
+            WHERE s.status<>'reversed' AND r.received_at>=? AND r.received_at<${next}) sitesCents,
+          (SELECT COALESCE(SUM(amount_cents),0) FROM service_receipts WHERE received_at>=? AND received_at<${next}) servicesCents`,
+          start,start,start,start),
+        query(db,`SELECT u.id,u.name,u.status,g.goal_cents,COALESCE(r.received_cents,0) received_cents
+          FROM users u LEFT JOIN goals g ON g.partner_id=u.id AND g.period=?
+          LEFT JOIN (SELECT o.partner_id,SUM(r.amount_cents) received_cents FROM sale_receipts r
+            JOIN sales s ON s.id=r.sale_id JOIN opportunities o ON o.id=s.opportunity_id
+            WHERE s.status<>'reversed' AND r.received_at>=? AND r.received_at<${next} GROUP BY o.partner_id) r ON r.partner_id=u.id
+          WHERE u.role='representante' AND (u.status='active' OR g.id IS NOT NULL OR r.partner_id IS NOT NULL)
+          ORDER BY u.name COLLATE NOCASE,u.id`,period,start,start)
       ]);
       const total=(list,status)=>list.find(x=>x.status===status)?.total||0;
+      const commission=status=>commissions.results.find(x=>x.status===status);
+      const approvedCents=(commission("approved")?.amount||0)+(commission("due")?.amount||0);
       return respond({
-        ok:true,applications:applicants.results,users:reps.results,projects:devs.results,
+        ok:true,applications:applicants.results,users:people.results,projects:projects.results,
         opportunities:opportunities.results,receivedCents:received.results[0].total,
-        commissionsPendingCents:commissions.results[0].total,
-        studioInquiries:inquiries.results,
+        commissionsPendingCents:approvedCents,studioInquiries:inquiries.results,
+        monthly:{period,...sales.results[0],...cash.results[0],commissionsPaidCents:commission("paid")?.paid_in_month||0},
+        commissions:{estimatedCents:commission("estimated")?.amount||0,approvedCents},
+        performance:performance.results,
         tasks:{
-          candidates:applicants.results.filter(x=>['received','review','requested','interview','preapproved','documentation'].includes(x.status)).reduce((n,x)=>n+x.total,0),
+          ...tasks.results[0],
+          candidates:applicants.results.filter(x=>pendingApplicationStatuses.has(x.status)).reduce((n,x)=>n+x.total,0),
           newCandidates:total(applicants.results,'received'),
           studioNew:total(inquiries.results,'new'),
           studioOpen:inquiries.results.filter(x=>['new','review','qualified','proposal'].includes(x.status)).reduce((n,x)=>n+x.total,0),
-          overdueProjects:overdue.results[0].total,
-          salesAwaitingPayment:receivables.results[0].total,
-          accountsReceivableCents:receivables.results[0].amount,
-          dormantOpportunities:staleLeads.results[0].total,
-          dueFollowups:(await db.prepare("SELECT COUNT(*) total FROM opportunities WHERE next_action_at IS NOT NULL AND date(next_action_at)<=date('now') AND stage NOT IN ('paid','lost','cancelled')").first()).total,
-          servicesOverdue:(await db.prepare("SELECT COUNT(*) total FROM service_charges WHERE status<>'paid' AND due_on<date('now','-4 hours')").first()).total,
-          servicesDueToday:(await db.prepare("SELECT COUNT(*) total FROM service_charges WHERE status<>'paid' AND due_on=date('now','-4 hours')").first()).total
+          commissionReviews:commission("estimated")?.total||0
         }
       });
     }
@@ -358,8 +388,8 @@ export async function onRequest(context){
       return respond({ok:true,id,status:next});
     }
     if(route==="admin/goal"&&method==="POST"&&allowed(user,"admin")){
-      const b=await readBody(request),id=str(b.partnerId,60),period=str(b.period,7),value=b.goalCents;
-      if(!/^\\d{4}-\\d{2}$/.test(period)||!positive(value))return error("Meta inválida.");
+      const b=await readBody(request),id=str(b.partnerId,60),period=str(b.period,16),value=b.goalCents;
+      if(!validMonth(period)||!positive(value))return error("Meta inválida.");
       const rep=await query(db,"SELECT id FROM users WHERE id=? AND role='representante' AND status='active'",id).first();
       if(!rep)return error("Representante não encontrado.");
       await query(db,"INSERT INTO goals(id,partner_id,period,goal_cents) VALUES (?,?,?,?) ON CONFLICT(partner_id,period) DO UPDATE SET goal_cents=excluded.goal_cents",fresh(),id,period,value).run();

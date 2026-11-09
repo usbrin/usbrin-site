@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
    }
    return json;
  };
- const metric=(label,value)=>{const box=node('div',null,'metric');box.append(node('strong',value),node('span',label));metrics.append(box)};
+ const metric=(label,value,target=metrics)=>{const box=node('div',null,'metric');box.append(node('strong',value),node('span',label));target.append(box)};
  const table=(parent,headers,rows,actions)=>{
    parent.replaceChildren();
    if(!rows.length){parent.append(node('p','Nenhum registro disponível.','muted'));return;}
@@ -99,11 +99,11 @@ document.addEventListener('DOMContentLoaded',async()=>{
  const setNavigation=role=>{
    const allowed=role==='admin'?['overview','leads','guide','applications','studio','partners','projects','commissions','billing','bank']:role==='representante'?['overview','leads','guide','commissions']:['overview','projects','commissions'];
    document.querySelectorAll('#portal-nav button').forEach(b=>b.classList.toggle('hidden',!allowed.includes(b.dataset.view)));
-   el('lead-create').classList.toggle('hidden',role!=='representante');el('goal-panel').classList.add('hidden');el('action-center').classList.toggle('hidden',role!=='admin');
+   el('lead-create').classList.toggle('hidden',role!=='representante');el('goal-panel').classList.add('hidden');
    el('project-create').classList.toggle('hidden',role!=='admin');
    el('rep-command').hidden=role!=='representante';
-   metrics.classList.toggle('hidden',role==='representante');
-   el('overview-description').closest('.panel').classList.toggle('hidden',role==='representante');
+   metrics.classList.toggle('hidden',role!=='desenvolvedor');
+   el('overview-description').closest('.panel').classList.toggle('hidden',role!=='desenvolvedor');
    if(role==='representante')el('panel-title').textContent='Command';
  };
  const open=async(name)=>{
@@ -273,7 +273,10 @@ document.addEventListener('DOMContentLoaded',async()=>{
  const renderActionCenter=tasks=>{
    const list=el('action-list');list.replaceChildren();
    const actions=[
-     {name:'Candidaturas aguardando análise',count:tasks.candidates,desc:'Ver etapas de seleção',view:'applications'},
+     {name:'Candidaturas em aberto',count:tasks.candidates,desc:'Ver candidaturas',view:'applications',filter:()=>{el('app-status-filter').value='pending';el('app-type-filter').value='';el('app-search').value='';}},
+     {name:'Candidaturas aprovadas sem conta',count:tasks.awaitingActivation,desc:'Abrir Gestão de Acessos',view:'partners'},
+     {name:'Comissões aguardando aprovação',count:tasks.commissionReviews,desc:'Analisar comissões',view:'commissions'},
+     {name:'Devoluções para revisar',count:tasks.refundReviews,desc:'Ver conciliação',view:'bank'},
      {name:'Solicitações do Studio',count:tasks.studioNew,desc:'Avaliar novos briefings',view:'studio'},
      {name:'Projetos fora do prazo',count:tasks.overdueProjects,desc:'Revisar entregas',view:'projects'},
      {name:'Vendas com saldo a receber',count:tasks.salesAwaitingPayment,desc:'Conferir conciliação',view:'commissions'},
@@ -287,10 +290,72 @@ document.addEventListener('DOMContentLoaded',async()=>{
    pending.forEach(a=>{
      const card=node('div',null,'task-card');
      const count=node('strong',a.count,'task-count'),description=node('span',a.name,'task-name');
-     const action=btn(a.desc,()=>open(a.view));action.classList.add('task-action');
+     const action=btn(a.desc,async()=>{a.filter?.();await open(a.view);el('panel-title').focus();});action.classList.add('task-action');
      card.append(count,description,action);list.append(card);
    });
  };
+ let overviewPeriod='',overviewRequest=0;
+ const renderAdminOverview=info=>{
+   const {monthly,commissions,performance}=info;
+   const snapshot=el('admin-current-metrics'),periodMetrics=el('admin-monthly-metrics');
+   const active=role=>info.users.find(x=>x.role===role)?.total||0;
+   const openStages=new Set(['new','contact','interested','qualified','proposal','negotiation']);
+   snapshot.replaceChildren();
+   for(const [label,value] of [
+     ['Candidaturas em aberto',info.tasks.candidates],
+     ['Representantes ativos',active('representante')],
+     ['Desenvolvedores ativos',active('desenvolvedor')],
+     ['Oportunidades em andamento',info.opportunities.reduce((n,x)=>n+(openStages.has(x.stage)?x.total:0),0)],
+     ['Comissões previstas',currency(commissions.estimatedCents)],
+     ['Comissões aprovadas a pagar',currency(commissions.approvedCents)]
+   ])metric(label,value,snapshot);
+
+   periodMetrics.replaceChildren();
+   for(const [label,value] of [
+     ['Vendas confirmadas',monthly.count],
+     ['Valor contratado',currency(monthly.contractedCents)],
+     ['Receita recebida',currency(monthly.sitesCents+monthly.servicesCents)],
+     ['Comissões pagas',currency(monthly.commissionsPaidCents)]
+   ])metric(label,value,periodMetrics);
+   el('overview-period-status').textContent='Período '+monthly.period.split('-').reverse().join('/')+' · Sites '+currency(monthly.sitesCents)+' · Serviços '+currency(monthly.servicesCents);
+   table(el('admin-goals'),['Representante','Recebido em sites','Meta','Atingimento'],performance.map(x=>[
+     x.name+(x.status==='active'?'':' (inativo)'),currency(x.received_cents),
+     x.goal_cents===null?'Sem meta':currency(x.goal_cents),
+     x.goal_cents>0?new Intl.NumberFormat('pt-BR',{style:'percent',maximumFractionDigits:1}).format(x.received_cents/x.goal_cents):'—'
+   ]));
+   const reps=performance.filter(x=>x.status==='active'),target=el('goal-partner'),selection=target.value;
+   target.replaceChildren(new Option('Selecione um representante',''),...reps.map(x=>new Option(x.name,x.id)));
+   if(reps.some(x=>x.id===selection))target.value=selection;
+   el('goal-form').elements.period.value=monthly.period;
+   el('goal-panel').classList.toggle('hidden',!reps.length);
+   renderActionCenter(info.tasks);
+   for(const id of ['admin-snapshot','action-center','admin-performance'])el(id).classList.remove('hidden');
+   el('overview-period-data').hidden=false;
+ };
+ const loadAdminOverview=async()=>{
+   const current=++overviewRequest;
+   const status=el('overview-period-status'),data=el('overview-period-data');
+   status.textContent='Carregando indicadores do mês…';
+   data.hidden=true;
+   try{
+     const params=new URLSearchParams(overviewPeriod?{month:overviewPeriod}:{});
+     const info=await request('admin/overview'+(params.size?'?'+params:''));
+     if(current!==overviewRequest||view!=='overview')return;
+     overviewPeriod=info.monthly.period;
+     el('overview-month').value=overviewPeriod;
+     renderAdminOverview(info);
+   }catch(error){
+     if(current!==overviewRequest||view!=='overview')return;
+     status.textContent='Não foi possível carregar os indicadores do mês.';
+     throw error;
+   }
+ };
+ el('overview-period-form').addEventListener('submit',async event=>{
+   event.preventDefault();
+   if(user?.role!=='admin'||view!=='overview')return;
+   overviewPeriod=el('overview-month').value;
+   try{await loadAdminOverview();}catch(error){message(error.message,true);}
+ });
  const renderStudio=async data=>{
    const host=el('studio-list'),filter=el('studio-status-filter').value,search=el('studio-search').value.trim().toLocaleLowerCase('pt-BR');
    const items=data.inquiries.filter(x=>(!filter||x.status===filter)&&(!search||[x.name,x.company,x.protocol].some(v=>String(v||'').toLocaleLowerCase('pt-BR').includes(search))));
@@ -754,11 +819,10 @@ document.addEventListener('DOMContentLoaded',async()=>{
    if(name==='billing'&&user.role==='admin')await loadBilling();
    if(name==='guide'&&(user.role==='admin'||user.role==='representante'))await loadBriefLeads();
    if(name==='overview'){
-     const info=user.role==='admin'?await request('admin/overview'):user.role==='representante'?await request('representante/dashboard'):await request('desenvolvedor/dashboard');
-     if(user.role==='admin'){const people=await request('admin/users');const reps=people.users.filter(x=>x.role==='representante'&&x.status==='active');const target=el('goal-partner');target.replaceChildren(new Option('Selecione um representante',''));reps.forEach(x=>target.add(new Option(x.name+' — '+x.email,x.id)));el('goal-panel').classList.toggle('hidden',reps.length===0);renderActionCenter(info.tasks||{});}
+     if(user.role==='admin'){await loadAdminOverview();return;}
+     const info=await request(user.role==='representante'?'representante/dashboard':'desenvolvedor/dashboard');
      metrics.replaceChildren();
-     if(user.role==='admin'){metric('Candidaturas recebidas',info.applications.reduce((n,x)=>n+x.total,0));metric('Parceiros ativos',info.users.reduce((n,x)=>n+(x.role==='admin'?0:x.total),0));metric('Receita recebida',currency(info.receivedCents));metric('Comissões pendentes',currency(info.commissionsPendingCents));}
-     else if(user.role==='representante'){
+     if(user.role==='representante'){
        if(!window.USBRIN_REP_COMMAND?.render)throw Error('Painel Command indisponível. Atualize a página.');
        window.USBRIN_REP_COMMAND.render({root:el('rep-command'),data:info,user,request,currency,
          openLead:openRepLead,openStage:openRepStages,openSection:openRepSection,refresh:()=>open('overview'),notify:message});
@@ -847,7 +911,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
      const data=await request('admin/applications');
      const type=el('app-type-filter').value,statusFilter=el('app-status-filter').value,search=el('app-search').value.trim().toLocaleLowerCase('pt-BR');
      const applicants=data.applications.filter(x=>
-       (!type||x.type===type)&&(!statusFilter||x.status===statusFilter)&&
+       (!type||x.type===type)&&(!statusFilter||(statusFilter==='pending'?['received','review','requested','interview','preapproved','documentation'].includes(x.status):x.status===statusFilter))&&
        (!search||[x.name,x.email,x.protocol,x.city].some(v=>String(v||'').toLocaleLowerCase('pt-BR').includes(search)))
      );
      const statuses={received:'Recebida',review:'Em análise',requested:'Informações solicitadas',interview:'Entrevista',preapproved:'Pré-aprovada',documentation:'Documentação',approved:'Aprovada',rejected:'Não selecionada',withdrawn:'Encerrada'};
@@ -859,9 +923,9 @@ document.addEventListener('DOMContentLoaded',async()=>{
        const details=node('details'),summary=node('summary','Ver candidatura');
        const content=node('div',null,'details-content');
        content.append(node('p','Nome: '+a.name),node('p','E-mail: '+a.email),node('p','WhatsApp: '+a.phone));
-       content.append(node('p','Disponibilidade: '+(a.availability||'Não informada')));
-       content.append(node('p','Experiência:'),node('pre',a.experience,'briefing-text'));
-       content.append(node('p','Apresentação:'),node('pre',a.motivation,'briefing-text'));
+       if(a.availability||a.type==='desenvolvedor')content.append(node('p','Disponibilidade: '+(a.availability||'Não informada')));
+       content.append(node('p',a.type==='representante'?'Experiência com vendas':'Experiência técnica'),node('pre',a.experience,'briefing-text'));
+       content.append(node('p',a.type==='representante'?'Apresentação comercial':'Apresentação'),node('pre',a.motivation,'briefing-text'));
        if(a.portfolio){
          try{const url=new URL(a.portfolio);
            if(url.protocol==='https:'){

@@ -112,6 +112,62 @@ test("candidate forms require verified Turnstile, consent, and reject duplicate 
  assert.equal(stored.email,body.email);assert.equal(stored.type,"representante");assert.equal(stored.status,"received");
 });
 
+test("representative preview is host-scoped, accepts QA-only data and never creates accounts",async()=>{
+ const origin="https://usbrin-preview.pages.dev";
+ const enabled={...env,REPRESENTATIVE_APPLICATIONS_PREVIEW:env.ACCESS_APP_HOST,TURNSTILE_SITE_KEY:"site-key-test",TURNSTILE_SECRET:"secret-test"};
+ const body={type:"representante",name:"Pessoa Exemplo",email:"representante.qa@example.com",phone:"+55 (69) 99999-9999",city:"Porto Velho",state:"RO",experience:"Ainda não tenho experiência profissional em vendas.",motivation:"Pretendo prospectar empresas locais e apresentar uma demonstração.",privacy:true,turnstileToken:"mock-application-token"};
+ const submit=(payload,host=origin)=>apply({env:enabled,request:new Request(host+"/public/api/applications",{
+   method:"POST",headers:{"content-type":"application/json",origin:host},body:JSON.stringify(payload)
+ })});
+ const config=async host=>(await publicConfig({env:enabled,request:new Request(host+"/public/api/public-config")}).json());
+ assert.deepEqual((await config(origin)).applicationTypes,["representante"]);
+ assert.equal((await config("https://usbrin-site.pages.dev")).applicationsOpen,false);
+ assert.equal((await submit(body,"https://usbrin-site.pages.dev")).status,503);
+ assert.equal((await submit({...body,type:"desenvolvedor"})).status,503);
+ for(const changes of [{email:"pessoa@outro.test"},{state:"XX"},{phone:"1198765432abc"},{city:"   "},{experience:"Breve"},{name:"a".repeat(121)},{website:"spam"}]){
+   assert.equal((await submit({...body,...changes})).status,400);
+ }
+ const response=await submit(body);
+ assert.equal(response.status,201);
+ const {protocol}=await response.json();
+ const listed=(await call(users[0][1],"admin/applications")).data.applications.find(x=>x.protocol===protocol);
+ assert.equal(listed.phone,"+5569999999999");
+ assert.equal(listed.motivation,body.motivation);
+ assert.equal(db.sqlite.prepare("SELECT details FROM audit_events WHERE action='application.privacy' AND entity_id=?").get(listed.id).details,"privacidade-parceiros/v1");
+ assert.equal(db.sqlite.prepare("SELECT COUNT(*) n FROM users WHERE application_id=? OR email=?").get(listed.id,body.email).n,0);
+ assert.equal((await submit({...body,email:body.email.toUpperCase()})).status,409);
+ const lookup=await statusLookup({env:enabled,request:new Request(origin+"/public/api/application-status",{
+   method:"POST",headers:{"content-type":"application/json",origin},body:JSON.stringify({protocol,email:body.email,turnstileToken:"mock-status-token"})
+ })});
+ assert.equal(lookup.status,200);
+ assert.equal((await lookup.json()).status,"received");
+});
+
+test("admin overview separates sales, recorded receipts and goals by Porto Velho month",async()=>{
+ const leadId="overview-lead",saleId="overview-sale";
+ db.sqlite.prepare("INSERT INTO opportunities (id,partner_id,company,contact,stage) VALUES (?,'r1','Empresa QA','Contato QA','contracted')").run(leadId);
+ db.sqlite.prepare("INSERT INTO sales (id,opportunity_id,gross_cents,created_at) VALUES (?,?,100000,'2026-04-01 04:00:00')").run(saleId,leadId);
+ const receipt=db.sqlite.prepare("INSERT INTO sale_receipts (id,sale_id,amount_cents,reference,received_at,actor_id) VALUES (?,?,?,?,?,'a1')");
+ receipt.run("overview-march",saleId,15000,"overview-march","2026-04-01 03:59:59");
+ receipt.run("overview-april",saleId,25000,"overview-april","2026-04-01 04:00:00");
+ const admin=users[0][1];
+ assert.equal((await call(admin,"admin/goal",{partnerId:"r1",period:"2026-04",goalCents:50000})).status,200);
+ assert.equal((await call(admin,"admin/overview?month=2026-13")).status,400);
+ for(const index of [1,3])assert.equal((await call(users[index][1],"admin/overview?month=2026-04")).status,404);
+ const april=await call(admin,"admin/overview?month=2026-04");
+ assert.equal(april.status,200);
+ assert.equal(april.data.monthly.count,1);
+ assert.equal(april.data.monthly.contractedCents,100000);
+ assert.equal(april.data.monthly.sitesCents,25000);
+ const row=april.data.performance.find(x=>x.id==="r1");
+ assert.equal(row.goal_cents,50000);
+ assert.equal(row.received_cents,25000);
+ const march=await call(admin,"admin/overview?month=2026-03");
+ assert.equal(march.data.monthly.count,0);
+ assert.equal(march.data.monthly.sitesCents,15000);
+ assert.equal(march.data.performance.find(x=>x.id==="r1").goal_cents,null);
+});
+
 test("Studio remains opt-in and CRM conversion is unique, authorized and traceable",async()=>{
  const disabledReq=new Request("https://usbrin-preview.pages.dev/api/studio-inquiry",{
    method:"POST",headers:{"content-type":"application/json","origin":"https://usbrin-preview.pages.dev"},body:"{}"

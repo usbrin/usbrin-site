@@ -13,7 +13,11 @@ await mkdir(outDir,{recursive:true});
 const fixture={
   admin: {
     me:{ok:true,user:{name:'HOMOLOGAÇÃO Admin',role:'admin'}},
-    'admin/overview':{ok:true,applications:[],users:[],projects:[],opportunities:[],receivedCents:0,commissionsPendingCents:0,studioInquiries:[],tasks:{}},
+    'admin/overview':{ok:true,users:[{role:'representante',total:2},{role:'desenvolvedor',total:1}],opportunities:[{stage:'proposal',total:3}],
+      monthly:{period:'2026-11',count:2,contractedCents:188000,sitesCents:119000,servicesCents:25000,commissionsPaidCents:17850},
+      commissions:{estimatedCents:10350,approvedCents:0},performance:[{id:'qa-rep',name:'Representante QA',status:'active',goal_cents:200000,received_cents:119000}],
+      tasks:{candidates:2,awaitingActivation:1,commissionReviews:1}},
+    'admin/applications':{ok:true,applications:[]},
     'admin/users':{ok:true,users:[]},
     'admin/access':{ok:true,users:[{id:'qa-partner',name:'Parceiro QA',email:'partner@usbrin.test',role:'representante',status:'active',contract_ready:1}],
       candidates:[{id:'qa-candidate',name:'Candidato QA',email:'candidate@usbrin.test',type:'representante',protocol:'UQA-00001'}],
@@ -98,7 +102,11 @@ async function pageFor(role,width,url){
      else if(path.includes('/api/private/')){
        if(role==='expired')return Response.json({ok:false,code:'session_required'},{status:401});
        const endpoint=path.split('/api/private/')[1].split('?')[0];
-       if(endpoint==='admin/access/invitation'&&options.method==='POST'){
+       if(endpoint==='admin/overview'){
+         const month=new URL(path,location.href).searchParams.get('month');
+         const overview=fixture[role][endpoint];
+         result=month?{...overview,monthly:{...overview.monthly,period:month}}:overview;
+       }else if(endpoint==='admin/access/invitation'&&options.method==='POST'){
          window.__accessInvitation=JSON.parse(options.body);result=fixture[role]?.[endpoint];
        }else if(endpoint==='crm/proposal-draft'&&options.method==='POST'){
          window.__guideSubmitted=JSON.parse(options.body);
@@ -176,6 +184,74 @@ try{
    console.log('PASS public entry, keyboard handoff, denied states and active session routing');
  }finally{await routing.close();}
  for(const width of [375,768,1440]){
+   const recruitment=await browser.newContext({viewport:{width,height:900}});
+   try{
+     const page=await recruitment.newPage();
+     let submissions=0;
+     await page.route('https://challenges.cloudflare.com/turnstile/v0/api.js?*',route=>route.fulfill({contentType:'text/javascript',body:`
+       window.turnstile={render(selector,options){
+         const marker=document.createElement('p');
+         marker.textContent='Verificação de segurança · simulação QA';
+         marker.style.color='#b69cf5';
+         document.querySelector(selector).append(marker);
+         window.__qaChallenge=options.callback;options.callback('browser-fixture-token');return 'qa';
+       },reset(){window.__qaChallenge('browser-fixture-token');}};
+     `}));
+     const qaOrigin='https://recruitment-fixture.test';
+     await page.route(qaOrigin+'/**',async route=>{
+       const path=new URL(route.request().url()).pathname;
+       if(path==='/public/api/public-config')return route.fulfill({json:{applicationsOpen:true,applicationTypes:['representante'],representativePreview:true,turnstileSiteKey:'fixture-site-key'}});
+       if(path==='/public/api/applications'){
+         const body=route.request().postDataJSON();
+         assert.equal(body.type,'representante');
+         assert.equal(body.state,'RO');
+         assert.equal(body.privacy,true);
+         assert.equal(body.portfolio,undefined);
+         submissions++;
+         await new Promise(resolve=>setTimeout(resolve,100));
+         return submissions===1?route.fulfill({status:409,json:{error:'Já existe uma candidatura ativa.'}})
+           :route.fulfill({status:201,json:{protocol:'U123456789ABCD'}});
+       }
+       const safe=/^\/public\/(?:[\w-]+\.html|(?:assets|css|js)\/[\w.-]+)$/.test(path);
+       return safe?route.fulfill({path:resolve('dist'+path)}):route.abort();
+     });
+     await page.goto(qaOrigin+'/public/parceiros.html');
+     await page.getByText('Parceiros',{exact:true}).first().waitFor();
+     await assertFits(page,'USBRIN Parceiros '+width);
+     await page.screenshot({path:resolve(outDir,'usbrin-parceiros-'+width+'.png')});
+     await page.getByRole('link',{name:'Candidatura de representante'}).click();
+     await page.getByRole('button',{name:'Enviar candidatura'}).waitFor();
+     await page.waitForFunction(()=>!document.querySelector('#submit')?.disabled);
+     await assertFits(page,'Candidatura '+width);
+     await page.screenshot({path:resolve(outDir,'usbrin-candidatura-'+width+'.png'),fullPage:true});
+     const submit=page.getByRole('button',{name:'Enviar candidatura'});
+     await submit.focus();
+     await page.keyboard.press('Enter');
+     assert.equal(submissions,0);
+     assert.equal(await page.locator('#name').evaluate(element=>element===document.activeElement),true);
+     await page.locator('#name').fill('Pessoa QA');
+     await page.keyboard.press('Tab');
+     assert.equal(await page.locator('#email').evaluate(element=>element===document.activeElement),true);
+     await page.locator('#email').fill('representante.qa@example.com');
+     await page.locator('#phone').fill('(69) 99999-9999');
+     await page.locator('#city').fill('Porto Velho');
+     await page.locator('#state').selectOption('RO');
+     await page.locator('#experience').fill('Já trabalhei com atendimento e prospecção local.');
+     await page.locator('#motivation').fill('Pretendo conversar com comércios da região e mostrar uma demonstração.');
+     await page.getByRole('checkbox').check();
+     await submit.click();
+     await page.getByText('Registrando sua candidatura…').waitFor();
+     await page.getByText('Já existe uma candidatura ativa.').waitFor();
+     assert.equal(await page.locator('#email').inputValue(),'representante.qa@example.com');
+     await submit.focus();
+     await page.keyboard.press('Enter');
+     await page.getByText(/Candidatura recebida/).waitFor();
+     await page.locator('#result').getByRole('link',{name:'Acompanhar candidatura'}).waitFor();
+     assert.equal(await page.locator('#result').evaluate(element=>element===document.activeElement),true);
+     console.log('PASS Parceiros e candidatura com teclado, validação, envio e resposta em '+width+'px');
+   }finally{await recruitment.close();}
+ }
+ for(const width of [375,768,1440]){
    for(const role of ['admin','representante','desenvolvedor']){
      const {context,page,errors}=await pageFor(role,width,portalUrl);
      try{
@@ -187,6 +263,16 @@ try{
        const expected=role==='admin'?['overview','leads','guide','applications','studio','partners','projects','commissions','billing','bank']:role==='representante'?['overview','leads','guide','commissions']:['overview','projects','commissions'];
        assert.deepEqual(visible,expected,role+' navigation mismatch');
        if(role==='admin'){
+         await assertFits(page,'Dashboard administrativo '+width);
+         await page.getByText('59,5%',{exact:true}).waitFor();
+         await page.screenshot({path:resolve(outDir,'usbrin-admin-'+width+'.png'),fullPage:true});
+         await page.locator('#overview-month').fill('2026-10');
+         const filter=page.getByRole('button',{name:'Aplicar período'});
+         await filter.focus();
+         await page.keyboard.press('Enter');
+         await page.getByText(/^Período 10\/2026/).waitFor();
+         await page.getByRole('button',{name:'Ver candidaturas',exact:true}).click();
+         assert.equal(await page.locator('#app-status-filter').inputValue(),'pending');
          await page.locator('#portal-nav [data-view="partners"]').click();
          await page.getByRole('heading',{name:'Gestão de Acessos',exact:true}).waitFor();
          await page.locator('#partner-list').getByText('Parceiro QA',{exact:true}).waitFor();
