@@ -1003,29 +1003,39 @@ body.menu-open{overflow:hidden;}
 @media(min-width:1101px){.mobile-nav{display:none;}}
 @media(max-width:600px){.form-grid,.feature-options{grid-template-columns:1fr;}.header-actions{display:none;}.contact-panel{padding:36px 16px;}.demo-head-row{align-items:flex-start;flex-wrap:wrap;}.quote-result{padding:14px;}.wa-float{width:46px;height:46px;bottom:12px;right:12px;}.channels{grid-template-columns:1fr;}}
 
-/* USBRIN: menu completo em duas linhas no desktop.
-   A navegação móvel mantém o cabeçalho compacto original. */
-@media (min-width:1101px){
+/* USBRIN: navegacao horizontal compacta sem sobrepor a marca e o CTA.
+   Em telas intermediarias, preserva todas as opcoes no menu recolhivel. */
+@media (min-width:1301px){
   .site-header .container{
-    height:116px;
-    display:grid;
-    grid-template-columns:minmax(0,1fr) auto;
-    grid-template-rows:70px 46px;
+    max-width:1500px;
+    height:78px;
+    display:flex;
     align-items:center;
-    column-gap:24px;
+    justify-content:space-between;
+    gap:clamp(16px,1.6vw,28px);
   }
-  .site-header .brand{grid-column:1;grid-row:1;justify-self:start;}
-  .site-header .header-actions{grid-column:2;grid-row:1;justify-self:end;}
+  .site-header .brand{flex:0 0 auto;}
   .site-header .main-nav{
-    grid-column:1 / -1;
-    grid-row:2;
-    justify-content:center;
-    width:100%;
+    display:flex;
+    flex:1 1 auto;
     min-width:0;
-    gap:clamp(15px,2vw,30px);
-    border-top:1px solid var(--border);
+    width:auto;
+    justify-content:center;
+    gap:clamp(12px,1.3vw,22px);
     white-space:nowrap;
+    border-top:0;
   }
-  .site-header .main-nav a{font-size:14px;line-height:1.4;}
-  .hero{padding-top:164px;}
+  .site-header .main-nav a{
+    font-size:clamp(12px,.95vw,14px);
+    line-height:1.4;
+  }
+  .site-header .header-actions{flex:0 0 auto;}
+  .site-header .header-actions .btn-primary{padding:11px 17px;white-space:nowrap;}
+}
+/* O menu completo passa ao botao em vez de quebrar a linha no desktop estreito. */
+@media (min-width:1101px) and (max-width:1300px){
+  .site-header .container{height:78px;display:flex;align-items:center;justify-content:space-between;}
+  .site-header .main-nav{display:none;}
+  .site-header .nav-toggle{display:flex;}
+  .mobile-nav{display:flex;}
 }
