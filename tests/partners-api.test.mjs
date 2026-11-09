@@ -170,6 +170,51 @@ test("admin overview separates sales, recorded receipts and goals by Porto Velho
  assert.equal(march.data.performance.find(x=>x.id==="r1").goal_cents,null);
 });
 
+test("admin dashboard reconciles cash, commissions and bank credits with synthetic ledger entries",async()=>{
+ const month="2025-07",admin=users[0][1],rep=users[1][1];
+ const sale=db.sqlite.prepare("INSERT INTO sales(id,opportunity_id,gross_cents,created_at) VALUES (?,?,?,'2025-07-03 12:00:00')");
+ const lead=db.sqlite.prepare("INSERT INTO opportunities(id,partner_id,company,contact,stage) VALUES (?,'r1',?,'Contato fictício','contracted')");
+ const receipt=db.sqlite.prepare("INSERT INTO sale_receipts(id,sale_id,amount_cents,reference,received_at,actor_id) VALUES (?,?,?,?,'2025-07-03 12:30:00','a1')");
+ const commission=db.sqlite.prepare("INSERT INTO commissions(id,sale_id,partner_id,basis_cents,rate_bps,amount_cents,status,paid_at) VALUES (?,?,'r1',?,1500,?,?,?)");
+ const before=(await call(admin,"admin/overview?month="+month)).data.commissions;
+ for(const [id,amount,state] of [["fin-paid",119000,"paid"],["fin-approved",69000,"approved"],["fin-estimated",50000,"estimated"]]){
+   lead.run(id,id);sale.run(id,id,amount);receipt.run(id,id,amount,id);
+   commission.run(id,id,amount,amount*15/100,state,state==="paid"?"2025-07-05 12:00:00":null);
+ }
+ lead.run("fin-unpaid","Venda sem recebimento");sale.run("fin-unpaid","fin-unpaid",30000);
+ const agreement=await call(admin,"admin/billing/agreement",{saleId:"fin-paid",kind:"support",cadence:"monthly",amountCents:25000,startOn:"2025-07-01",
+   contractReference:"QA-RECONCILIATION-2025",termsSummary:"Acordo de suporte fictício usado na conciliação do dashboard.",confirmedSigned:true});
+ assert.equal(agreement.status,201);
+ const charge=await call(admin,"admin/billing/charge",{agreementId:agreement.data.id,period:month,dueOn:"2025-07-05",confirmedManual:true});
+ assert.equal(charge.status,201);
+ db.sqlite.prepare("INSERT INTO service_receipts(id,charge_id,amount_cents,reference,actor_id,received_at) VALUES ('fin-support',?,10000,'fin-support','a1','2025-07-05 13:00:00')").run(charge.data.id);
+ const statement=await call(admin,"admin/bank/import",{accountAlias:"QA-DASHBOARD",filename:"qa-dashboard.csv",confirmedSource:true,
+   csv:"data;valor;descricao;identificador\n2025-07-03;1190,00;Crédito de site;fin-paid\n2025-07-05;100,00;Crédito de suporte;fin-support\n2025-07-06;-120,00;Devolução;fin-refund"});
+ assert.equal(statement.status,201);
+ const entry=id=>db.sqlite.prepare("SELECT id FROM bank_entries WHERE external_id=?").get(id.toUpperCase()).id;
+ for(const [kind,id] of [["sale","fin-paid"],["service","fin-support"]]){
+   assert.equal((await call(admin,"admin/bank/match",{entryId:entry(id),receiptKind:kind,receiptId:id,confirmedComparison:true})).status,200);
+ }
+ const refund=await call(admin,"admin/bank/refund-request",{receiptKind:"sale",receiptId:"fin-paid",amountCents:12000,reason:"Devolução fictícia para separar receita bruta e caixa líquido",confirmedCase:true});
+ assert.equal(refund.status,201);
+ assert.equal((await call(admin,"admin/bank/refund-review",{id:refund.data.id,decision:"approved",confirmedReview:true})).status,200);
+ assert.equal((await call(admin,"admin/bank/refund-settle",{id:refund.data.id,bankEntryId:entry("fin-refund"),confirmedBankDebit:true})).status,200);
+ assert.equal((await call(admin,"admin/goal",{partnerId:"r1",period:month,goalCents:300000})).status,200);
+ const overview=await call(admin,"admin/overview?month="+month);
+ assert.equal(overview.status,200);
+ assert.deepEqual(overview.data.monthly,{period:month,count:4,contractedCents:268000,sitesCents:238000,servicesCents:10000,commissionsPaidCents:17850});
+ assert.equal(overview.data.commissions.estimatedCents-before.estimatedCents,7500);
+ assert.equal(overview.data.commissions.approvedCents-before.approvedCents,10350);
+ const target=overview.data.performance.find(row=>row.id==="r1");
+ assert.equal(target.received_cents,238000);assert.equal(target.goal_cents,300000);
+ const control=await call(admin,"admin/control/overview?month="+month);
+ assert.equal(control.status,200);
+ assert.equal(control.data.monthly.bankMatchedInCents,129000);
+ assert.equal(control.data.monthly.bankMatchedRefundOutCents,12000);
+ assert.equal(control.data.monthly.netClassifiedCents,117000);
+ assert.equal((await call(rep,"admin/overview?month="+month)).status,404);
+});
+
 test("Studio remains opt-in and CRM conversion is unique, authorized and traceable",async()=>{
  const disabledReq=new Request("https://usbrin-preview.pages.dev/api/studio-inquiry",{
    method:"POST",headers:{"content-type":"application/json","origin":"https://usbrin-preview.pages.dev"},body:"{}"
