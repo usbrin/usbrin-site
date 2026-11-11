@@ -14,7 +14,9 @@ let drawComparison=()=>{},drawRoutine=()=>{};
 const filters=$('#atelier-filters'),cards=$('#atelier-cards'),search=$('#atelier-search'),sortControl=$('#atelier-sort'),dialog=$('#atelier-dialog'),toast=$('#atelier-toast');
 function node(tag,cls){const e=document.createElement(tag);if(cls)e.className=cls;return e;}
 function text(parent,tag,value,cls){const e=node(tag,cls);e.textContent=value;parent.append(e);return e;}
-function picture(src,alt){const img=node('img');img.src=src;img.alt=alt;img.loading='lazy';img.decoding='async';img.width=920;img.height=780;img.addEventListener('error',()=>{img.style.opacity='.22';img.alt='Fotografia de referência indisponível';},{once:true});return img;}
+const fallbackPhoto=kind==='jewelry'?'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=920&q=78':'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=920&q=78';
+function attachFallback(img){img.addEventListener('error',()=>{if(img.dataset.fallback==='1'){img.style.opacity='.22';img.alt='Fotografia de referência indisponível';return;}img.dataset.fallback='1';img.src=fallbackPhoto;img.alt='Fotografia editorial alternativa de referência';});}
+function picture(src,alt){const img=node('img');img.src=src;img.alt=alt;img.loading='lazy';img.decoding='async';img.width=920;img.height=780;attachFallback(img);return img;}
 function notify(message){toast.hidden=false;toast.textContent=message;clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.hidden=true,2800);}
 const nav=$('#atelier-nav'),toggle=$('.nav-toggle');
 if(nav&&toggle){
@@ -40,7 +42,7 @@ function choose(id){
 }
 function showDetails(product){
  current=product;
- const img=$('#detail-photo');img.src=product.photo;img.alt='Fotografia editorial de referência para '+product.name;
+ const img=$('#detail-photo');delete img.dataset.fallback;img.style.opacity='1';img.src=product.photo;img.alt='Fotografia editorial de referência para '+product.name;
  $('#detail-category').textContent=(product.category||product.stage)+' · projeto conceitual';
  $('#detail-title').textContent=product.name;
  $('#detail-description').textContent=product.detail;
@@ -66,6 +68,7 @@ function drawCatalog(){
  $('#catalog-count').textContent=data.length===1?'1 referência encontrada':data.length+' referências encontradas';
  $('#catalog-empty').hidden=data.length>0;
 }
+attachFallback($('#detail-photo'));
 $('#dialog-close').addEventListener('click',()=>dialog.close());
 dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
 $('#detail-select').addEventListener('click',()=>{if(!current)return;const id=current.id;dialog.close();choose(id);$('#estudio').scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});});
