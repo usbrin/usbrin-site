@@ -50,7 +50,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 | Nº | Projeto autoral | Modelo de negócio | Situação nesta fase | Experiência diferencial |
 |---:|---|---|---|---|
 | 19 | Maia Advocacia | Advocacia | planejado | Especialidades e credibilidade |
-| 20 | Norte Contábil | Contabilidade | planejado | Serviços e captação B2B |
+| 20 | Norte Contábil | Contabilidade | novo · premium | Painel de cenários financeiros demonstrativos |
 | 21 | Eixo Consultoria | Consultoria | planejado | Soluções, metodologia e diagnóstico |
 | 22 | Brilho Casa | Limpeza | planejado | Solicitação simples e benefícios |
 | 23 | Luz Solar | Energia solar | planejado | Simulação ilustrativa e projetos |
@@ -92,7 +92,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 | 39 | Fluxo | SaaS | novo | Dashboard interativo com dados demonstrativos |
 | 40 | Opala Cloud | Cloud | planejado | Infraestrutura e recursos |
 | 41 | Vértice Digital | Marketing digital | planejado | Serviços, processo e portfólio |
-| 42 | Nexo Automação | Automação | planejado | Fluxos e integrações demonstrativas |
+| 42 | Nexo Automação | Automação | novo · padrão USBRIN | Orquestrador local de fluxos por etapas |
 
 ### Turismo e hospedagem (4)
 
@@ -122,7 +122,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 6. Transparência: marca e dados conceituais; não inventar clientes, avaliações ou números de desempenho reais.
 7. Rastreável: registrar revisão visual e regressão antes de promoção de preview para produção.
 
-**Nesta etapa:** 4 demonstrações legadas reformuladas e 6 experiências novas na branch de preview, totalizando 10 projetos navegáveis. As legadas receberam novas artes autorais, navegação móvel e interações específicas. Os testes automatizados de desktop/mobile em Chromium concluíram 118 verificações de UX e 10 capturas em 2026-11-11. Ainda é necessária revisão final em dispositivos reais e aprovação para publicação oficial.
+**Nesta etapa:** 4 demonstrações legadas reformuladas e 8 experiências novas na branch de preview, totalizando 12 projetos navegáveis. As legadas receberam novas artes autorais, navegação móvel e interações específicas. Os testes automatizados de desktop/mobile em Chromium concluíram 118 verificações de UX e 10 capturas em 2026-11-11. Ainda é necessária revisão final em dispositivos reais e aprovação para publicação oficial.
 
 **Meta comercial a observar após lançamento:** visitas por categoria, cliques em "Explorar site", cliques em "Quero algo assim", solicitações de proposta e conversões qualificadas. Sem fingir que há dados antes de instrumentar mensuração consentida.
 
@@ -157,4 +157,14 @@ A partir do 9º projeto, os conceitos devem demonstrar lógica funcional real, a
 - `tests/portfolio-browser.cjs` ampliado para interações dos dois conceitos, erros de script e responsividade.
 - CI e build allowlist incluem apenas arquivos estáticos do Portfolio, mantendo Studio, Store, parceiros e ID inalterados.
 
-**Estado:** dez experiências navegáveis em preview; quarenta conceitos restantes no planejamento. Não há autorização para promover à produção até testes e revisão final.
+**Estado:** doze experiências navegáveis em preview; trinta e oito conceitos restantes no planejamento. Não há autorização para promover à produção até testes e revisão final.
+
+## Terceiro lote técnico — identidade corporativa e padrão USBRIN (11/11/2026)
+
+- **Norte Contábil:** site empresarial com linguagem corporativa independente, seção de serviços e painel de cenários editáveis com indicadores de contribuição, ponto de equilíbrio simplificado e estimativa didática de necessidade operacional de caixa.
+- Os cálculos excluem tributos, estoques, dívidas, investimentos, sazonalidade e custos não informados. Todo dado é hipotético. Não é consultoria contábil, recomendação financeira nem ferramenta de apuração tributária.
+- **Nexo Automação:** primeira experiência deste lote explicitamente alinhada à identidade visual USBRIN (grafite, branco e lilás), sem transformar a coleção inteira em templates iguais.
+- Três modelos de processos, escolha de origem ilustrativa, prioridade, intervalo e execução local de quatro etapas, com indicadores de progresso e registro de eventos.
+- Motor compartilhado puro `js/portfolio-suite.js`, teste independente `tests/portfolio-suite.test.cjs`, interface em `js/demo-suite.js` e estilos isolados em `css/demo-suite.css`.
+- Não há cadastro, conexão de sistemas, envio de e-mails, operação fiscal, processamento de pagamentos, persistência ou qualquer execução externa.
+- Os 12 projetos permanecem em preview protegido. A homologação inclui testes estruturais, simulações de navegador e regressão do Studio. Não publicar em produção antes de revisão humana e autorização expressa.
