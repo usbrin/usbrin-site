@@ -39,7 +39,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 | Nº | Projeto autoral | Modelo de negócio | Situação nesta fase | Experiência diferencial |
 |---:|---|---|---|---|
 | 13 | Brasa & Mesa | Restaurante | revisado em preview | Cardápio e experiência gastronômica |
-| 14 | Café Orvalho | Cafeteria | planejado | Menu sazonal e ambiente editorial |
+| 14 | Café Orvalho | Cafeteria | novo · editorial/fotográfico | Cardápio filtrável e seleção ilustrativa por momento |
 | 15 | Forno 82 | Pizzaria | planejado | Cardápio visual e pedidos demonstrativos |
 | 16 | Doce Mira | Confeitaria | planejado | Coleções e encomendas |
 | 17 | Casa Smash | Hamburgueria | planejado | Identidade ousada e cardápio |
@@ -107,7 +107,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 
 | Nº | Projeto autoral | Modelo de negócio | Situação nesta fase | Experiência diferencial |
 |---:|---|---|---|---|
-| 47 | Helena Luz | Fotografia | planejado | Galerias e projetos de imagem |
+| 47 | Helena Luz | Fotografia | novo · editorial/fotográfico | Galeria ampliável com navegação acessível e briefing de ensaio |
 | 48 | Ponto Filmes | Audiovisual | planejado | Reels e produções conceituais |
 | 49 | Grid Estúdio | Design | planejado | Cases de identidade e processo |
 | 50 | Harmonia Lab | Estúdio musical | planejado | Trabalhos e serviços de produção |
@@ -331,3 +331,30 @@ Congelar provisoriamente a expansão da coleção em **18/50**, priorizando qual
 - `tests/portfolio-specialists.test.cjs` valida domínio, limites, integridade e política de não coleta; `tests/portfolio-browser.cjs` valida interface, responsividade, mídia e 22 projetos.
 - `portfolio.html` contém 22 cartões com categorias existentes e acesso ao briefing contextual. O build permite somente os arquivos de preview apropriados; produção continua isolada na sua branch e commit existentes.
 - **Próxima prioridade:** continuar lotes pequenos com identidade e jornada própria para cada setor. Reformulação completa dos antigos permanece planejada para depois do desenvolvimento dos novos, conforme autorização do usuário.
+
+## Nono lote — gastronomia e portfólio criativo em padrão fotográfico (11/11/2026)
+
+**Progresso:** projetos 23 e 24 desenvolvidos na branch de preview. **24 de 50 conceitos criados; 26 restantes**. Não altera os registros de homologação dos lotes passados; o status deste lote depende de CI e revisão visual próprios.
+
+### Café Orvalho (item 14 do plano)
+- Cafeteria conceitual com hero fotográfico, interiores como referência, cardápio de nove produtos hipotéticos e navegação por categorias.
+- Busca acento-insensível, ordenação, descrição e aviso de que fotos podem não corresponder a cada item específico.
+- Seleção interativa de até 4 produtos diferentes (quantidade 1–10), cálculo local de valores ilustrativos em centavos, edição, remoção e limpeza.
+- Sugestões fixas por momento (pausa, trabalho e encontro) para demonstrar curadoria, não previsão personalizada.
+- Resumo copiável apenas após gesto explícito do visitante; **nenhum pedido, compra, pagamento, entrega, reserva ou banco real**.
+- Composição e alergênicos não foram verificados; para um cliente real, utilizar ingredientes, fotos, preços e informações alimentares efetivas.
+
+### Helena Luz (item 47 do plano)
+- Portfólio editorial de fotografia com oito referências externas, filtragem por retratos/editorial/histórias e `<dialog>` com navegação por botões e setas do teclado.
+- A fotógrafa é marca fictícia, e nenhuma fotografia é representada como obra de Helena, cliente atendido ou ensaio já realizado.
+- Briefing local com tipo de ensaio, ambiente preferido, formato de entrega e observações genéricas até 300 caracteres. Gerador em texto, com cópia voluntária.
+- Sem agenda, disponibilidade, contatos pessoais, envio, pagamento, contrato ou afirmação de direitos autorais que não pertençam à USBRIN.
+
+### Arquitetura
+- `js/portfolio-editorial.js`: domínio com produtos, filtros, sugestões, seleção e geração de briefings, sem efeitos colaterais.
+- `js/demo-editorial.js`: funcionalidades acessíveis do catálogo, galeria, teclado, briefing e menu móvel.
+- `css/demo-editorial.css`: duas identidades editoriais próprias (gastronomia e fotografia), sem desenho de produtos.
+- `tests/portfolio-editorial.test.cjs` e `tests/portfolio-browser.cjs`: fórmulas, limites, categorias, lightbox, navegação móvel, imagens decodificadas e regressões.
+- `portfolio.html` agora contém 24 projetos, incluindo filtro de criativos/fotografia; os 24 links de briefing contextual continuam vinculados ao Studio ou e-mail voluntário.
+
+**Governança:** tudo segue no preview protegido, PR #5 em rascunho; não promover a produção, alterar Studio/Store, APIs, autenticação ou Cloudflare Access sem autorização explícita. Continuar criando os 26 projetos pendentes com o padrão alto e reformular os antigos na etapa final.
