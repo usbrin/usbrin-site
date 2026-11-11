@@ -52,10 +52,48 @@ test('Links de navegação por âncora nas novas páginas são válidos', () => 
 
 test('Scripts do portfólio são sintaticamente válidos', () => {
   new vm.Script(read('js/portfolio.js'), {filename:'portfolio.js'});
-  for (const name of ['demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html']) {
+  new vm.Script(read('js/demo-portfolio.js'), {filename:'demo-portfolio.js'});
+  for (const name of ['demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html']) {
     const html = read(name);
     for (const [, js] of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
       new vm.Script(js, {filename:name});
+    }
+  }
+});
+
+
+test('Todos os conceitos têm estrutura válida, imagens locais e acesso ao Portfolio ou Studio', () => {
+  const paths = ['demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html'];
+  for(const name of paths){
+    const html=read(name);
+    const ids=[...html.matchAll(/\\bid="([^"]+)"/g)].map(x=>x[1]);
+    assert.equal(ids.length,new Set(ids).size,'ID duplicado: '+name);
+    const anchors=[...html.matchAll(/href="#([^"]+)"/g)].map(x=>x[1]);
+    for(const id of anchors)assert.ok(ids.includes(id),'Âncora ausente '+id+' em '+name);
+    assert.match(html,/<body data-demo="[^"]+">/,'demo-id ausente em '+name);
+    assert.match(html,/src="js\\/demo-portfolio\\.js"/,'script demo ausente em '+name);
+    assert.match(html,/href="portfolio\\.html"/,'volta ao Portfolio ausente em '+name);
+    const imgs=[...html.matchAll(/<img[^>]+src="([^"]+)"/g)].map(x=>x[1]);
+    assert.ok(imgs.length>=2,'falta arte no demo '+name);
+    for(const img of imgs)assert.ok(fs.existsSync(path.join(root,img)),'Imagem não existe: '+img);
+  }
+});
+test('Interações por segmento são expostas como controles reais', () => {
+  assert.match(read('demo-restaurante.html'), /data-menu-filter="entradas"/);
+  assert.match(read('demo-restaurante.html'), /id="reservation-dialog"/);
+  assert.match(read('demo-restaurante.html'), /id="gallery-dialog"/);
+  assert.equal((read('demo-construtora.html').match(/data-work-category=/g)||[]).length,3);
+  assert.equal((read('demo-clinica.html').match(/data-spec-select=/g)||[]).length,4);
+  assert.match(read('demo-clinica.html'), /id="journey-summary"/);
+  assert.equal((read('demo-imobiliaria.html').match(/data-prop-filter=/g)||[]).length,4);
+  assert.equal((read('demo-imobiliaria.html').match(/data-prop-type=/g)||[]).length,3);
+  assert.match(read('demo-imobiliaria.html'), /id="property-dialog"/);
+});
+test('Capa da galeria atualizada corresponde às artes autorais locais',()=>{
+  for(const path of ['index.html','portfolio.html']){
+    const html=read(path);
+    for(const name of ['brasa','alto','vitta','prime']){
+      assert.match(html,new RegExp('assets/portfolio-'+name+'\\.svg'),path+' sem capa '+name);
     }
   }
 });
