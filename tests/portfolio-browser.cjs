@@ -87,78 +87,59 @@ const server=http.createServer((req,res)=>{
   await page.locator('[data-close-dialog="property-dialog"]').click();
 
 
-  // Nova experiência técnica: engenharia.
+  // Engenharia: navegação, detalhes e cálculo didático de estimativa.
   await page.goto(base+'demo-pilar.html');
-  ok(await page.locator('#lab-range').innerText()!=='' && (await page.locator('#lab-range').innerText()).includes('R,'demo-construtora.html','demo-clinica.html','demo-imobiliaria.html']){
-    await page.goto(base+filename);
-    const toggle=page.locator('.menu-toggle');
-    await toggle.click();ok(await toggle.getAttribute('aria-expanded')==='true','Menu móvel abre em '+filename);
-    await page.keyboard.press('Escape');ok(await toggle.getAttribute('aria-expanded')==='false','Menu móvel fecha em '+filename);
-  }
-  // Menus dos novos conceitos também precisam funcionar em telas pequenas.
-  for(const [filename,selector] of [['demo-pilar.html','.nav-toggle'],['demo-nimbo.html','.menu-toggle']]){
-    await page.goto(base+filename);
-    const toggle=page.locator(selector);
-    await toggle.click();
-    ok(await toggle.getAttribute('aria-expanded')==='true','Menu abre em '+filename);
-    await page.keyboard.press('Escape');
-    ok(await toggle.getAttribute('aria-expanded')==='false','Menu fecha por Escape em '+filename);
-  }
-  const dir=path.join(root,'tests','artifacts');fs.mkdirSync(dir,{recursive:true});
-  for(const width of [390,1366]){
-    await page.setViewportSize({width,height:width===390?844:900});
-    for(const filename of demos){
-      await page.goto(base+filename);
-      await page.screenshot({path:path.join(dir,'portfolio-'+path.basename(filename,'.html')+'-'+width+'.png'),fullPage:true,animations:'disabled'});
-    }
-  }
-  ok(errors.length===0,'Erros de script ou assets locais: '+JSON.stringify(errors));
-  console.log('Portfólio: '+checks+' verificações UX aprovadas, '+demos.length*2+' capturas geradas.');
- }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
-})().catch(e=>{console.error(e.stack||e);process.exitCode=1;});
-),'Laboratório exibe faixa monetária');
-  const prior=await page.locator('#lab-range').innerText();
+  ok((await page.locator('#lab-range').innerText()).includes('R$'),'Laboratório exibe faixa em reais');
+  const costPrior=await page.locator('#lab-range').innerText();
   await page.locator('#lab-area').evaluate(el=>{el.value='260';el.dispatchEvent(new Event('input',{bubbles:true}));});
   await page.locator('#lab-category').selectOption('industrial');
-  ok(await page.locator('#lab-range').innerText()!==prior,'Estimativa atualiza ao alterar cenário');
+  ok(await page.locator('#lab-range').innerText()!==costPrior,'Cenário de engenharia atualiza valores');
   await page.locator('[data-project-filter="Industrial"]').click();
-  ok(await page.locator('.project-card:not([hidden])').count()===1,'Filtro industrial da Pilar');
+  ok(await page.locator('.project-card:not([hidden])').count()===1,'Filtro técnico industrial');
   await page.locator('[data-project-open="logistico"]').first().click();
-  ok(await page.locator('#project-dialog').isVisible(),'Ficha técnica abre');
-  ok((await page.locator('#dialog-title').innerText()).includes('Complexo Base'),'Ficha técnica selecionada');
+  ok(await page.locator('#project-dialog').isVisible(),'Ficha técnica aberta');
+  ok((await page.locator('#dialog-title').innerText()).includes('Complexo Base'),'Ficha do estudo correto');
   await page.locator('[data-close]').click();
   await page.locator('[data-phase="2"]').click();
-  ok((await page.locator('#phase-title').innerText()).includes('Integração'),'Etapas técnicas funcionais');
+  ok((await page.locator('#phase-title').innerText()).includes('Integração'),'Etapa técnica atualizada');
 
-  // Nova experiência premium: móveis e comparação.
+  // Móveis: filtros e busca; comparação e configurador ilustrativos.
   await page.goto(base+'demo-nimbo.html');
   await page.locator('[data-filter="Quarto"]').click();
-  ok(await page.locator('.item:not([hidden])').count()===2,'Filtro quarto da Nimbo');
+  ok(await page.locator('.item:not([hidden])').count()===2,'Filtro de peças para quarto');
   await page.locator('#item-search').fill('Casa');
-  ok(await page.locator('.item:not([hidden])').count()===1,'Busca no catálogo Nimbo');
+  ok(await page.locator('.item:not([hidden])').count()===1,'Busca encontra peça');
   await page.locator('#item-search').fill('');
   await page.locator('[data-filter="Todos"]').click();
   await page.locator('[data-compare="n01"]').click();
   await page.locator('[data-compare="n03"]').click();
-  ok(!(await page.locator('#open-compare').isDisabled()),'Comparação habilitada para duas peças');
+  ok(!(await page.locator('#open-compare').isDisabled()),'Comparação habilitada');
   await page.locator('#open-compare').click();
-  ok(await page.locator('.compare-item').count()===2,'Comparador mostra duas fichas');
+  ok(await page.locator('.compare-item').count()===2,'Duas fichas no comparador');
   await page.locator('#compare-close').click();
-  const furnitureBefore=await page.locator('#preview-cost').innerText();
+  const furniturePrior=await page.locator('#preview-cost').innerText();
   await page.locator('#config-width').evaluate(el=>{el.value='280';el.dispatchEvent(new Event('input',{bubbles:true}));});
   await page.locator('[data-finish="nogueira"]').click();
   await page.locator('#config-hardware').check();
-  ok(await page.locator('#preview-cost').innerText()!==furnitureBefore,'Custo ilustrativo atualizado');
-  ok((await page.locator('#preview-summary').innerText()).includes('Nogueira'),'Acabamento refletido no resumo');
+  ok(await page.locator('#preview-cost').innerText()!==furniturePrior,'Estimativa de móveis atualizada');
+  ok((await page.locator('#preview-summary').innerText()).includes('Nogueira'),'Resumo de acabamento atualizado');
   await page.locator('#config-product').selectOption('n03');
-  ok((await page.locator('#preview-model').innerText()).includes('ORLA'),'Modelo sincronizado');
-
+  ok((await page.locator('#preview-model').innerText()).includes('ORLA'),'Modelo escolhido sincronizado');
   await page.setViewportSize({width:390,height:844});
   for(const filename of ['demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html']){
     await page.goto(base+filename);
     const toggle=page.locator('.menu-toggle');
     await toggle.click();ok(await toggle.getAttribute('aria-expanded')==='true','Menu móvel abre em '+filename);
     await page.keyboard.press('Escape');ok(await toggle.getAttribute('aria-expanded')==='false','Menu móvel fecha em '+filename);
+  }
+
+  for(const [filename,selector] of [['demo-pilar.html','.nav-toggle'],['demo-nimbo.html','.menu-toggle']]){
+    await page.goto(base+filename);
+    const control=page.locator(selector);
+    await control.click();
+    ok(await control.getAttribute('aria-expanded')==='true','Menu novo abre em '+filename);
+    await page.keyboard.press('Escape');
+    ok(await control.getAttribute('aria-expanded')==='false','Menu novo fecha por Escape em '+filename);
   }
   const dir=path.join(root,'tests','artifacts');fs.mkdirSync(dir,{recursive:true});
   for(const width of [390,1366]){
