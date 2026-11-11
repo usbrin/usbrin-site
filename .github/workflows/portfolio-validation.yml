@@ -45,6 +45,7 @@ jobs:
           node --check js/demo-pilar.js
           node --check js/demo-nimbo.js
           node --check tests/portfolio-pro.test.cjs
+          node --check tests/portfolio-browser.cjs
           node --check tests/portfolio.test.cjs
       - name: Testar integridade do portfólio
         run: |
