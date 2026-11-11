@@ -18,6 +18,7 @@ on:
       - 'css/demo-commerce.css'
       - 'css/demo-retail.css'
       - 'css/demo-atelier.css'
+      - 'css/demo-experiences.css'
       - 'js/portfolio.js'
       - 'js/portfolio-brief.js'
       - 'js/demo-portfolio.js'
@@ -32,6 +33,8 @@ on:
       - 'js/demo-retail.js'
       - 'js/portfolio-atelier.js'
       - 'js/demo-atelier-market.js'
+      - 'js/portfolio-experiences.js'
+      - 'js/demo-experiences.js'
       - 'docs/USBRIN-PORTFOLIO-PLANO.md'
       - 'scripts/build-static.cjs'
       - 'tests/portfolio.test.cjs'
@@ -42,6 +45,7 @@ on:
       - 'tests/portfolio-commerce.test.cjs'
       - 'tests/portfolio-retail.test.cjs'
       - 'tests/portfolio-atelier.test.cjs'
+      - 'tests/portfolio-experiences.test.cjs'
       - 'tests/portfolio-browser.cjs'
       - 'package.json'
       - '.github/workflows/portfolio-validation.yml'
@@ -81,6 +85,9 @@ jobs:
           node --check js/portfolio-atelier.js
           node --check js/demo-atelier-market.js
           node --check tests/portfolio-atelier.test.cjs
+          node --check js/portfolio-experiences.js
+          node --check js/demo-experiences.js
+          node --check tests/portfolio-experiences.test.cjs
           node --check tests/portfolio-pro.test.cjs
           node --check tests/portfolio-browser.cjs
           node --check tests/portfolio.test.cjs
@@ -93,6 +100,7 @@ jobs:
           node --test tests/portfolio-commerce.test.cjs
           node --test tests/portfolio-retail.test.cjs
           node --test tests/portfolio-atelier.test.cjs
+          node --test tests/portfolio-experiences.test.cjs
       - name: Auditar mídia fotográfica (diagnóstico informativo)
         run: node scripts/audit-portfolio-media.cjs
       - name: Regressão do USBRIN Studio
@@ -115,6 +123,8 @@ jobs:
           test -f dist/demo-base-norte.html
           test -f dist/demo-aurea-joias.html
           test -f dist/demo-essencia-cosmeticos.html
+          test -f dist/demo-vista-hotel.html
+          test -f dist/demo-motor-forma.html
           test -f dist/demo-atelier.html
           test -f dist/demo-fluxo.html
           test -f dist/demo-flor-raiz.html
@@ -132,6 +142,9 @@ jobs:
           test -f dist/css/demo-commerce.css
           test -f dist/css/demo-retail.css
           test -f dist/css/demo-atelier.css
+          test -f dist/css/demo-experiences.css
+          test -f dist/js/portfolio-experiences.js
+          test -f dist/js/demo-experiences.js
           test -f dist/js/portfolio-atelier.js
           test -f dist/js/demo-atelier-market.js
           test -f dist/js/portfolio-retail.js
