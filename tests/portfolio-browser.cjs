@@ -24,7 +24,7 @@ const server=http.createServer((req,res)=>{
   page.on('pageerror',e=>errors.push(e.message));
   page.on('response',resp=>{if(resp.url().startsWith('http://127.0.0.1:'+port)&&resp.status()>=400)errors.push(resp.status()+' '+resp.url());});
   const base='http://127.0.0.1:'+port+'/';
-  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-pilar.html','demo-nimbo.html','demo-norte-contabil.html','demo-nexo-automacao.html'];
+  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-pilar.html','demo-nimbo.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-volta-tech.html','demo-casa-patta.html'];
   for(const width of [360,390,768,1366]){
     await page.setViewportSize({width,height:850});
     for(const filename of demos){
@@ -35,7 +35,7 @@ const server=http.createServer((req,res)=>{
       ok(await page.locator('a[href="portfolio.html"]').count()>=1||filename==='portfolio.html','Retorno Portfolio em '+filename);
       if(filename.startsWith('demo-')){
         ok(await page.locator('img').count()>=(filename.includes('contabil')||filename.includes('automacao')?1:2),'Arte em '+filename);
-        ok(await page.locator('[data-demo], [data-suite]').count()===1,'Id da demonstração em '+filename);
+        ok(await page.locator('[data-demo], [data-suite], [data-shop]').count()===1,'Id da demonstração em '+filename);
       }
     }
   }
@@ -46,7 +46,7 @@ const server=http.createServer((req,res)=>{
   await page.locator('#portfolio-search').fill('Vitta');
   ok(await page.locator('.project:not([hidden])').count()===1,'Busca de projeto');
   await page.locator('#portfolio-search').fill('');
-  ok(await page.locator('.project:not([hidden])').count()===12,'Galeria mantém 12 projetos');
+  ok(await page.locator('.project:not([hidden])').count()===14,'Galeria mantém 14 projetos');
 
   await page.goto(base+'demo-restaurante.html');
   await page.locator('[data-menu-filter="sobremesas"]').click();
@@ -154,6 +154,55 @@ const server=http.createServer((req,res)=>{
   ok(await page.locator('#flow-log li').count()===4,'Log registra quatro eventos');
   await page.locator('#flow-restart').click();
   ok(await page.locator('#flow-nodes li.completed').count()===0,'Reinício limpa execução');
+
+  // Nova geração de e-commerce: vitrines fotográficas, variações e sacola local.
+  await page.goto(base+'demo-volta-tech.html');
+  ok(await page.locator('.product-card').count()===6,'VOLTA apresenta seis produtos');
+  await page.locator('[data-category="Áudio"]').click();
+  ok(await page.locator('.product-card').count()===3,'VOLTA filtra áudio');
+  await page.locator('#catalog-search').fill('Fone');
+  ok(await page.locator('.product-card').count()===2,'VOLTA busca produtos');
+  await page.locator('#catalog-search').fill('');
+  await page.locator('[data-category="Todos"]').click();
+  await page.locator('[data-view="t02"]').first().click();
+  ok(await page.locator('#product-dialog').isVisible(),'VOLTA abre ficha de produto');
+  await page.locator('#detail-variant').selectOption('Preto');
+  await page.locator('#detail-quantity').fill('2');
+  await page.locator('#detail-add').click();
+  ok(await page.locator('#cart-dialog').isVisible(),'VOLTA abre sacola após escolher variação');
+  ok((await page.locator('#cart-subtotal').innerText()).includes('498,00'),'Subtotal para duas unidades correto');
+  ok((await page.locator('#cart-delivery').innerText()).includes('Grátis'),'Frete demonstrativo acima de limite');
+  ok(await page.locator('.cart-line').count()===1,'VOLTA tem uma linha na sacola');
+  await page.locator('.cart-line .decrement').click();
+  ok((await page.locator('#cart-subtotal').innerText()).includes('249,00'),'Quantidade altera subtotal');
+  ok((await page.locator('#cart-delivery').innerText()).includes('24,90'),'Taxa simulada abaixo do limite');
+  ok(await page.locator('.button-disabled').isDisabled(),'Finalização real desativada na VOLTA');
+  await page.locator('.cart-line .remove').click();
+  ok(await page.locator('#cart-empty').isVisible(),'Remoção esvazia sacola');
+  await page.locator('[data-close-cart]').click();
+
+  await page.goto(base+'demo-casa-patta.html');
+  ok(await page.locator('.product-card').count()===6,'Casa Patta apresenta seis produtos');
+  await page.locator('[data-category="Passeio"]').click();
+  ok(await page.locator('.product-card').count()===2,'Casa Patta filtra passeio');
+  await page.locator('#catalog-search').fill('Coleira');
+  ok(await page.locator('.product-card').count()===1,'Casa Patta encontra coleira');
+  await page.locator('#catalog-search').fill('');
+  await page.locator('[data-category="Todos"]').click();
+  await page.locator('[data-add="p01"]').click();
+  await page.locator('[data-open-cart]').click();
+  ok((await page.locator('#cart-subtotal').innerText()).includes('89,00'),'Casa Patta adiciona primeiro produto');
+  await page.locator('.cart-line .increment').click();
+  ok((await page.locator('#cart-subtotal').innerText()).includes('178,00'),'Casa Patta atualiza quantidade');
+  ok(await page.locator('.button-disabled').isDisabled(),'Casa Patta sem checkout real');
+  await page.locator('[data-close-cart]').click();
+  await page.locator('[data-view="p04"]').first().click();
+  await page.locator('#detail-variant').selectOption('M');
+  await page.locator('#detail-add').click();
+  ok(await page.locator('.cart-line').count()===2,'Casa Patta reúne duas variações na sacola');
+  ok((await page.locator('#cart-delivery').innerText()).includes('Grátis'),'Frete ilustrativo ao cruzar limite');
+  await page.locator('[data-close-cart]').click();
+
   await page.setViewportSize({width:390,height:844});
   for(const filename of ['demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html']){
     await page.goto(base+filename);
@@ -177,6 +226,15 @@ const server=http.createServer((req,res)=>{
     ok(await control.getAttribute('aria-expanded')==='true','Menu B2B abre em '+filename);
     await page.keyboard.press('Escape');
     ok(await control.getAttribute('aria-expanded')==='false','Menu B2B fecha com Escape em '+filename);
+  }
+  for(const filename of ['demo-volta-tech.html','demo-casa-patta.html']){
+    await page.goto(base+filename);
+    const control=page.locator('.menu-toggle');
+    await control.click();
+    ok(await control.getAttribute('aria-expanded')==='true','Menu comércio abre em '+filename);
+    await page.keyboard.press('Escape');
+    ok(await control.getAttribute('aria-expanded')==='false','Menu comércio fecha por Escape em '+filename);
+    ok(await page.locator('[data-open-cart]').isVisible(),'Sacola acessível no celular em '+filename);
   }
   const dir=path.join(root,'tests','artifacts');fs.mkdirSync(dir,{recursive:true});
   for(const width of [390,1366]){
