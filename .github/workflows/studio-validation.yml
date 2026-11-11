@@ -65,10 +65,16 @@ jobs:
       - name: Instalar navegador de testes
         run: |
           npm install --no-save playwright
-          npx playwright install --with-deps chromium
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "Usando Google Chrome pré-instalado"
+          elif command -v chromium >/dev/null 2>&1; then
+            echo "Usando Chromium pré-instalado"
+          else
+            npx playwright install chromium
+          fi
       - name: Testar Studio e site original
         run: |
-          export CHROMIUM_PATH="$(node -e "process.stdout.write(require('playwright').chromium.executablePath())")"
+          export CHROMIUM_PATH="$(command -v google-chrome || command -v chromium || node -e "process.stdout.write(require('playwright').chromium.executablePath())")"
           node tests/studio-browser.cjs
           node tests/browser.cjs
       - name: Guardar capturas de tela do Studio
