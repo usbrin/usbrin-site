@@ -20,6 +20,7 @@ on:
       - 'css/demo-atelier.css'
       - 'css/demo-experiences.css'
       - 'css/demo-specialists.css'
+      - 'css/demo-editorial.css'
       - 'js/portfolio.js'
       - 'js/portfolio-brief.js'
       - 'js/demo-portfolio.js'
@@ -38,6 +39,8 @@ on:
       - 'js/demo-experiences.js'
       - 'js/portfolio-specialists.js'
       - 'js/demo-specialists.js'
+      - 'js/portfolio-editorial.js'
+      - 'js/demo-editorial.js'
       - 'docs/USBRIN-PORTFOLIO-PLANO.md'
       - 'scripts/build-static.cjs'
       - 'tests/portfolio.test.cjs'
@@ -50,6 +53,7 @@ on:
       - 'tests/portfolio-atelier.test.cjs'
       - 'tests/portfolio-experiences.test.cjs'
       - 'tests/portfolio-specialists.test.cjs'
+      - 'tests/portfolio-editorial.test.cjs'
       - 'tests/portfolio-browser.cjs'
       - 'package.json'
       - '.github/workflows/portfolio-validation.yml'
@@ -95,6 +99,9 @@ jobs:
           node --check js/portfolio-specialists.js
           node --check js/demo-specialists.js
           node --check tests/portfolio-specialists.test.cjs
+          node --check js/portfolio-editorial.js
+          node --check js/demo-editorial.js
+          node --check tests/portfolio-editorial.test.cjs
           node --check tests/portfolio-pro.test.cjs
           node --check tests/portfolio-browser.cjs
           node --check tests/portfolio.test.cjs
@@ -109,6 +116,7 @@ jobs:
           node --test tests/portfolio-atelier.test.cjs
           node --test tests/portfolio-experiences.test.cjs
           node --test tests/portfolio-specialists.test.cjs
+          node --test tests/portfolio-editorial.test.cjs
       - name: Auditar mídia fotográfica (diagnóstico informativo)
         run: node scripts/audit-portfolio-media.cjs
       - name: Regressão do USBRIN Studio
@@ -135,6 +143,8 @@ jobs:
           test -f dist/demo-motor-forma.html
           test -f dist/demo-vereda-planejados.html
           test -f dist/demo-sorriso-claro.html
+          test -f dist/demo-cafe-orvalho.html
+          test -f dist/demo-helena-luz.html
           test -f dist/demo-atelier.html
           test -f dist/demo-fluxo.html
           test -f dist/demo-flor-raiz.html
@@ -154,6 +164,9 @@ jobs:
           test -f dist/css/demo-atelier.css
           test -f dist/css/demo-experiences.css
           test -f dist/css/demo-specialists.css
+          test -f dist/css/demo-editorial.css
+          test -f dist/js/portfolio-editorial.js
+          test -f dist/js/demo-editorial.js
           test -f dist/js/portfolio-specialists.js
           test -f dist/js/demo-specialists.js
           test -f dist/js/portfolio-experiences.js
