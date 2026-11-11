@@ -17,7 +17,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 | Nº | Projeto autoral | Modelo de negócio | Situação nesta fase | Experiência diferencial |
 |---:|---|---|---|---|
 | 1 | Vitta Clínica | Clínica | revisado em preview | Design clean e especialidades claras |
-| 2 | Sorriso Claro | Odontologia | planejado | Agendamento e jornada do paciente |
+| 2 | Sorriso Claro | Odontologia | novo · fotográfico/institucional | Especialidades e mensagem preparatória sem dados clínicos |
 | 3 | Nara Derma | Dermatologia | planejado | Elegância e apresentação de tratamentos |
 | 4 | Pausa | Psicologia | planejado | Acolhimento e linguagem acessível |
 | 5 | Arena Movimento | Academia | planejado | Planos e programação de aulas |
@@ -32,7 +32,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 | 9 | Atelier Forma | Arquitetura | novo | Editorial arquitetônico e filtro de projetos |
 | 10 | Pilar Engenharia | Engenharia | novo · premium | Projetos técnicos, etapas e estimativas didáticas |
 | 11 | Linho Interiores | Design de interiores | planejado | Antes/depois de ambientes |
-| 12 | Vereda Planejados | Móveis planejados | planejado | Acabamentos e galeria interativa |
+| 12 | Vereda Planejados | Móveis planejados | novo · fotográfico/técnico | Configurador de ambiente e briefing com medidas aproximadas |
 
 ### Gastronomia (6)
 
@@ -284,7 +284,7 @@ Congelar provisoriamente a expansão da coleção em **18/50**, priorizando qual
 
 ## Sétimo lote — novos projetos com o padrão elevado (11/11/2026)
 
-**Decisão de sequência do usuário:** continuar produzindo os conceitos novos restantes, já no padrão de qualidade refinado; **adiar a reformulação dos sites anteriores para depois da criação**. Isso substitui a instrução operacional de congelamento em 18/50 da Sprint 1, sem invalidar as auditorias já realizadas. Quantidade total: **20 projetos implementados em preview; 30 planejados para desenvolvimento**. Nenhuma autorização para publicar a produção.
+**Decisão de sequência do usuário:** continuar produzindo os conceitos novos restantes, já no padrão de qualidade refinado; **adiar a reformulação dos sites anteriores para depois da criação**. Isso substitui a instrução operacional de congelamento em 18/50 da Sprint 1, sem invalidar as auditorias já realizadas. Quantidade total: **22 projetos implementados em preview; 28 planejados para desenvolvimento**. Nenhuma autorização para publicar a produção.
 
 ### Vista Hotel — projeto 43 do plano
 - Hotelaria premium com identidade editorial bege/verde, tipografia sofisticada e fotografias reais de ambientação via Unsplash.
@@ -303,5 +303,31 @@ Congelar provisoriamente a expansão da coleção em **18/50**, priorizando qual
 - `tests/portfolio-experiences.test.cjs` e E2E em `tests/portfolio-browser.cjs` verificam fórmulas, limites, navegação móvel e integrações visuais.
 - As fotografias são referências licenciadas, não imagens de um hotel real da marca ou de clientes atendidos.
 - `portfolio.html` agora oferece 20 cartões, filtro de turismo/hospedagem e briefing contextual para todas as referências.
-- Os 20 sites continuam isolados em PR de preview. Preservar Studio, Store, parceiros, Zitadel/USBRIN ID e todos os sistemas comerciais.
+- Os 22 sites continuam isolados em PR de preview. Preservar Studio, Store, parceiros, Zitadel/USBRIN ID e todos os sistemas comerciais.
 - Após cada lote, medir funcionalidade, performance, imagens e diferenciação. Evitar templates repetidos e custos novos.
+
+## Oitavo lote — projeto de interiores e atendimento institucional (11/11/2026)
+
+**Projetos 21 e 22 de 50 em preview:** Vereda Planejados e Sorriso Claro. **Restantes: 28 conceitos**. A aprovação do usuário foi para criação em preview, não para lançamento em produção.
+
+### Vereda Planejados (item 12 do plano)
+- Site editorial de móveis planejados com fotografia real de ambientes como **inspiração**, sem atribuir obras fictícias à empresa.
+- Três espaços de referência: cozinha, closet e sala de estar.
+- Configurador de ambiente, paleta de acabamento, forma de organização, largura/altura aproximadas e preferências livres até 400 caracteres.
+- `js/portfolio-specialists.js` valida limites antes de gerar briefing em texto simples. Não calcula orçamento, viabilidade, custo, consumo de materiais ou metragem comercial.
+- **As imagens não são renderizações do projeto escolhido.** O cartão e a imagem de referência mudam conforme o ambiente, mas acabamento/layout selecionados são apresentados em texto e swatch, não alteram objetos na foto.
+- Botão de cópia exige interação do visitante, sem armazenamento nem envio.
+
+### Sorriso Claro (item 2 do plano)
+- Site institucional de odontologia com fotografia de referência, quatro áreas temáticas e explicação da jornada de contato.
+- Ferramenta de preparação de mensagem **não clínica**, apenas com área de interesse, objetivo do contato e preferência de turno. Não solicita sintomas, diagnóstico, dados de saúde, nome, telefone ou agendamento.
+- Nenhuma equipe, avaliação, depoimento, resultado clínico, disponibilidade ou consultório real foi inventado. É uma demonstração, não uma clínica em operação.
+- Um site de cliente real deverá apresentar informações verificadas de responsáveis técnicos, registros profissionais aplicáveis, consentimento e políticas pertinentes.
+
+### Estrutura e governança
+- `demo-vereda-planejados.html`, `demo-sorriso-claro.html`: HTML independentes.
+- `css/demo-specialists.css`: duas identidades separadas com foco fotográfico, design responsivo e acessibilidade.
+- `js/portfolio-specialists.js`: regras puras e testáveis; `js/demo-specialists.js`: interações client-side, sem transmissão de dados.
+- `tests/portfolio-specialists.test.cjs` valida domínio, limites, integridade e política de não coleta; `tests/portfolio-browser.cjs` valida interface, responsividade, mídia e 22 projetos.
+- `portfolio.html` contém 22 cartões com categorias existentes e acesso ao briefing contextual. O build permite somente os arquivos de preview apropriados; produção continua isolada na sua branch e commit existentes.
+- **Próxima prioridade:** continuar lotes pequenos com identidade e jornada própria para cada setor. Reformulação completa dos antigos permanece planejada para depois do desenvolvimento dos novos, conforme autorização do usuário.
