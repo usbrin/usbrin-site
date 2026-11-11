@@ -14,15 +14,19 @@ on:
       - 'css/portfolio.css'
       - 'css/demo-pilar.css'
       - 'css/demo-nimbo.css'
+      - 'css/demo-suite.css'
       - 'js/portfolio.js'
       - 'js/demo-portfolio.js'
       - 'js/portfolio-engine.js'
       - 'js/demo-pilar.js'
       - 'js/demo-nimbo.js'
+      - 'js/portfolio-suite.js'
+      - 'js/demo-suite.js'
       - 'docs/USBRIN-PORTFOLIO-PLANO.md'
       - 'scripts/build-static.cjs'
       - 'tests/portfolio.test.cjs'
       - 'tests/portfolio-pro.test.cjs'
+      - 'tests/portfolio-suite.test.cjs'
       - 'tests/portfolio-browser.cjs'
       - 'package.json'
       - '.github/workflows/portfolio-validation.yml'
@@ -44,6 +48,9 @@ jobs:
           node --check js/portfolio-engine.js
           node --check js/demo-pilar.js
           node --check js/demo-nimbo.js
+          node --check js/portfolio-suite.js
+          node --check js/demo-suite.js
+          node --check tests/portfolio-suite.test.cjs
           node --check tests/portfolio-pro.test.cjs
           node --check tests/portfolio-browser.cjs
           node --check tests/portfolio.test.cjs
@@ -51,6 +58,7 @@ jobs:
         run: |
           npm run test:portfolio
           node --test tests/portfolio-pro.test.cjs
+          node --test tests/portfolio-suite.test.cjs
       - name: Regressão do USBRIN Studio
         run: npm run test:pricing
       - name: Validar pacote estático
@@ -62,6 +70,8 @@ jobs:
           test -f dist/portfolio.html
           test -f dist/demo-pilar.html
           test -f dist/demo-nimbo.html
+          test -f dist/demo-norte-contabil.html
+          test -f dist/demo-nexo-automacao.html
           test -f dist/demo-atelier.html
           test -f dist/demo-fluxo.html
           test -f dist/demo-flor-raiz.html
@@ -75,6 +85,11 @@ jobs:
           test -f dist/js/demo-nimbo.js
           test -f dist/css/demo-pilar.css
           test -f dist/css/demo-nimbo.css
+          test -f dist/css/demo-suite.css
+          test -f dist/js/portfolio-suite.js
+          test -f dist/js/demo-suite.js
+          test -f dist/assets/preview-norte-contabil.svg
+          test -f dist/assets/preview-nexo-automacao.svg
           test -f dist/assets/portfolio-vitta.svg
           test -f dist/assets/portfolio-prime.svg
           test -f dist/js/demo-portfolio.js
