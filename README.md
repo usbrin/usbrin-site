@@ -19,10 +19,13 @@ Abra http://localhost:8000. O servidor não é necessário em produção; publiq
 - `css/style.css`: identidade e responsividade.
 - `js/main.js`: navegação, carrossel e interações visuais.
 - `js/quote.js`: validação, prévia e composição do link WhatsApp.
-- `portfolio.html`: catálogo autoral com busca, filtros por setor e dez projetos navegáveis na branch de preview.
-- `demo-*.html`: dez experiências conceituais: quatro demonstrações reformuladas e seis projetos novos, incluindo Pilar Engenharia e Nimbo Móveis.
+- `portfolio.html`: catálogo autoral com busca, filtros por setor e doze projetos navegáveis na branch de preview.
+- `demo-*.html`: doze experiências conceituais: quatro demonstrações reformuladas e oito projetos novos, incluindo Pilar Engenharia e Nimbo Móveis.
 - `js/demo-portfolio.js`: filtro de obras/imóveis, galeria, diálogo de detalhes e experiências demonstrativas; não envia, salva ou processa transações.
 - `js/portfolio-engine.js`: motor puro de cálculos e dados de produto, testável em Node.js e executado no navegador.
+- `js/portfolio-suite.js`: regras ilustrativas puras para cenários B2B e fluxos simulados, sem rede.
+- `demo-norte-contabil.html`: experiência corporativa com cenários financeiros didáticos, sem apuração fiscal.
+- `demo-nexo-automacao.html`: experiência tecnológica no padrão visual USBRIN, com simulação local de automações.
 - `demo-pilar.html`: portfólio técnico de estudos, etapas e laboratório didático de estimativas.
 - `demo-nimbo.html`: catálogo de mobiliário com busca, filtros, configuração e comparação ilustrativa.
 - `docs/USBRIN-PORTFOLIO-PLANO.md`: mapa de 50 projetos previstos e critérios de qualidade.
@@ -53,4 +56,4 @@ Instale Playwright no ambiente de desenvolvimento e disponibilize Chromium. Exec
 
 Para o Studio: execute `npm run test:pricing` e, com Playwright/Chromium, `CHROMIUM_PATH=/caminho/do/chromium node tests/studio-browser.cjs`.
 
-Para o Portfolio: execute `npm run test:portfolio`, `node --test tests/portfolio-pro.test.cjs` e `CHROMIUM_PATH=/caminho/do/chromium node tests/portfolio-browser.cjs`. O workflow `USBRIN Portfolio — validação` confere a integridade, as interações e a responsividade (360, 390, 768 e 1366 px), além da regressão do Studio. Ele produz capturas de tela para revisão visual. A documentação de operação e pré-lançamento está em `docs/USBRIN-STUDIO-OPERACAO.md`.
+Para o Portfolio: execute `npm run test:portfolio`, `node --test tests/portfolio-pro.test.cjs`, `node --test tests/portfolio-suite.test.cjs` e `CHROMIUM_PATH=/caminho/do/chromium node tests/portfolio-browser.cjs`. O workflow `USBRIN Portfolio — validação` confere a integridade, as interações e a responsividade (360, 390, 768 e 1366 px), além da regressão do Studio. Ele produz capturas de tela para revisão visual. A documentação de operação e pré-lançamento está em `docs/USBRIN-STUDIO-OPERACAO.md`.
