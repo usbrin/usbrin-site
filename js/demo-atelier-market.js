@@ -9,6 +9,8 @@ const $=selector=>document.querySelector(selector),all=selector=>[...document.qu
 const money=cents=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(cents/100);
 const productList=kind==='jewelry'?model.jewelry:model.cosmetics;
 let category='Todos',sort='destaques',selected=[],texture='leve',choices={},current=null,toastTimer;
+// Ações dos cartões devem acessar funções definidas nas duas experiências.
+let drawComparison=()=>{},drawRoutine=()=>{};
 const filters=$('#atelier-filters'),cards=$('#atelier-cards'),search=$('#atelier-search'),sortControl=$('#atelier-sort'),dialog=$('#atelier-dialog'),toast=$('#atelier-toast');
 function node(tag,cls){const e=document.createElement(tag);if(cls)e.className=cls;return e;}
 function text(parent,tag,value,cls){const e=node(tag,cls);e.textContent=value;parent.append(e);return e;}
@@ -79,7 +81,7 @@ if(kind==='jewelry'){
   }
   $('#gift-count').textContent=(results?.length||0)+' opções de referência';
  }
- function drawComparison(){
+ drawComparison=function(){
   const container=$('#comparison-items');container.replaceChildren();
   const result=model.comparison(selected,wrap.checked);
   for(const id of selected){
@@ -92,12 +94,12 @@ if(kind==='jewelry'){
   if(!selected.length)text(container,'p','Selecione até duas peças do catálogo para comparar.','placeholder');
   $('#comparison-total').textContent=money(result.total);
   drawCatalog();
- }
+ };
  oc.addEventListener('change',drawFinder);budget.addEventListener('change',drawFinder);wrap.addEventListener('change',drawComparison);
  $('#comparison-clear').addEventListener('click',()=>{selected=[];wrap.checked=false;drawComparison();});
  drawFinder();drawComparison();
 }else{
- function drawRoutine(){
+ drawRoutine=function(){
   const data=model.routine(texture,choices);
   if(!data)return;
   const container=$('#routine-steps');container.replaceChildren();
@@ -112,7 +114,7 @@ if(kind==='jewelry'){
   });
   $('#routine-total').textContent=money(data.total);
   $('#routine-texture-label').textContent='TEXTURA '+(texture==='leve'?'LEVE':'CREMOSA').toUpperCase();
- }
+ };
  const controls=all('[data-texture]');
  controls.forEach(button=>button.addEventListener('click',()=>{texture=button.dataset.texture;choices={};controls.forEach(control=>control.setAttribute('aria-pressed',String(button===control)));drawRoutine();drawCatalog();}));
  $('#routine-reset').addEventListener('click',()=>{texture='leve';choices={};controls.forEach(control=>control.setAttribute('aria-pressed',String(control.dataset.texture===texture)));drawRoutine();drawCatalog();});
