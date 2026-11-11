@@ -71,8 +71,8 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 | Nº | Projeto autoral | Modelo de negócio | Situação nesta fase | Experiência diferencial |
 |---:|---|---|---|---|
 | 30 | Nimbo Móveis | Móveis | novo · premium | Catálogo, comparação e configurador ilustrativo |
-| 31 | Pet Ninho | Pet shop | planejado | Produtos, serviços e cuidados |
-| 32 | TecnoHub | Eletrônicos | planejado | Filtros e comparações demonstrativas |
+| 31 | Casa Patta | Pet shop / e-commerce | novo · fotográfico | Busca, filtros, variantes e sacola demonstrativa |
+| 32 | VOLTA Tech Store | Eletrônicos / e-commerce | novo · fotográfico | Produtos fotografados, variantes e carrinho demonstrativo |
 | 33 | Flor & Raiz | Floricultura | novo | Presentes e coleções florais |
 | 34 | Construbase | Materiais de construção | planejado | Categorias e solicitações de cotação |
 
@@ -122,7 +122,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 6. Transparência: marca e dados conceituais; não inventar clientes, avaliações ou números de desempenho reais.
 7. Rastreável: registrar revisão visual e regressão antes de promoção de preview para produção.
 
-**Nesta etapa:** 4 demonstrações legadas reformuladas e 8 experiências novas na branch de preview, totalizando 12 projetos navegáveis. As legadas receberam novas artes autorais, navegação móvel e interações específicas. Os testes automatizados de desktop/mobile em Chromium concluíram 118 verificações de UX e 10 capturas em 2026-11-11. Ainda é necessária revisão final em dispositivos reais e aprovação para publicação oficial.
+**Nesta etapa:** 4 demonstrações legadas reformuladas e 10 experiências novas na branch de preview, totalizando 14 projetos navegáveis. As legadas receberam novas artes autorais, navegação móvel e interações específicas. Os testes automatizados de desktop/mobile em Chromium concluíram 118 verificações de UX e 10 capturas em 2026-11-11. Ainda é necessária revisão final em dispositivos reais e aprovação para publicação oficial.
 
 **Meta comercial a observar após lançamento:** visitas por categoria, cliques em "Explorar site", cliques em "Quero algo assim", solicitações de proposta e conversões qualificadas. Sem fingir que há dados antes de instrumentar mensuração consentida.
 
@@ -157,7 +157,7 @@ A partir do 9º projeto, os conceitos devem demonstrar lógica funcional real, a
 - `tests/portfolio-browser.cjs` ampliado para interações dos dois conceitos, erros de script e responsividade.
 - CI e build allowlist incluem apenas arquivos estáticos do Portfolio, mantendo Studio, Store, parceiros e ID inalterados.
 
-**Estado:** doze experiências navegáveis em preview; trinta e oito conceitos restantes no planejamento. Não há autorização para promover à produção até testes e revisão final.
+**Estado:** quatorze experiências navegáveis em preview; trinta e seis conceitos restantes no planejamento. Não há autorização para promover à produção até testes e revisão final.
 
 ## Terceiro lote técnico — identidade corporativa e padrão USBRIN (11/11/2026)
 
@@ -167,4 +167,30 @@ A partir do 9º projeto, os conceitos devem demonstrar lógica funcional real, a
 - Três modelos de processos, escolha de origem ilustrativa, prioridade, intervalo e execução local de quatro etapas, com indicadores de progresso e registro de eventos.
 - Motor compartilhado puro `js/portfolio-suite.js`, teste independente `tests/portfolio-suite.test.cjs`, interface em `js/demo-suite.js` e estilos isolados em `css/demo-suite.css`.
 - Não há cadastro, conexão de sistemas, envio de e-mails, operação fiscal, processamento de pagamentos, persistência ou qualquer execução externa.
-- Os 12 projetos permanecem em preview protegido. A homologação inclui testes estruturais, simulações de navegador e regressão do Studio. Não publicar em produção antes de revisão humana e autorização expressa.
+- Os 14 projetos permanecem em preview protegido. A homologação inclui testes estruturais, simulações de navegador e regressão do Studio. Não publicar em produção antes de revisão humana e autorização expressa.
+
+## Quarto lote — comércio e e-commerce com fotografia real (11/11/2026)
+
+**Diretriz criativa:** reduzir ilustrações e SVGs decorativos nos novos projetos comerciais; priorizar fotografia real de ambientação, hierarquia comercial, vitrines realistas, cores próprias de cada marca, produto e mobilidade.
+
+### VOLTA Tech Store
+- Conceito de varejo de eletrônicos com identidade editorial clara, azul tecnológico e fotografia real.
+- Seis fichas ilustrativas de dispositivos, com filtros por categoria, busca, ordenação, variações de modelos, preços e sacola.
+- Inclusão rápida, escolha detalhada, alteração de quantidades, remoção e cálculo demonstrativo de entrega.
+
+### Casa Patta
+- Conceito de pet shop com paleta verde, areia e tons naturais, fotografias de animais e cenas de ambientação.
+- Seis fichas conceituais, categorias Passeio, Alimentação, Conforto e Brincadeiras; seleção de tamanho/opção, busca e carrinho.
+- Fotografias são de ambientação e **não representam necessariamente cada produto ou um fornecedor**; não apresentar como catálogo de estoque real.
+
+### Fotografia, licenças e restrições
+- Imagens de terceiros licenciadas via Unsplash em URLs `images.unsplash.com`. Licença: https://unsplash.com/license; uso comercial permitido com limitações relevantes sobre marcas, pessoas e obras retratadas.
+- Dependência de CDN externa: para operação comercial real, substituir por acervo autorizado do próprio cliente, otimizar e hospedar imagens sob domínio/CDN controlado.
+- Exibir créditos de fonte e aviso sobre natureza ilustrativa. **Não simular avaliações, depoimentos, estoque, pedidos, descontos falsos ou integrações operacionais.**
+
+### Funcionalidade e segurança
+- `js/portfolio-commerce.js` define catálogo e regras puras de carrinho. Todos os valores são centavos ilustrativos e têm limites.
+- `js/demo-commerce.js` fornece filtros, busca, opções, diálogos, sacola e cálculo de entrega local.
+- Sem conta, coleta de dados, persistência, integração de pagamento, pedido, checkout ou cálculo real de CEP. O botão de finalização fica desativado.
+- `tests/portfolio-commerce.test.cjs` valida catálogos e limites; `tests/portfolio-browser.cjs` exercita compra simulada e responsividade.
+- **Estado:** 14 projetos navegáveis em preview de Cloudflare; 36 conceitos a desenvolver. Publicação em produção continua condicionada a revisão e autorização.
