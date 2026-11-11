@@ -17,10 +17,10 @@ const filters = new Set([...portfolio.matchAll(/data-filter="([^"]+)"/g)].map(x 
 const imagePaths = [...portfolio.matchAll(/<img[^>]+src="([^"]+)"[^>]*>/g)].map(x => x[1]);
 const localFiles = new Set(fs.readdirSync(root));
 
-test('O portfólio lista exatamente vinte e dois projetos disponíveis nesta fase', () => {
-  assert.equal(titles.length, 22);
-  assert.equal(cards.length, 22);
-  assert.equal(new Set(cards.map(x => x[2])).size, 22);
+test('O portfólio lista exatamente vinte e quatro projetos disponíveis nesta fase', () => {
+  assert.equal(titles.length, 24);
+  assert.equal(cards.length, 24);
+  assert.equal(new Set(cards.map(x => x[2])).size, 24);
 });
 
 test('Todos os projetos publicados têm arquivo, rótulo de autoria e noindex', () => {
@@ -45,7 +45,7 @@ test('As prévias visuais e o CSS/JS do portfólio existem', () => {
 });
 
 test('Links de navegação por âncora nas novas páginas são válidos', () => {
-  for (const name of ['portfolio.html','demo-vereda-planejados.html','demo-sorriso-claro.html','demo-vista-hotel.html','demo-motor-forma.html','demo-aurea-joias.html','demo-essencia-cosmeticos.html','demo-lume-moda.html','demo-base-norte.html','demo-volta-tech.html','demo-casa-patta.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-pilar.html','demo-nimbo.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html']) {
+  for (const name of ['portfolio.html','demo-cafe-orvalho.html','demo-helena-luz.html','demo-vereda-planejados.html','demo-sorriso-claro.html','demo-vista-hotel.html','demo-motor-forma.html','demo-aurea-joias.html','demo-essencia-cosmeticos.html','demo-lume-moda.html','demo-base-norte.html','demo-volta-tech.html','demo-casa-patta.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-pilar.html','demo-nimbo.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html']) {
     const html = read(name);
     const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(x => x[1]);
     assert.equal(ids.length, new Set(ids).size, 'IDs repetidos em ' + name);
@@ -57,7 +57,7 @@ test('Links de navegação por âncora nas novas páginas são válidos', () => 
 test('Scripts do portfólio são sintaticamente válidos', () => {
   new vm.Script(read('js/portfolio.js'), {filename:'portfolio.js'});
   new vm.Script(read('js/demo-portfolio.js'), {filename:'demo-portfolio.js'});
-  for (const name of ['demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-vereda-planejados.html','demo-sorriso-claro.html','demo-vista-hotel.html','demo-motor-forma.html','demo-aurea-joias.html','demo-essencia-cosmeticos.html','demo-lume-moda.html','demo-base-norte.html','demo-volta-tech.html','demo-casa-patta.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-pilar.html','demo-nimbo.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html']) {
+  for (const name of ['demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-cafe-orvalho.html','demo-helena-luz.html','demo-vereda-planejados.html','demo-sorriso-claro.html','demo-vista-hotel.html','demo-motor-forma.html','demo-aurea-joias.html','demo-essencia-cosmeticos.html','demo-lume-moda.html','demo-base-norte.html','demo-volta-tech.html','demo-casa-patta.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-pilar.html','demo-nimbo.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html']) {
     const html = read(name);
     for (const [, js] of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
       new vm.Script(js, {filename:name});
