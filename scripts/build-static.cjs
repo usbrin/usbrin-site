@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const output = path.join(root, 'dist');
-const pages = ['index.html','studio.html','privacidade.html','parceiros.html','demo-clinica.html','demo-construtora.html','demo-imobiliaria.html','demo-restaurante.html','sitemap.xml','_headers'];
+const pages = ['index.html','studio.html','privacidade.html','parceiros.html','portfolio.html','demo-atelier.html','demo-fluxo.html','demo-clinica.html','demo-construtora.html','demo-imobiliaria.html','demo-restaurante.html','sitemap.xml','_headers'];
 const folders = ['assets','css','js'];
 fs.rmSync(output, {recursive:true,force:true});
 fs.mkdirSync(output,{recursive:true});
@@ -53,7 +53,7 @@ if(configuredURL){
     const partners=fs.readFileSync(partnersPath,'utf8');
     fs.writeFileSync(partnersPath,partners.replace('<head>','<head><meta name="robots" content="noindex,nofollow">'));
   }
-  const urls=[base+'/',base+'/studio.html',base+'/parceiros'];
+  const urls=[base+'/',base+'/studio.html',base+'/parceiros',base+'/portfolio.html'];
   const sitemap='<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+
     urls.map(x=>'<url><loc>'+x+'</loc></url>').join('\n')+'\n</urlset>\n';
   fs.writeFileSync(path.join(output,'sitemap.xml'),sitemap);
