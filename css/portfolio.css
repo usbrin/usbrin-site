@@ -12,3 +12,29 @@
 @media(max-width:760px){.container{width:min(100% - 32px,1240px)}.top-inner{min-height:72px}.logo img{width:122px}.logo small{font-size:9px}.menu{display:none}.mobile-menu{display:inline-flex;font-size:12px;padding:9px 12px;border:1px solid var(--line);border-radius:9px}.mobile-nav{display:none;padding-bottom:15px}.mobile-nav.open{display:flex;flex-direction:column;gap:0}.mobile-nav a{display:block;padding:11px 3px;border-top:1px solid var(--line);font-size:13px}.hero{padding:75px 0 65px}.hero-grid{grid-template-columns:1fr;gap:28px}.hero h1{font-size:clamp(46px,12vw,70px)}.hero-aside{display:flex;flex-wrap:wrap;gap:14px;align-items:center;border-left:0;border-top:1px solid var(--line);padding:19px 0 0}.hero-aside strong{font-size:34px}.hero-aside p{max-width:30ch;margin:0}.hero-aside .aside-note{width:100%;margin-top:6px;padding-top:12px}.projects{grid-template-columns:1fr;gap:16px}.project p{min-height:auto}.work{padding:42px 0 70px}.work-top{align-items:flex-start;flex-direction:column}.collection{padding:70px 0}.collection-grid{grid-template-columns:1fr;gap:28px}.action{padding:65px 0}.action-inner{flex-direction:column;align-items:flex-start}.footer-inner{align-items:flex-start;flex-direction:column}.action .btn{width:100%}}
 @media(max-width:400px){.filters{gap:6px}.filter{padding:8px 10px;font-size:11px}.category-list{grid-template-columns:1fr}.project-actions{flex-wrap:wrap}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+
+/* Portfolio 2.0 — fluxo de briefing contextual, sem envio automático. */
+.brief-dialog{width:min(690px,calc(100% - 22px));max-height:min(91vh,900px);padding:0;background:#1d1e28;border:1px solid #5a5a77;border-radius:18px;color:#f8f7fe;box-shadow:0 38px 110px #000b}
+.brief-dialog::backdrop{background:rgba(10,11,17,.83);backdrop-filter:blur(3px)}
+.brief-shell{padding:32px}
+.brief-top{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:20px}
+.brief-close{border:1px solid #5b5b6c;background:transparent;color:#dfdfea;padding:9px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.brief-dialog h2{font-size:clamp(28px,4vw,42px);line-height:1.14;margin:0 0 12px;letter-spacing:-.045em}
+.brief-dialog p{font-size:13px;color:#c4c4d5;line-height:1.72}
+.brief-reference{background:#292a38;border:1px solid #45465d;border-radius:12px;padding:17px;margin:21px 0}
+.brief-reference>span,.brief-preview-label{display:block;color:#aaa6f9;letter-spacing:.14em;font-size:10px;font-weight:800}
+.brief-reference strong{display:block;color:#fff;font-size:20px;margin:5px 0}
+.brief-reference p{margin:0}
+.brief-dialog label{display:block;font-size:12px;font-weight:800;margin:17px 0 8px}
+.brief-dialog label span{font-size:11px;color:#aaa9bd;font-weight:400}
+.brief-dialog select,.brief-dialog textarea{width:100%;min-width:0;border:1px solid #56566a;background:#222330;color:#f5f5ff;padding:12px 13px;border-radius:8px;font:inherit;font-size:13px}
+.brief-dialog select:focus-visible,.brief-dialog textarea:focus-visible,.brief-close:focus-visible{outline:3px solid #a5a0ff;outline-offset:3px}
+.brief-dialog textarea{resize:vertical;line-height:1.55}
+.brief-preview-label{margin:22px 0 10px}
+.brief-preview{max-height:185px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;padding:15px;border:1px solid #44465b;border-radius:9px;background:#14151e;font:400 11px/1.65 "Inter",sans-serif;color:#d3d4e1}
+.brief-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.brief-actions .btn{flex:1;text-align:center;min-width:175px;cursor:pointer}
+.brief-studio-link{display:inline-block;margin-top:18px;color:#bcb7ff;font-size:12px;font-weight:800;text-decoration:underline;text-underline-offset:4px}
+.brief-footnote{font-size:11px!important;color:#abaabd!important;margin-top:16px!important}
+@media(max-width:600px){.brief-shell{padding:20px}.brief-top{align-items:flex-start}.brief-top .eyebrow{max-width:22ch}.brief-actions{flex-direction:column}.brief-actions .btn{width:100%;min-width:0}.brief-dialog h2{font-size:31px}}
