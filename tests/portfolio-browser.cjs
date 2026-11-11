@@ -354,6 +354,19 @@ const server=http.createServer((req,res)=>{
     await page.setViewportSize({width,height:width===390?844:900});
     for(const filename of demos){
       await page.goto(base+filename);
+      // Capturas full-page exigem carregar imagens lazy antes de fotografar a página inteira.
+      // Evita concluir incorretamente que cards abaixo da dobra estão sem fotografia.
+      const photoState=await page.evaluate(async()=>{
+        const pictures=[...document.images];
+        for(const img of pictures)img.loading='eager';
+        await Promise.race([
+          Promise.all(pictures.map(img=>img.decode().catch(()=>{}))),
+          new Promise(resolve=>setTimeout(resolve,2400))
+        ]);
+        return {loaded:pictures.filter(img=>img.complete&&img.naturalWidth>0).length,total:pictures.length};
+      });
+      if(filename==='demo-aurea-joias.html'||filename==='demo-essencia-cosmeticos.html')
+        console.log('FOTOGRAFIAS',filename,width,JSON.stringify(photoState));
       await page.screenshot({path:path.join(dir,'portfolio-'+path.basename(filename,'.html')+'-'+width+'.png'),fullPage:true,animations:'disabled'});
     }
   }
