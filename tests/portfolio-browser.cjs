@@ -377,6 +377,24 @@ const server=http.createServer((req,res)=>{
     await page.keyboard.press('Escape');
     ok(await toggle.getAttribute('aria-expanded')==='false','Menu atelier fecha em '+filename);
   }
+
+  // Auditoria visual efetiva: HTML HTTP 200 não significa que o browser decodificou fotos.
+  for(const filename of ['demo-aurea-joias.html','demo-essencia-cosmeticos.html']){
+    await page.goto(base+filename);
+    ok(await page.locator('.product').count()===6,'Catálogo fotográfico disponível em '+filename);
+    const media=await page.evaluate(async ()=>{
+      const imgs=[...document.images].filter(img=>/^https?:/.test(img.src));
+      imgs.forEach(img=>{img.loading='eager';});
+      await Promise.race([
+        Promise.allSettled(imgs.map(img=>img.decode())),
+        new Promise(resolve=>setTimeout(resolve,12000))
+      ]);
+      return imgs.map(img=>({loaded:img.naturalWidth>0,url:img.currentSrc.split('?')[0],alt:img.alt}));
+    });
+    console.log('PORTFOLIO_MEDIA_BROWSER',filename,JSON.stringify({total:media.length,loaded:media.filter(i=>i.loaded).length,broken:media.filter(i=>!i.loaded)}));
+    ok(media.length>=8,'Fotografias de hero, catálogo e editorial presentes em '+filename);
+    ok(media.every(item=>item.loaded),'Imagens efetivamente decodificadas em '+filename+': '+JSON.stringify(media.filter(item=>!item.loaded)));
+  }
   const dir=path.join(root,'tests','artifacts');fs.mkdirSync(dir,{recursive:true});
   for(const width of [390,1366]){
     await page.setViewportSize({width,height:width===390?844:900});
