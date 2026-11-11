@@ -24,7 +24,7 @@ const server=http.createServer((req,res)=>{
   page.on('pageerror',e=>errors.push(e.message));
   page.on('response',resp=>{if(resp.url().startsWith('http://127.0.0.1:'+port)&&resp.status()>=400)errors.push(resp.status()+' '+resp.url());});
   const base='http://127.0.0.1:'+port+'/';
-  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-pilar.html','demo-nimbo.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-volta-tech.html','demo-casa-patta.html','demo-lume-moda.html','demo-base-norte.html'];
+  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-pilar.html','demo-nimbo.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-volta-tech.html','demo-casa-patta.html','demo-lume-moda.html','demo-base-norte.html','demo-aurea-joias.html','demo-essencia-cosmeticos.html'];
   for(const width of [360,390,768,1366]){
     await page.setViewportSize({width,height:850});
     for(const filename of demos){
@@ -35,7 +35,7 @@ const server=http.createServer((req,res)=>{
       ok(await page.locator('a[href="portfolio.html"]').count()>=1||filename==='portfolio.html','Retorno Portfolio em '+filename);
       if(filename.startsWith('demo-')){
         ok(await page.locator('img').count()>=(filename.includes('contabil')||filename.includes('automacao')?1:2),'Arte em '+filename);
-        ok(await page.locator('[data-demo], [data-suite], [data-shop], [data-retail]').count()===1,'Id da demonstração em '+filename);
+        ok(await page.locator('[data-demo], [data-suite], [data-shop], [data-retail], [data-atelier]').count()===1,'Id da demonstração em '+filename);
       }
     }
   }
@@ -46,7 +46,7 @@ const server=http.createServer((req,res)=>{
   await page.locator('#portfolio-search').fill('Vitta');
   ok(await page.locator('.project:not([hidden])').count()===1,'Busca de projeto');
   await page.locator('#portfolio-search').fill('');
-  ok(await page.locator('.project:not([hidden])').count()===16,'Galeria mantém 16 projetos');
+  ok(await page.locator('.project:not([hidden])').count()===18,'Galeria mantém 18 projetos');
 
   await page.goto(base+'demo-restaurante.html');
   await page.locator('[data-menu-filter="sobremesas"]').click();
@@ -248,6 +248,45 @@ const server=http.createServer((req,res)=>{
   ok(!(await page.locator('#copy-quote').isDisabled()),'Resumo da cotação disponível para copiar');
   await page.locator('#clear-quote').click();
   ok((await page.locator('#quote-total').innerText()).includes('0,00'),'Lista de cotação reiniciada');
+
+  // Joalheria: curadoria transparente, catálogo e comparação de duas peças.
+  await page.goto(base+'demo-aurea-joias.html');
+  ok(await page.locator('.product').count()===6,'Áurea tem seis referências');
+  await page.locator('[data-category="Colares"]').click();
+  ok(await page.locator('.product').count()===2,'Áurea filtra colares');
+  await page.locator('#atelier-search').fill('Aurora');
+  ok(await page.locator('.product').count()===1,'Áurea pesquisa peças');
+  await page.locator('#atelier-search').fill('');
+  await page.locator('[data-category="Todos"]').click();
+  await page.locator('#gift-occasion').selectOption('cotidiano');
+  await page.locator('#gift-budget').selectOption('30000');
+  ok((await page.locator('#gift-count').innerText()).includes('2 opções'),'Curadoria por ocasião e orçamento');
+  await page.locator('.product[data-product="j01"] .product-photo').click();
+  ok(await page.locator('#atelier-dialog').isVisible(),'Ficha de joia abre');
+  await page.locator('#detail-select').click();
+  await page.locator('[data-choose="j02"]').click();
+  ok((await page.locator('#comparison-total').innerText()).includes('688,00'),'Comparação soma peças');
+  await page.locator('#gift-wrap').check();
+  ok((await page.locator('#comparison-total').innerText()).includes('717,00'),'Embalagem demonstrativa');
+  await page.locator('#comparison-clear').click();
+  ok((await page.locator('#comparison-total').innerText()).includes('0,00'),'Comparação pode ser zerada');
+
+  // Cosméticos: seleções de preferência estética, sem diagnóstico clínico.
+  await page.goto(base+'demo-essencia-cosmeticos.html');
+  ok(await page.locator('.product').count()===6,'Essência apresenta seis conceitos');
+  await page.locator('[data-category="Hidratar"]').click();
+  ok(await page.locator('.product').count()===2,'Essência filtra etapa');
+  await page.locator('[data-category="Todos"]').click();
+  ok((await page.locator('#routine-total').innerText()).includes('277,00'),'Rotina leve tem valor ilustrativo correto');
+  await page.locator('[data-texture="cremosa"]').click();
+  ok((await page.locator('#routine-total').innerText()).includes('317,00'),'Textura cremosa reorganiza as três etapas');
+  await page.locator('[data-stage="Hidratar"]').selectOption('c03');
+  ok((await page.locator('#routine-total').innerText()).includes('297,00'),'Troca manual recalcula composição');
+  await page.locator('#routine-reset').click();
+  ok((await page.locator('#routine-total').innerText()).includes('277,00'),'Reset restaura sugestões');
+  await page.locator('.product[data-product="c02"] .product-photo').click();
+  ok(await page.locator('#atelier-dialog').isVisible(),'Ficha de cosmético abre');
+  await page.locator('#dialog-close').click();
   await page.setViewportSize({width:390,height:844});
   for(const filename of ['demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html']){
     await page.goto(base+filename);
@@ -288,6 +327,14 @@ const server=http.createServer((req,res)=>{
     ok(await toggle.getAttribute('aria-expanded')==='true','Menu retail abre em '+filename);
     await page.keyboard.press('Escape');
     ok(await toggle.getAttribute('aria-expanded')==='false','Menu retail fecha por Escape em '+filename);
+  }
+  for(const filename of ['demo-aurea-joias.html','demo-essencia-cosmeticos.html']){
+    await page.goto(base+filename);
+    const toggle=page.locator('.nav-toggle');
+    await toggle.click();
+    ok(await toggle.getAttribute('aria-expanded')==='true','Menu atelier abre em '+filename);
+    await page.keyboard.press('Escape');
+    ok(await toggle.getAttribute('aria-expanded')==='false','Menu atelier fecha em '+filename);
   }
   const dir=path.join(root,'tests','artifacts');fs.mkdirSync(dir,{recursive:true});
   for(const width of [390,1366]){
