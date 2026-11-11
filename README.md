@@ -12,16 +12,19 @@ Abra http://localhost:8000. O servidor não é necessário em produção; publiq
 
 ## Estrutura
 
-- `index.html`: apresentação, quatro demonstrações, soluções, processo, FAQ nativo e formulário; acesso ao Studio no branch de desenvolvimento.
+- `index.html`: apresentação, destaque de quatro projetos autorais, soluções, processo, FAQ, formulário e acesso ao Studio e Portfolio.
 - `studio.html`: configurador híbrido e prévia conceitual, com valores preliminares (noindex enquanto não aprovado).
 - `css/studio.css`: estilo do Studio, responsivo.
 - `js/studio.js` e `js/studio-pricing.js`: interação, regras comerciais e geração do resumo.
 - `css/style.css`: identidade e responsividade.
 - `js/main.js`: navegação, carrossel e interações visuais.
 - `js/quote.js`: validação, prévia e composição do link WhatsApp.
-- `demo-*.html`: quatro empresas fictícias, preservadas e identificadas.
-- `assets/`: logos originais e derivados otimizados.
-- `sitemap.xml`: endereço canônico da página principal; demos têm `noindex`.
+- `portfolio.html`: catálogo autoral com busca, filtros por setor e oito projetos navegáveis na branch de preview.
+- `demo-*.html`: oito experiências conceituais, incluindo quatro demonstrações originais reformuladas e quatro projetos criados para a coleção.
+- `js/demo-portfolio.js`: filtro de obras/imóveis, galeria, diálogo de detalhes e experiências demonstrativas; não envia, salva ou processa transações.
+- `docs/USBRIN-PORTFOLIO-PLANO.md`: mapa de 50 projetos previstos e critérios de qualidade.
+- `assets/`: logos originais, prévias e artes SVG autorais para as experiências.
+- `sitemap.xml`: rotas geradas pelo build, incluindo Portfolio; demonstrações conceituais usam `noindex`.
 
 ## Contato e orçamento
 
@@ -39,10 +42,12 @@ Versão original: commit `63e47c868b6cd3b92fc8f25ecf9be61d4b57b550`, preservado 
 
 O GitHub Pages contém restrições para operar negócios e sites destinados principalmente a facilitar transações comerciais: https://docs.github.com/pt/pages/getting-started-with-github-pages/github-pages-limits . Antes de ampliar a operação comercial, confirme o enquadramento com o GitHub ou escolha uma hospedagem adequada. Não há checkout ou processamento de pagamento neste site.
 
-**Hospedagem selecionada para lançamento:** Cloudflare Pages Free, conectando este mesmo repositório GitHub. O build é `npm run build`, saída `dist`, com `CF_PAGES_URL` usado para atualizar o canonical e o sitemap. Para a primeira implantação, selecione `feature/usbrin-studio-mvp` como branch de produção (ainda não mesclada); após homologação, mescle PR #2 e mude a branch de produção para `main`. Consulte `docs/CLOUDFLARE-PUBLICACAO.md`. Não há checkout, cobrança, backend, alteração de DNS ou implantação Cloudflare confirmados neste commit. Os arquivos `vercel.json` e `docs/VERCEL-PUBLICACAO.md` são referências anteriores, **não** instruções para o lançamento escolhido.
+**Hospedagem atual:** Cloudflare Pages Free, projeto `usbrin-site`, conectado ao GitHub. O build é `npm run build`, saída `dist`, com `CF_PAGES_URL` usado para atualizar o canonical e sitemap. A branch de produção continua `feature/usbrin-studio-mvp`; a evolução do portfólio foi desenvolvida separadamente na branch `feature/usbrin-portfolio-20261110`, via PR #5 em rascunho, sem merge ou alteração de produção. Consulte `docs/CLOUDFLARE-PUBLICACAO.md`. Não há checkout, cobrança ou backend nas demonstrações. Os arquivos `vercel.json` e `docs/VERCEL-PUBLICACAO.md` são referências anteriores.
 
 ## Testes
 
 Instale Playwright no ambiente de desenvolvimento e disponibilize Chromium. Execute `CHROMIUM_PATH=/caminho/do/chromium node tests/browser.cjs`. O teste cria seu próprio servidor local na porta 8001 e não envia mensagens. Consulte `docs/VALIDACAO-2026-10-29.md` para resultados e limites.
 
-Para o Studio: execute `node --test tests/studio-pricing.test.cjs` e, com Playwright/Chromium instalados, `CHROMIUM_PATH=/caminho/do/chromium node tests/studio-browser.cjs`. A documentação de operação e pré-lançamento está em `docs/USBRIN-STUDIO-OPERACAO.md`.
+Para o Studio: execute `npm run test:pricing` e, com Playwright/Chromium, `CHROMIUM_PATH=/caminho/do/chromium node tests/studio-browser.cjs`.
+
+Para o Portfolio: execute `npm run test:portfolio` e `CHROMIUM_PATH=/caminho/do/chromium node tests/portfolio-browser.cjs`. O workflow `USBRIN Portfolio — validação` confere a integridade, as interações e a responsividade (360, 390, 768 e 1366 px), além da regressão do Studio. Ele produz capturas de tela para revisão visual. A documentação de operação e pré-lançamento está em `docs/USBRIN-STUDIO-OPERACAO.md`.
