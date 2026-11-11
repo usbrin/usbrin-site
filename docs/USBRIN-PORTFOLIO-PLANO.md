@@ -30,7 +30,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 | 7 | Alto Norte Engenharia | Construtora | revisado em preview | Obras e serviços organizados |
 | 8 | PrimeLar Imóveis | Imobiliária | revisado em preview | Exploração de imóveis em catálogo |
 | 9 | Atelier Forma | Arquitetura | novo | Editorial arquitetônico e filtro de projetos |
-| 10 | Pilar Engenharia | Engenharia | planejado | Portfólio técnico e soluções |
+| 10 | Pilar Engenharia | Engenharia | novo · premium | Projetos técnicos, etapas e estimativas didáticas |
 | 11 | Linho Interiores | Design de interiores | planejado | Antes/depois de ambientes |
 | 12 | Vereda Planejados | Móveis planejados | planejado | Acabamentos e galeria interativa |
 
@@ -70,7 +70,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 
 | Nº | Projeto autoral | Modelo de negócio | Situação nesta fase | Experiência diferencial |
 |---:|---|---|---|---|
-| 30 | Nimbo Móveis | Móveis | planejado | Busca por ambientes e catálogo |
+| 30 | Nimbo Móveis | Móveis | novo · premium | Catálogo, comparação e configurador ilustrativo |
 | 31 | Pet Ninho | Pet shop | planejado | Produtos, serviços e cuidados |
 | 32 | TecnoHub | Eletrônicos | planejado | Filtros e comparações demonstrativas |
 | 33 | Flor & Raiz | Floricultura | novo | Presentes e coleções florais |
@@ -122,7 +122,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 6. Transparência: marca e dados conceituais; não inventar clientes, avaliações ou números de desempenho reais.
 7. Rastreável: registrar revisão visual e regressão antes de promoção de preview para produção.
 
-**Nesta etapa:** 4 demonstrações legadas reformuladas e 4 experiências novas na branch de preview, totalizando 8 projetos navegáveis. As legadas receberam novas artes autorais, navegação móvel e interações específicas. Os testes automatizados de desktop/mobile em Chromium concluíram 118 verificações de UX e 10 capturas em 2026-11-11. Ainda é necessária revisão final em dispositivos reais e aprovação para publicação oficial.
+**Nesta etapa:** 4 demonstrações legadas reformuladas e 6 experiências novas na branch de preview, totalizando 10 projetos navegáveis. As legadas receberam novas artes autorais, navegação móvel e interações específicas. Os testes automatizados de desktop/mobile em Chromium concluíram 118 verificações de UX e 10 capturas em 2026-11-11. Ainda é necessária revisão final em dispositivos reais e aprovação para publicação oficial.
 
 **Meta comercial a observar após lançamento:** visitas por categoria, cliques em "Explorar site", cliques em "Quero algo assim", solicitações de proposta e conversões qualificadas. Sem fingir que há dados antes de instrumentar mensuração consentida.
 
@@ -134,3 +134,27 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 - **PrimeLar Imóveis:** fichas visuais de imóveis, filtros por tipo, detalhes de propriedades em diálogo e identificação explícita dos preços e dados como exemplos.
 - **Validação:** testes estruturais com `npm run test:portfolio`, regressão de preços e execução de Chromium com viewport 360, 390, 768 e 1366 px. O workflow publica capturas como artefato GitHub Actions; o Cloudflare Access permanece ativo no preview.
 - **Estado de entrega:** somente preview; PR #5 continua como rascunho. Não houve alteração na branch de produção, no Studio, Store, parceiros, ID ou na infraestrutura de autenticação.
+
+## Segunda coleção — novo padrão técnico (11/11/2026)
+
+A partir do 9º projeto, os conceitos devem demonstrar lógica funcional real, arquitetura de interface, validação de dados e critérios de acessibilidade. Funcionalidades que exigiriam serviços reais permanecem ilustrativas e sem transações.
+
+### Pilar Engenharia
+- Interface técnica com três estudos conceituais por setor e fichas abertas em diálogo.
+- Apresentação de quatro fases, com diagrama interativo.
+- Laboratório de custos didáticos: área de 50–800 m² × coeficiente hipotético por categoria × fator de detalhamento, com faixa de ±15%; reserva de 12% mostrada separadamente.
+- Valores fictícios, sem recomendação técnica, sem orçamento real e sem coleta de dados.
+
+### Nimbo Móveis
+- Catálogo de seis produtos autorais, filtros por ambiente, pesquisa com suporte a acentos.
+- Comparação local de duas peças e configurações por largura, acabamento e ferragens opcionais.
+- Estimativas calculadas em memória com bases e fatores totalmente ilustrativos; nenhuma venda, pedido, checkout ou cadastro.
+- Identidade visual independente da Pilar, assets SVG originais e layouts para móvel e desktop.
+
+### Arquitetura técnica
+- Motor de dados e cálculos separado em `js/portfolio-engine.js`, testável em Node.js e usado diretamente pelo navegador.
+- `tests/portfolio-pro.test.cjs` para regras, limites, filtros, metadados, links e scripts.
+- `tests/portfolio-browser.cjs` ampliado para interações dos dois conceitos, erros de script e responsividade.
+- CI e build allowlist incluem apenas arquivos estáticos do Portfolio, mantendo Studio, Store, parceiros e ID inalterados.
+
+**Estado:** dez experiências navegáveis em preview; quarenta conceitos restantes no planejamento. Não há autorização para promover à produção até testes e revisão final.
