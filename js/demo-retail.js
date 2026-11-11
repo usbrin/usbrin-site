@@ -7,6 +7,8 @@ const kind=document.body.dataset.retail; if(!['fashion','materials'].includes(ki
 const money=cents=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(cents/100);
 const source=kind==='fashion'?model.fashion:model.materials;
 let category='Todos',sort='destaques',current=null,chosen=[],quote=[];
+// Handlers compartilhados com cartões do catálogo, definidos em cada experiência.
+let toggleLook=()=>{},addQuote=()=>{};
 const cards=$('#retail-cards'),filters=$('#retail-filters'),search=$('#retail-search'),sorter=$('#retail-sort'),dialog=$('#retail-dialog'),toast=$('#retail-toast');
 let toastTimer;
 function announce(message){toast.textContent=message;toast.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.hidden=true,2500);}
@@ -81,12 +83,12 @@ if(kind==='fashion'){
   $('#look-total').textContent=money(total.total);
   renderCatalog();
  }
- function toggleLook(id){
+ toggleLook=function(id){
    if(chosen.includes(id))chosen=chosen.filter(x=>x!==id);
    else if(chosen.length<3)chosen=[...chosen,id];
    else{announce('Limite de três peças. Remova uma seleção para adicionar outra.');return;}
    renderLook();
- }
+ };
  $('#clear-look').addEventListener('click',()=>{chosen=[];renderLook();});
  $('#detail-action').addEventListener('click',()=>{if(!current)return;toggleLook(current.id);dialog.close();$('#experiencia').scrollIntoView({behavior:'smooth'});});
  renderLook();
@@ -109,13 +111,13 @@ if(kind==='fashion'){
   $('#quote-total').textContent=money(calc.total);
   $('#copy-quote').disabled=quote.length===0;
  }
- function addQuote(id,q){
+ addQuote=function(id,q){
   if(!Number.isInteger(q)||q<1||q>500){announce('Quantidade deve ficar entre 1 e 500.');return;}
   const old=quote.find(l=>l.id===id);
   if(old&&old.quantity+q>500){announce('Limite de 500 unidades por item.');return;}
   quote=old?quote.map(l=>l.id===id?{id,quantity:l.quantity+q}:l):[...quote,{id,quantity:q}];
   quoteUpdate();announce('Item incluído na lista de referência.');
- }
+ };
  $('#detail-action').addEventListener('click',()=>{
   const n=Number($('#detail-qty').value);if(!current)return;
   if(!Number.isInteger(n)||n<1||n>500){announce('Quantidade entre 1 e 500.');return;}
