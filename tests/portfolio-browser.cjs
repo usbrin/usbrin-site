@@ -179,16 +179,13 @@ const server=http.createServer((req,res)=>{
   ok(await page.locator('.button-disabled').isDisabled(),'Finalização real desativada na VOLTA');
   await page.locator('.cart-line .remove').click();
   ok(await page.locator('#cart-empty').isVisible(),'Remoção esvazia sacola');
-  console.log('CART_GEOMETRY',JSON.stringify(await page.evaluate(()=>{
-    const d=document.querySelector('#cart-dialog'),b=document.querySelector('[data-close-cart]');
-    const dr=d.getBoundingClientRect(),br=b.getBoundingClientRect();
-    const cx=br.left+br.width/2,cy=br.top+br.height/2;
-    const hit=document.elementFromPoint(cx,cy);
-    return {dialog:{x:dr.x,y:dr.y,w:dr.width,h:dr.height},button:{x:br.x,y:br.y,w:br.width,h:br.height},topElement:hit?.outerHTML?.slice(0,250),viewport:{w:innerWidth,h:innerHeight},dialogScroll:{top:d.scrollTop,left:d.scrollLeft},innerScroll:document.querySelector('#cart-dialog .dialog-inner')?.scrollTop};
-  })));
-  fs.mkdirSync(path.join(root,'tests','artifacts'),{recursive:true});
-  await page.screenshot({path:path.join(root,'tests','artifacts','portfolio-cart-debug.png')});
-  await page.locator('[data-close-cart]').click({timeout:3000});
+  // Testa um clique físico no centro do controle modal; confirma hit-test e fechamento.
+  const closeBox=await page.locator('[data-close-cart]').boundingBox();
+  ok(!!closeBox && closeBox.width>0 && closeBox.height>0,'Botão de fechar sacola possui área clicável');
+  const closeX=closeBox.x+closeBox.width/2,closeY=closeBox.y+closeBox.height/2;
+  ok(await page.evaluate(([x,y])=>document.elementFromPoint(x,y)?.closest('[data-close-cart]')!==null,[closeX,closeY]),'Botão de fechar recebe hit-test no navegador');
+  await page.mouse.click(closeX,closeY);
+  ok(await page.locator('#cart-dialog').isHidden(),'Sacola fecha após clique físico');
 
   await page.goto(base+'demo-casa-patta.html');
   ok(await page.locator('.product-card').count()===6,'Casa Patta apresenta seis produtos');
@@ -204,13 +201,19 @@ const server=http.createServer((req,res)=>{
   await page.locator('.cart-line .increment').click();
   ok((await page.locator('#cart-subtotal').innerText()).includes('178,00'),'Casa Patta atualiza quantidade');
   ok(await page.locator('.button-disabled').isDisabled(),'Casa Patta sem checkout real');
-  await page.locator('[data-close-cart]').click();
+  const closeArea=await page.locator('[data-close-cart]').boundingBox();
+  ok(!!closeArea,'Sacola mantém botão de fechamento acessível');
+  await page.mouse.click(closeArea.x+closeArea.width/2,closeArea.y+closeArea.height/2);
+  ok(await page.locator('#cart-dialog').isHidden(),'Sacola fecha por clique real');
   await page.locator('[data-view="p04"]').first().click();
   await page.locator('#detail-variant').selectOption('M');
   await page.locator('#detail-add').click();
   ok(await page.locator('.cart-line').count()===2,'Casa Patta reúne duas variações na sacola');
   ok((await page.locator('#cart-delivery').innerText()).includes('Grátis'),'Frete ilustrativo ao cruzar limite');
-  await page.locator('[data-close-cart]').click();
+  const closeArea=await page.locator('[data-close-cart]').boundingBox();
+  ok(!!closeArea,'Sacola mantém botão de fechamento acessível');
+  await page.mouse.click(closeArea.x+closeArea.width/2,closeArea.y+closeArea.height/2);
+  ok(await page.locator('#cart-dialog').isHidden(),'Sacola fecha por clique real');
 
 
   // Lume Moda — busca e editor de looks com até três peças.
