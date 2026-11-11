@@ -201,7 +201,7 @@ const server=http.createServer((req,res)=>{
   await page.locator('.cart-line .increment').click();
   ok((await page.locator('#cart-subtotal').innerText()).includes('178,00'),'Casa Patta atualiza quantidade');
   ok(await page.locator('.button-disabled').isDisabled(),'Casa Patta sem checkout real');
-  const closeArea=await page.locator('[data-close-cart]').boundingBox();
+  let closeArea=await page.locator('[data-close-cart]').boundingBox();
   ok(!!closeArea,'Sacola mantém botão de fechamento acessível');
   await page.mouse.click(closeArea.x+closeArea.width/2,closeArea.y+closeArea.height/2);
   ok(await page.locator('#cart-dialog').isHidden(),'Sacola fecha por clique real');
@@ -210,7 +210,7 @@ const server=http.createServer((req,res)=>{
   await page.locator('#detail-add').click();
   ok(await page.locator('.cart-line').count()===2,'Casa Patta reúne duas variações na sacola');
   ok((await page.locator('#cart-delivery').innerText()).includes('Grátis'),'Frete ilustrativo ao cruzar limite');
-  const closeArea=await page.locator('[data-close-cart]').boundingBox();
+  closeArea=await page.locator('[data-close-cart]').boundingBox();
   ok(!!closeArea,'Sacola mantém botão de fechamento acessível');
   await page.mouse.click(closeArea.x+closeArea.width/2,closeArea.y+closeArea.height/2);
   ok(await page.locator('#cart-dialog').isHidden(),'Sacola fecha por clique real');
