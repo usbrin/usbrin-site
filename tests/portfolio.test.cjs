@@ -66,13 +66,13 @@ test('Todos os conceitos têm estrutura válida, imagens locais e acesso ao Port
   const paths = ['demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html'];
   for(const name of paths){
     const html=read(name);
-    const ids=[...html.matchAll(/\\bid="([^"]+)"/g)].map(x=>x[1]);
+    const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(x=>x[1]);
     assert.equal(ids.length,new Set(ids).size,'ID duplicado: '+name);
     const anchors=[...html.matchAll(/href="#([^"]+)"/g)].map(x=>x[1]);
     for(const id of anchors)assert.ok(ids.includes(id),'Âncora ausente '+id+' em '+name);
     assert.match(html,/<body data-demo="[^"]+">/,'demo-id ausente em '+name);
-    assert.match(html,/src="js\\/demo-portfolio\\.js"/,'script demo ausente em '+name);
-    assert.match(html,/href="portfolio\\.html"/,'volta ao Portfolio ausente em '+name);
+    assert.match(html,/src="js\/demo-portfolio\.js"/,'script demo ausente em '+name);
+    assert.match(html,/href="portfolio\.html"/,'volta ao Portfolio ausente em '+name);
     const imgs=[...html.matchAll(/<img[^>]+src="([^"]+)"/g)].map(x=>x[1]);
     assert.ok(imgs.length>=2,'falta arte no demo '+name);
     for(const img of imgs)assert.ok(fs.existsSync(path.join(root,img)),'Imagem não existe: '+img);
