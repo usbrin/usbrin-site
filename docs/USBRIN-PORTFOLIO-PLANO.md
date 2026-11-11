@@ -54,7 +54,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 | 21 | Eixo Consultoria | Consultoria | planejado | Soluções, metodologia e diagnóstico |
 | 22 | Brilho Casa | Limpeza | planejado | Solicitação simples e benefícios |
 | 23 | Luz Solar | Energia solar | planejado | Simulação ilustrativa e projetos |
-| 24 | Motor & Forma | Oficina | planejado | Serviços, orçamento e agenda |
+| 24 | Motor & Forma | Estética automotiva | novo · fotográfico/técnico | Configurador de serviços por porte de veículo e complementos ilustrativos |
 
 ### Moda e beleza (5)
 
@@ -98,7 +98,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 
 | Nº | Projeto autoral | Modelo de negócio | Situação nesta fase | Experiência diferencial |
 |---:|---|---|---|---|
-| 43 | Vista Hotel | Hotel | planejado | Quartos e reservas ilustrativas |
+| 43 | Vista Hotel | Hotelaria premium | novo · editorial/fotográfico | Comparação de suítes e simulação transparente de estadia |
 | 44 | Casa Rio | Pousada | planejado | Imersão visual e acomodações |
 | 45 | Rota Brasil | Agência | planejado | Roteiros e pacotes |
 | 46 | Selva Viva | Ecoturismo | planejado | Expedições e sustentabilidade |
@@ -281,3 +281,27 @@ Congelar provisoriamente a expansão da coleção em **18/50**, priorizando qual
 6. **Governança:** preview isolado e PR em rascunho até revisão visual, testes, autorização específica e plano de reversão.
 
 **Próximo lote de melhoria:** fotos fielmente relacionadas a cada modelo, layouts menos repetidos, páginas de produto completas e um experimento comercial para verificar demanda, **antes** de iniciar novos conceitos.
+
+## Sétimo lote — novos projetos com o padrão elevado (11/11/2026)
+
+**Decisão de sequência do usuário:** continuar produzindo os conceitos novos restantes, já no padrão de qualidade refinado; **adiar a reformulação dos sites anteriores para depois da criação**. Isso substitui a instrução operacional de congelamento em 18/50 da Sprint 1, sem invalidar as auditorias já realizadas. Quantidade total: **20 projetos implementados em preview; 30 planejados para desenvolvimento**. Nenhuma autorização para publicar a produção.
+
+### Vista Hotel — projeto 43 do plano
+- Hotelaria premium com identidade editorial bege/verde, tipografia sofisticada e fotografias reais de ambientação via Unsplash.
+- Apresenta três acomodações hipotéticas e fotografias ilustrativas, sem afirmar que o hotel, suas instalações ou seus quartos existem.
+- Interação real no navegador para selecionar suíte, datas, número de hóspedes e café da manhã. Cálculos puros em centavos com limite de 21 noites, capacidades por quarto e validação de datas.
+- Total representa **tarifa hipotética**, sem impostos, taxas, reservas reais, disponibilidade ou integração com sistemas de hospedagem. Não coleta dados pessoais.
+
+### Motor & Forma — projeto 24 do plano
+- Identidade própria, fundo grafite com cobre, fotografia automotiva e interface de serviços premium.
+- Três pacotes de cuidado estético ilustrativos, seleção por porte (compacto, sedã ou SUV), complementos opcionais, estimativa de custo e tempo.
+- Não informa diagnóstico mecânico nem promete resultados. A soma demonstra como uma proposta comercial poderia ser estruturada, sem agenda, cobrança, pedido ou orçamento vinculante.
+- Resumo copiável apenas por gesto explícito do visitante, sem API ou armazenamento.
+
+### Critérios mantidos
+- Arquivos `demo-vista-hotel.html`, `demo-motor-forma.html`, `js/portfolio-experiences.js`, `js/demo-experiences.js` e `css/demo-experiences.css`.
+- `tests/portfolio-experiences.test.cjs` e E2E em `tests/portfolio-browser.cjs` verificam fórmulas, limites, navegação móvel e integrações visuais.
+- As fotografias são referências licenciadas, não imagens de um hotel real da marca ou de clientes atendidos.
+- `portfolio.html` agora oferece 20 cartões, filtro de turismo/hospedagem e briefing contextual para todas as referências.
+- Os 20 sites continuam isolados em PR de preview. Preservar Studio, Store, parceiros, Zitadel/USBRIN ID e todos os sistemas comerciais.
+- Após cada lote, medir funcionalidade, performance, imagens e diferenciação. Evitar templates repetidos e custos novos.
