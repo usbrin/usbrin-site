@@ -16,7 +16,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 
 | Nº | Projeto autoral | Modelo de negócio | Situação nesta fase | Experiência diferencial |
 |---:|---|---|---|---|
-| 1 | Vitta Clínica | Clínica | existente | Design clean e especialidades claras |
+| 1 | Vitta Clínica | Clínica | revisado em preview | Design clean e especialidades claras |
 | 2 | Sorriso Claro | Odontologia | planejado | Agendamento e jornada do paciente |
 | 3 | Nara Derma | Dermatologia | planejado | Elegância e apresentação de tratamentos |
 | 4 | Pausa | Psicologia | planejado | Acolhimento e linguagem acessível |
@@ -27,8 +27,8 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 
 | Nº | Projeto autoral | Modelo de negócio | Situação nesta fase | Experiência diferencial |
 |---:|---|---|---|---|
-| 7 | Alto Norte Engenharia | Construtora | existente | Obras e serviços organizados |
-| 8 | PrimeLar Imóveis | Imobiliária | existente | Exploração de imóveis em catálogo |
+| 7 | Alto Norte Engenharia | Construtora | revisado em preview | Obras e serviços organizados |
+| 8 | PrimeLar Imóveis | Imobiliária | revisado em preview | Exploração de imóveis em catálogo |
 | 9 | Atelier Forma | Arquitetura | novo | Editorial arquitetônico e filtro de projetos |
 | 10 | Pilar Engenharia | Engenharia | planejado | Portfólio técnico e soluções |
 | 11 | Linho Interiores | Design de interiores | planejado | Antes/depois de ambientes |
@@ -38,7 +38,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 
 | Nº | Projeto autoral | Modelo de negócio | Situação nesta fase | Experiência diferencial |
 |---:|---|---|---|---|
-| 13 | Brasa & Mesa | Restaurante | existente | Cardápio e experiência gastronômica |
+| 13 | Brasa & Mesa | Restaurante | revisado em preview | Cardápio e experiência gastronômica |
 | 14 | Café Orvalho | Cafeteria | planejado | Menu sazonal e ambiente editorial |
 | 15 | Forno 82 | Pizzaria | planejado | Cardápio visual e pedidos demonstrativos |
 | 16 | Doce Mira | Confeitaria | planejado | Coleções e encomendas |
@@ -122,6 +122,15 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 6. Transparência: marca e dados conceituais; não inventar clientes, avaliações ou números de desempenho reais.
 7. Rastreável: registrar revisão visual e regressão antes de promoção de preview para produção.
 
-**Nesta etapa:** 4 demonstrações legadas disponíveis e 4 novas experiências em branch de preview. As quatro legadas ainda devem passar por auditoria visual antes de serem consideradas no padrão final de excelência.
+**Nesta etapa:** 4 demonstrações legadas reformuladas e 4 experiências novas na branch de preview, totalizando 8 projetos navegáveis. As legadas receberam novas artes autorais, navegação móvel e interações específicas. Os testes automatizados de desktop/mobile em Chromium concluíram 118 verificações de UX e 10 capturas em 2026-11-11. Ainda é necessária revisão final em dispositivos reais e aprovação para publicação oficial.
 
 **Meta comercial a observar após lançamento:** visitas por categoria, cliques em "Explorar site", cliques em "Quero algo assim", solicitações de proposta e conversões qualificadas. Sem fingir que há dados antes de instrumentar mensuração consentida.
+
+## Revisão da primeira coleção (11/11/2026)
+
+- **Brasa & Mesa:** identidade gastronômica ampliada, arte de pratos autoral, galeria com ampliação, cardápio filtrável e simulação de preferências para reserva, sem envio de dados.
+- **Alto Norte Engenharia:** ilustrações originais de edifícios e obras, filtros por categoria, fichas ilustrativas em diálogo e substituição de números fictícios de histórico operacional por etapas de processo.
+- **Vitta Clínica:** nova experiência visual, apresentação de especialidades, equipe sinalizada como conceitual e jornada ilustrativa de consulta sem disponibilidade real.
+- **PrimeLar Imóveis:** fichas visuais de imóveis, filtros por tipo, detalhes de propriedades em diálogo e identificação explícita dos preços e dados como exemplos.
+- **Validação:** testes estruturais com `npm run test:portfolio`, regressão de preços e execução de Chromium com viewport 360, 390, 768 e 1366 px. O workflow publica capturas como artefato GitHub Actions; o Cloudflare Access permanece ativo no preview.
+- **Estado de entrega:** somente preview; PR #5 continua como rascunho. Não houve alteração na branch de produção, no Studio, Store, parceiros, ID ou na infraestrutura de autenticação.
