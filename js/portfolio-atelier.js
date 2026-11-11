@@ -7,20 +7,20 @@
 const u=(id)=>'https://images.unsplash.com/'+id+'?auto=format&fit=crop&w=920&q=78';
 const p=(id)=>'https://images.pexels.com/photos/'+id+'/pexels-photo-'+id+'.jpeg?auto=compress&cs=tinysrgb&w=920';
 const jewelry=Object.freeze([
- {id:'j01',name:'Colar Aurora',category:'Colares',occasion:['aniversario','celebracao'],price:42900,photo:u('photo-1599643477877-530eb83abc8e'),detail:'Linha delicada com ponto de luz em composição ilustrativa.',finish:'Tom dourado',presentation:'Acessório de inspiração delicada'},
- {id:'j02',name:'Argolas Forma',category:'Brincos',occasion:['cotidiano','aniversario'],price:25900,photo:u('photo-1630019852942-f89202989a59'),detail:'Um desenho essencial de argolas para acompanhar diversas composições.',finish:'Tom dourado',presentation:'Acessório versátil'},
- {id:'j03',name:'Anel Horizonte',category:'Anéis',occasion:['celebracao','aniversario'],price:59000,photo:u('photo-1605100804763-247f67b3557e'),detail:'Volume e brilho em uma proposta de presente marcante.',finish:'Tom prateado',presentation:'Referência de anel especial'},
- {id:'j04',name:'Pulseira Trama',category:'Pulseiras',occasion:['cotidiano','aniversario'],price:31900,photo:u('photo-1611591437281-460bfbe1220a'),detail:'Composição leve e texturizada para o dia a dia.',finish:'Tom dourado',presentation:'Estudo de acessório'},
- {id:'j05',name:'Colar Essência',category:'Colares',occasion:['cotidiano','celebracao'],price:34900,photo:u('photo-1617038220319-276d3cfab638'),detail:'Uma ideia de colar minimalista para usar em diferentes momentos.',finish:'Tom dourado',presentation:'Peça conceitual'},
- {id:'j06',name:'Brincos Elo',category:'Brincos',occasion:['celebracao','cotidiano'],price:18900,photo:u('photo-1535632066927-ab7c9ab60908'),detail:'Referência de brincos pequenos com desenho contemporâneo.',finish:'Tom prateado',presentation:'Peça conceitual'}
+ {id:'j01',name:'Colar Aurora',category:'Colares',occasion:['aniversario','celebracao'],price:42900,photo:p('33740462'),detail:'Linha delicada com ponto de luz em composição ilustrativa.',finish:'Tom dourado',presentation:'Acessório de inspiração delicada'},
+ {id:'j02',name:'Argolas Forma',category:'Brincos',occasion:['cotidiano','aniversario'],price:25900,photo:p('12194347'),detail:'Um desenho essencial de argolas para acompanhar diversas composições.',finish:'Tom dourado',presentation:'Acessório versátil'},
+ {id:'j03',name:'Anel Horizonte',category:'Anéis',occasion:['celebracao','aniversario'],price:59000,photo:p('8398840'),detail:'Volume e brilho em uma proposta de presente marcante.',finish:'Tom prateado',presentation:'Referência de anel especial'},
+ {id:'j04',name:'Pulseira Trama',category:'Pulseiras',occasion:['cotidiano','aniversario'],price:31900,photo:p('30720992'),detail:'Composição leve e texturizada para o dia a dia.',finish:'Tom dourado',presentation:'Estudo de acessório'},
+ {id:'j05',name:'Colar Essência',category:'Colares',occasion:['cotidiano','celebracao'],price:34900,photo:p('29502923'),detail:'Uma ideia de colar minimalista para usar em diferentes momentos.',finish:'Tom dourado',presentation:'Peça conceitual'},
+ {id:'j06',name:'Brincos Elo',category:'Brincos',occasion:['celebracao','cotidiano'],price:18900,photo:p('38984016'),detail:'Referência de brincos pequenos com desenho contemporâneo.',finish:'Tom prateado',presentation:'Peça conceitual'}
 ]);
 const cosmetics=Object.freeze([
  {id:'c01',name:'Gel Primeiro Passo',stage:'Limpar',texture:'leve',price:6900,photo:u('photo-1556228720-195a672e8a03'),detail:'Gel cosmético conceitual para uma experiência de rotina simples.',format:'Frasco ilustrativo · 150 mL'},
  {id:'c02',name:'Espuma Suave',stage:'Limpar',texture:'cremosa',price:7900,photo:u('photo-1608248543803-ba4f8c70ae0b'),detail:'Textura espumosa ilustrativa para a etapa de limpeza cosmética.',format:'Frasco ilustrativo · 160 mL'},
- {id:'c03',name:'Loção Dia Claro',stage:'Hidratar',texture:'leve',price:11900,photo:u('photo-1620916566398-39f1143ab7be'),detail:'Loção de textura leve apresentada como conceito de produto.',format:'Frasco ilustrativo · 100 mL'},
- {id:'c04',name:'Creme Horizonte',stage:'Hidratar',texture:'cremosa',price:13900,photo:u('photo-1601049541289-9b1b7bbbfe19'),detail:'Creme cosmético conceitual de textura mais encorpada.',format:'Pote ilustrativo · 50 g'},
- {id:'c05',name:'Óleo Ritual',stage:'Finalizar',texture:'cremosa',price:9900,photo:u('photo-1608571423902-eed4a5ad8108'),detail:'Conceito de óleo corporal para o momento final de autocuidado.',format:'Frasco ilustrativo · 60 mL'},
- {id:'c06',name:'Bruma Leve',stage:'Finalizar',texture:'leve',price:8900,photo:u('photo-1571781926291-c477ebfd024b'),detail:'Bruma cosmética conceitual para encerrar um ritual de cuidados.',format:'Frasco ilustrativo · 80 mL'}
+ {id:'c03',name:'Loção Dia Claro',stage:'Hidratar',texture:'leve',price:11900,photo:p('28116999'),detail:'Loção de textura leve apresentada como conceito de produto.',format:'Frasco ilustrativo · 100 mL'},
+ {id:'c04',name:'Creme Horizonte',stage:'Hidratar',texture:'cremosa',price:13900,photo:p('5911992'),detail:'Creme cosmético conceitual de textura mais encorpada.',format:'Pote ilustrativo · 50 g'},
+ {id:'c05',name:'Óleo Ritual',stage:'Finalizar',texture:'cremosa',price:9900,photo:p('7797735'),detail:'Conceito de óleo corporal para o momento final de autocuidado.',format:'Frasco ilustrativo · 60 mL'},
+ {id:'c06',name:'Bruma Leve',stage:'Finalizar',texture:'leve',price:8900,photo:p('38716583'),detail:'Bruma cosmética conceitual para encerrar um ritual de cuidados.',format:'Frasco ilustrativo · 80 mL'}
 ]);
 const categories=Object.freeze({jewelry:['Todos','Colares','Brincos','Anéis','Pulseiras'],cosmetics:['Todos','Limpar','Hidratar','Finalizar']});
 const stages=Object.freeze(['Limpar','Hidratar','Finalizar']);
