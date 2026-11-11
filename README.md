@@ -19,8 +19,8 @@ Abra http://localhost:8000. O servidor não é necessário em produção; publiq
 - `css/style.css`: identidade e responsividade.
 - `js/main.js`: navegação, carrossel e interações visuais.
 - `js/quote.js`: validação, prévia e composição do link WhatsApp.
-- `portfolio.html`: catálogo autoral com busca, filtros por setor e vinte e dois projetos navegáveis na branch de preview.
-- `demo-*.html`: vinte e duas experiências conceituais: quatro demonstrações reformuladas e dezoito projetos novos, incluindo Pilar Engenharia e Nimbo Móveis.
+- `portfolio.html`: catálogo autoral com busca, filtros por setor e vinte e quatro projetos navegáveis na branch de preview.
+- `demo-*.html`: vinte e quatro experiências conceituais: quatro demonstrações reformuladas e vinte projetos novos, incluindo Pilar Engenharia e Nimbo Móveis.
 - `js/demo-portfolio.js`: filtro de obras/imóveis, galeria, diálogo de detalhes e experiências demonstrativas; não envia, salva ou processa transações.
 - `js/portfolio-engine.js`: motor puro de cálculos e dados de produto, testável em Node.js e executado no navegador.
 - `js/portfolio-suite.js`: regras ilustrativas puras para cenários B2B e fluxos simulados, sem rede.
@@ -29,6 +29,10 @@ Abra http://localhost:8000. O servidor não é necessário em produção; publiq
 - `js/portfolio-atelier.js`: catálogo, curadoria de presentes, comparador e rotina cosmética não clínica.
 - `js/portfolio-experiences.js`: motor puro para simulação de estadia e composição de serviços automotivos.
 - `js/portfolio-specialists.js`: regras de briefing de móveis planejados e contato institucional odontológico.
+- `js/portfolio-editorial.js`: catálogo de café, sugestões de itens, portfólio fotográfico e briefings puros.
+- `demo-cafe-orvalho.html`: cafeteria editorial com seleção ilustrativa, sem pedido ou pagamento.
+- `demo-helena-luz.html`: fotografia editorial com galeria acessível e briefing de ensaio.
+- `js/demo-editorial.js` e `css/demo-editorial.css`: interações responsivas dos dois novos conceitos.
 - `demo-vereda-planejados.html`: ambientes editoriais e configurador sem orçamento automático.
 - `demo-sorriso-claro.html`: especialidades e preparação de contato não clínico, sem dados pessoais.
 - `js/demo-specialists.js` e `css/demo-specialists.css`: duas interfaces independentes, responsivas e sem checkout.
@@ -76,4 +80,4 @@ Instale Playwright no ambiente de desenvolvimento e disponibilize Chromium. Exec
 
 Para o Studio: execute `npm run test:pricing` e, com Playwright/Chromium, `CHROMIUM_PATH=/caminho/do/chromium node tests/studio-browser.cjs`.
 
-Para o Portfolio: execute `npm run test:portfolio`, `node --test tests/portfolio-pro.test.cjs`, `node --test tests/portfolio-suite.test.cjs`, `node --test tests/portfolio-commerce.test.cjs`, `node --test tests/portfolio-retail.test.cjs`, `node --test tests/portfolio-atelier.test.cjs`, `node --test tests/portfolio-experiences.test.cjs`, `node --test tests/portfolio-specialists.test.cjs` e `CHROMIUM_PATH=/caminho/do/chromium node tests/portfolio-browser.cjs`. O workflow `USBRIN Portfolio — validação` confere a integridade, as interações e a responsividade (360, 390, 768 e 1366 px), além da regressão do Studio. Ele produz capturas de tela para revisão visual. A documentação de operação e pré-lançamento está em `docs/USBRIN-STUDIO-OPERACAO.md`.
+Para o Portfolio: execute `npm run test:portfolio`, `node --test tests/portfolio-pro.test.cjs`, `node --test tests/portfolio-suite.test.cjs`, `node --test tests/portfolio-commerce.test.cjs`, `node --test tests/portfolio-retail.test.cjs`, `node --test tests/portfolio-atelier.test.cjs`, `node --test tests/portfolio-experiences.test.cjs`, `node --test tests/portfolio-specialists.test.cjs`, `node --test tests/portfolio-editorial.test.cjs` e `CHROMIUM_PATH=/caminho/do/chromium node tests/portfolio-browser.cjs`. O workflow `USBRIN Portfolio — validação` confere a integridade, as interações e a responsividade (360, 390, 768 e 1366 px), além da regressão do Studio. Ele produz capturas de tela para revisão visual. A documentação de operação e pré-lançamento está em `docs/USBRIN-STUDIO-OPERACAO.md`.
