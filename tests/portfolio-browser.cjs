@@ -24,7 +24,7 @@ const server=http.createServer((req,res)=>{
   page.on('pageerror',e=>errors.push(e.message));
   page.on('response',resp=>{if(resp.url().startsWith('http://127.0.0.1:'+port)&&resp.status()>=400)errors.push(resp.status()+' '+resp.url());});
   const base='http://127.0.0.1:'+port+'/';
-  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-pilar.html','demo-nimbo.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-volta-tech.html','demo-casa-patta.html','demo-lume-moda.html','demo-base-norte.html','demo-aurea-joias.html','demo-essencia-cosmeticos.html'];
+  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html','demo-pilar.html','demo-nimbo.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-volta-tech.html','demo-casa-patta.html','demo-lume-moda.html','demo-base-norte.html','demo-aurea-joias.html','demo-essencia-cosmeticos.html'];
   for(const width of [360,390,768,1366]){
     await page.setViewportSize({width,height:850});
     for(const filename of demos){
@@ -34,8 +34,14 @@ const server=http.createServer((req,res)=>{
         'Rolagem horizontal '+filename+' width='+width+' atual='+await page.evaluate(()=>document.documentElement.scrollWidth));
       ok(await page.locator('a[href="portfolio.html"]').count()>=1||filename==='portfolio.html','Retorno Portfolio em '+filename);
       if(filename.startsWith('demo-')){
-        ok(await page.locator('img').count()>=(filename.includes('contabil')||filename.includes('automacao')?1:2),'Arte em '+filename);
-        ok(await page.locator('[data-demo], [data-suite], [data-shop], [data-retail], [data-atelier]').count()===1,'Id da demonstração em '+filename);
+        const earlyConcepts=new Set(['demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html']);
+        if(earlyConcepts.has(filename)){
+          ok(await page.locator('section').count()>=4,'Projeto inicial mantém conteúdo completo em '+filename);
+          ok(await page.locator('a[href^="studio.html"]').count()>=1,'Projeto inicial encaminha para Studio em '+filename);
+        }else{
+          ok(await page.locator('img').count()>=(filename.includes('contabil')||filename.includes('automacao')?1:2),'Arte em '+filename);
+          ok(await page.locator('[data-demo], [data-suite], [data-shop], [data-retail], [data-atelier]').count()===1,'Id da demonstração em '+filename);
+        }
       }
     }
   }
