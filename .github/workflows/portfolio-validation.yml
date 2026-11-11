@@ -47,6 +47,9 @@ on:
       - '.github/workflows/portfolio-validation.yml'
 permissions:
   contents: read
+concurrency:
+  group: portfolio-validation-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   portfolio:
     runs-on: ubuntu-latest
