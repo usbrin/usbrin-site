@@ -24,7 +24,7 @@ const server=http.createServer((req,res)=>{
   page.on('pageerror',e=>errors.push(e.message));
   page.on('response',resp=>{if(resp.url().startsWith('http://127.0.0.1:'+port)&&resp.status()>=400)errors.push(resp.status()+' '+resp.url());});
   const base='http://127.0.0.1:'+port+'/';
-  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html','demo-pilar.html','demo-nimbo.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-volta-tech.html','demo-casa-patta.html','demo-lume-moda.html','demo-base-norte.html','demo-aurea-joias.html','demo-essencia-cosmeticos.html'];
+  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html','demo-pilar.html','demo-nimbo.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-volta-tech.html','demo-casa-patta.html','demo-lume-moda.html','demo-base-norte.html','demo-aurea-joias.html','demo-essencia-cosmeticos.html','demo-vista-hotel.html','demo-motor-forma.html'];
   for(const width of [360,390,768,1366]){
     await page.setViewportSize({width,height:850});
     for(const filename of demos){
@@ -40,7 +40,7 @@ const server=http.createServer((req,res)=>{
           ok(await page.locator('a[href^="studio.html"]').count()>=1,'Projeto inicial encaminha para Studio em '+filename);
         }else{
           ok(await page.locator('img').count()>=(filename.includes('contabil')||filename.includes('automacao')?1:2),'Arte em '+filename);
-          ok(await page.locator('[data-demo], [data-suite], [data-shop], [data-retail], [data-atelier]').count()===1,'Id da demonstração em '+filename);
+          ok(await page.locator('[data-demo], [data-suite], [data-shop], [data-retail], [data-atelier], [data-experience]').count()===1,'Id da demonstração em '+filename);
         }
       }
     }
@@ -52,7 +52,7 @@ const server=http.createServer((req,res)=>{
   await page.locator('#portfolio-search').fill('Vitta');
   ok(await page.locator('.project:not([hidden])').count()===1,'Busca de projeto');
   await page.locator('#portfolio-search').fill('');
-  ok(await page.locator('.project:not([hidden])').count()===18,'Galeria mantém 18 projetos');
+  ok(await page.locator('.project:not([hidden])').count()===20,'Galeria mantém 20 projetos');
 
   await page.goto(base+'demo-restaurante.html');
   await page.locator('[data-menu-filter="sobremesas"]').click();
@@ -307,10 +307,44 @@ const server=http.createServer((req,res)=>{
   ok(await page.locator('#atelier-dialog').isVisible(),'Ficha de cosmético abre');
   await page.locator('#dialog-close').click();
 
+
+  // Vista Hotel — escolha real de suíte e estimativa didática por noites e ocupação.
+  await page.goto(base+'demo-vista-hotel.html');
+  ok(await page.locator('.room-card').count()===3,'Vista Hotel apresenta três suítes');
+  await page.locator('[data-room="vista"]').click();
+  ok((await page.locator('#hotel-room-label').innerText()).includes('Panorama'),'Troca de suíte reflete no resumo');
+  await page.locator('#hotel-arrival').fill('2027-01-05');
+  await page.locator('#hotel-departure').fill('2027-01-07');
+  await page.locator('#hotel-guests').selectOption('3');
+  ok((await page.locator('#hotel-nights').innerText()).includes('2 noites'),'Duração em noites calculada');
+  ok((await page.locator('#hotel-total').innerText()).includes('2.240,00'),'Total hipotético de duas noites');
+  await page.locator('#hotel-breakfast').check();
+  ok((await page.locator('#hotel-total').innerText()).includes('2.750,00'),'Café opcional altera valor');
+  await page.locator('#hotel-guests').selectOption('4');
+  ok(await page.locator('#hotel-error').isVisible(),'Capacidade de acomodação é validada');
+  await page.locator('#hotel-guests').selectOption('2');
+  ok(await page.locator('#hotel-error').isHidden(),'Cenário corrigido fica válido');
+  await page.locator('[data-select-room="classic"]').click();
+  ok((await page.locator('#hotel-room-label').innerText()).includes('Jardim'),'Cartão da suíte altera planejamento');
+
+  // Motor & Forma — orçamentação simulada com porte, pacote e complementos.
+  await page.goto(base+'demo-motor-forma.html');
+  ok(await page.locator('.service-card').count()===3,'Motor & Forma apresenta três serviços');
+  await page.locator('[data-service="signature"]').click();
+  await page.locator('input[name="vehicle-size"][value="suv"]').check();
+  await page.locator('[data-extra="interior"]').check();
+  await page.locator('[data-extra="paint"]').check();
+  ok((await page.locator('#auto-price-total').innerText()).includes('2.355,00'),'Total ilustrativo com porte e complementos');
+  ok((await page.locator('#auto-duration').innerText()).includes('15 h'),'Horas exemplificativas calculadas');
+  await page.locator('[data-extra="paint"]').uncheck();
+  ok((await page.locator('#auto-price-total').innerText()).includes('2.115,00'),'Remoção de complemento recalcula');
+  await page.locator('[data-card-service="express"]').click();
+  ok((await page.locator('#auto-package-title').innerText()).includes('Essencial'),'Botão do serviço preenche configurador');
+
   // Portfolio 2.0: o interesse por cada projeto vira um briefing contextual copiável.
   await page.goto(base+'portfolio.html');
   const firstBrief=page.locator('[data-project-brief]').first();
-  ok(await page.locator('[data-project-brief]').count()===18,'Dezoito CTAs de briefing contextual');
+  ok(await page.locator('[data-project-brief]').count()===20,'Vinte CTAs de briefing contextual');
   await firstBrief.click();
   ok(await page.locator('#project-brief-dialog').isVisible(),'Briefing abre ao escolher referência');
   ok((await page.locator('#brief-project-name').innerText()).includes('Brasa & Mesa'),'Nome correto da referência comercial');
@@ -384,6 +418,16 @@ const server=http.createServer((req,res)=>{
     ok(await toggle.getAttribute('aria-expanded')==='false','Menu atelier fecha em '+filename);
   }
 
+
+  // Os novos sites devem manter navegação utilizável no celular.
+  for(const file of ['demo-vista-hotel.html','demo-motor-forma.html']){
+    await page.goto(base+file);
+    const control=page.locator('.nav-toggle');
+    await control.click();
+    ok(await control.getAttribute('aria-expanded')==='true','Menu abre no celular em '+file);
+    await page.keyboard.press('Escape');
+    ok(await control.getAttribute('aria-expanded')==='false','Menu fecha via teclado em '+file);
+  }
   // Auditoria visual efetiva: HTML HTTP 200 não significa que o browser decodificou fotos.
   for(const filename of ['demo-aurea-joias.html','demo-essencia-cosmeticos.html']){
     await page.goto(base+filename);
