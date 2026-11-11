@@ -3,10 +3,10 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.resolve(__dirname,'..');
 const read=p=>fs.readFileSync(path.join(root,p),'utf8');
-test('Os vinte e dois conceitos têm CTA de referência sem alterar o Studio',()=>{
+test('Os vinte e quatro conceitos têm CTA de referência sem alterar o Studio',()=>{
  const html=read('portfolio.html');
- assert.equal((html.match(/<article class="project" data-category=/g)||[]).length,22);
- assert.equal((html.match(/data-project-brief/g)||[]).length,22);
+ assert.equal((html.match(/<article class="project" data-category=/g)||[]).length,24);
+ assert.equal((html.match(/data-project-brief/g)||[]).length,24);
  assert.match(html,/id="project-brief-dialog"/);
  assert.match(html,/id="brief-email"/);
  assert.match(html,/id="brief-preview"/);
