@@ -66,7 +66,7 @@ function drawCatalog(){
 }
 $('#dialog-close').addEventListener('click',()=>dialog.close());
 dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
-$('#detail-select').addEventListener('click',()=>{if(!current)return;choose(current.id);dialog.close();$('#estudio').scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});});
+$('#detail-select').addEventListener('click',()=>{if(!current)return;const id=current.id;dialog.close();choose(id);$('#estudio').scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});});
 if(kind==='jewelry'){
  const wrap=$('#gift-wrap'),oc=$('#gift-occasion'),budget=$('#gift-budget');
  function drawFinder(){
