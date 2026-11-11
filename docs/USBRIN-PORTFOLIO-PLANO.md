@@ -184,7 +184,7 @@ A partir do 9º projeto, os conceitos devem demonstrar lógica funcional real, a
 - Fotografias são de ambientação e **não representam necessariamente cada produto ou um fornecedor**; não apresentar como catálogo de estoque real.
 
 ### Fotografia, licenças e restrições
-- Imagens de terceiros licenciadas via Unsplash em URLs `images.unsplash.com`. Licença: https://unsplash.com/license; uso comercial permitido com limitações relevantes sobre marcas, pessoas e obras retratadas.
+- Fotografias licenciadas de ambientação via Unsplash (`images.unsplash.com`) e Pexels (`images.pexels.com`). Licenças: https://unsplash.com/license e https://www.pexels.com/pt-br/licenca/. Uso comercial permitido com limitações para marcas, pessoas e obras retratadas.
 - Dependência de CDN externa: para operação comercial real, substituir por acervo autorizado do próprio cliente, otimizar e hospedar imagens sob domínio/CDN controlado.
 - Exibir créditos de fonte e aviso sobre natureza ilustrativa. **Não simular avaliações, depoimentos, estoque, pedidos, descontos falsos ou integrações operacionais.**
 
