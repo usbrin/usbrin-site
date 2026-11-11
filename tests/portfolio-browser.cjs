@@ -24,7 +24,7 @@ const server=http.createServer((req,res)=>{
   page.on('pageerror',e=>errors.push(e.message));
   page.on('response',resp=>{if(resp.url().startsWith('http://127.0.0.1:'+port)&&resp.status()>=400)errors.push(resp.status()+' '+resp.url());});
   const base='http://127.0.0.1:'+port+'/';
-  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html','demo-pilar.html','demo-nimbo.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-volta-tech.html','demo-casa-patta.html','demo-lume-moda.html','demo-base-norte.html','demo-aurea-joias.html','demo-essencia-cosmeticos.html','demo-vista-hotel.html','demo-motor-forma.html','demo-vereda-planejados.html','demo-sorriso-claro.html'];
+  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html','demo-pilar.html','demo-nimbo.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-volta-tech.html','demo-casa-patta.html','demo-lume-moda.html','demo-base-norte.html','demo-aurea-joias.html','demo-essencia-cosmeticos.html','demo-vista-hotel.html','demo-motor-forma.html','demo-vereda-planejados.html','demo-sorriso-claro.html','demo-cafe-orvalho.html','demo-helena-luz.html'];
   for(const width of [360,390,768,1366]){
     await page.setViewportSize({width,height:850});
     for(const filename of demos){
@@ -40,7 +40,7 @@ const server=http.createServer((req,res)=>{
           ok(await page.locator('a[href^="studio.html"]').count()>=1,'Projeto inicial encaminha para Studio em '+filename);
         }else{
           ok(await page.locator('img').count()>=(filename.includes('contabil')||filename.includes('automacao')?1:2),'Arte em '+filename);
-          ok(await page.locator('[data-demo], [data-suite], [data-shop], [data-retail], [data-atelier], [data-experience], [data-specialist]').count()===1,'Id da demonstração em '+filename);
+          ok(await page.locator('[data-demo], [data-suite], [data-shop], [data-retail], [data-atelier], [data-experience], [data-specialist], [data-editorial]').count()===1,'Id da demonstração em '+filename);
         }
       }
     }
@@ -52,7 +52,7 @@ const server=http.createServer((req,res)=>{
   await page.locator('#portfolio-search').fill('Vitta');
   ok(await page.locator('.project:not([hidden])').count()===1,'Busca de projeto');
   await page.locator('#portfolio-search').fill('');
-  ok(await page.locator('.project:not([hidden])').count()===22,'Galeria mantém 22 projetos');
+  ok(await page.locator('.project:not([hidden])').count()===24,'Galeria mantém 24 projetos');
 
   await page.goto(base+'demo-restaurante.html');
   await page.locator('[data-menu-filter="sobremesas"]').click();
@@ -377,10 +377,60 @@ const server=http.createServer((req,res)=>{
   ok((await page.locator('#dental-message').innerText()).includes('Não inclua dados de saúde'),'Aviso de privacidade visível no resumo');
   await page.locator('#dental-reset').click();
   ok((await page.locator('#dental-message').innerText()).includes('Clínica geral'),'Reset da mensagem funciona');
+
+  // Café Orvalho — seleção ilustrativa, filtro e combinações sem compra real.
+  await page.goto(base+'demo-cafe-orvalho.html');
+  ok(await page.locator('.item-card').count()===9,'Orvalho apresenta nove referências fotográficas');
+  await page.locator('[data-category="Cafés"]').click();
+  ok(await page.locator('.item-card').count()===3,'Orvalho filtra cafés');
+  await page.locator('#cafe-search').fill('latte');
+  ok(await page.locator('.item-card').count()===1,'Orvalho filtra texto sem recarregar');
+  await page.locator('#cafe-search').fill('');
+  await page.locator('[data-category="Todos"]').click();
+  await page.locator('[data-moment="pausa"]').click();
+  await page.locator('#cafe-add-moment').click();
+  ok((await page.locator('#cafe-selected-count').innerText()).includes('2 de 4'),'Sugestão adiciona dois itens');
+  ok(!(await page.locator('#cafe-copy').isDisabled()),'Resumo pode ser copiado quando há seleção');
+  await page.locator('[data-add="o02"]').click();
+  await page.locator('[data-add="o03"]').click();
+  ok((await page.locator('#cafe-selected-count').innerText()).includes('4 de 4'),'Seleção permite quatro produtos diferentes');
+  await page.locator('[data-add="o04"]').click();
+  ok((await page.locator('#cafe-selected-count').innerText()).includes('4 de 4'),'Quinto item é impedido');
+  await page.locator('.selected-row .qty-control').first().fill('2');
+  await page.locator('.selected-row .qty-control').first().dispatchEvent('change');
+  ok((await page.locator('#cafe-total').innerText()).includes('82,00'),'Alteração de quantidade recalcula seleção');
+  await page.locator('#cafe-clear').click();
+  ok((await page.locator('#cafe-total').innerText()).includes('0,00'),'Cafeteria limpa seleção sem pedido');
+  ok(await page.locator('#cafe-copy').isDisabled(),'Sem itens, resumo fica indisponível');
+
+  // Helena Luz — galeria navegável via teclado e briefing de sessão sem agendamento.
+  await page.goto(base+'demo-helena-luz.html');
+  ok(await page.locator('.photo-tile').count()===8,'Helena mostra oito fotos editoriais de referência');
+  await page.locator('[data-category="Retratos"]').click();
+  ok(await page.locator('.photo-tile').count()===3,'Helena filtra retratos');
+  await page.locator('.photo-tile').first().click();
+  ok(await page.locator('#helena-dialog').isVisible(),'Galeria abre lightbox');
+  ok((await page.locator('#helena-modal-title').innerText()).includes('Luz de manhã'),'Lightbox mostra título da referência');
+  await page.locator('#helena-next').click();
+  ok((await page.locator('#helena-modal-title').innerText()).includes('Entre luzes'),'Lightbox avança para próxima imagem');
+  await page.keyboard.press('ArrowLeft');
+  ok((await page.locator('#helena-modal-title').innerText()).includes('Luz de manhã'),'Seta do teclado navega para imagem anterior');
+  await page.keyboard.press('Escape');
+  ok(await page.locator('#helena-dialog').isHidden(),'Escape fecha a foto ampliada');
+  await page.locator('[data-category="Editorial"]').click();
+  ok(await page.locator('.photo-tile').count()===3,'Helena filtra ensaios editoriais');
+  await page.locator('#session-type').selectOption('editorial');
+  await page.locator('#session-place').selectOption('externo');
+  await page.locator('#session-delivery').selectOption('selecao');
+  await page.locator('#session-notes').fill('Retratos externos com luz natural.');
+  ok((await page.locator('#session-preview').innerText()).includes('Editorial de marca'),'Briefing informa o tipo correto');
+  ok((await page.locator('#session-preview').innerText()).includes('Retratos externos com luz natural'),'Briefing contém observação digitada');
+  await page.locator('#session-reset').click();
+  ok((await page.locator('#session-preview').innerText()).includes('Retrato pessoal'),'Reset restaura tipo original');
   // Portfolio 2.0: o interesse por cada projeto vira um briefing contextual copiável.
   await page.goto(base+'portfolio.html');
   const firstBrief=page.locator('[data-project-brief]').first();
-  ok(await page.locator('[data-project-brief]').count()===22,'Vinte e dois CTAs de briefing contextual');
+  ok(await page.locator('[data-project-brief]').count()===24,'Vinte e quatro CTAs de briefing contextual');
   await firstBrief.click();
   ok(await page.locator('#project-brief-dialog').isVisible(),'Briefing abre ao escolher referência');
   ok((await page.locator('#brief-project-name').innerText()).includes('Brasa & Mesa'),'Nome correto da referência comercial');
@@ -463,6 +513,15 @@ const server=http.createServer((req,res)=>{
     await page.keyboard.press('Escape');
     ok(await control.getAttribute('aria-expanded')==='false','Menu fecha via teclado em '+file);
   }
+
+  for(const file of ['demo-cafe-orvalho.html','demo-helena-luz.html']){
+    await page.goto(base+file);
+    const toggle=page.locator('.menu-toggle');
+    await toggle.click();
+    ok(await toggle.getAttribute('aria-expanded')==='true','Menu editorial abre no celular em '+file);
+    await page.keyboard.press('Escape');
+    ok(await toggle.getAttribute('aria-expanded')==='false','Menu editorial fecha por Escape em '+file);
+  }
   // Os novos sites devem manter navegação utilizável no celular.
   for(const file of ['demo-vista-hotel.html','demo-motor-forma.html']){
     await page.goto(base+file);
@@ -514,6 +573,20 @@ const server=http.createServer((req,res)=>{
     console.log('PORTFOLIO_SPECIALIST_MEDIA',file,JSON.stringify({total:media.length,loaded:media.filter(m=>m.ok).length,failed:media.filter(m=>!m.ok)}));
     ok(media.length>=minimum,'Fotos de apresentação e catálogo em '+file);
     ok(media.every(m=>m.ok),'Fotos decodificadas em '+file+': '+JSON.stringify(media.filter(m=>!m.ok)));
+  }
+
+  // Novos projetos fotográficos: validar decodificação no Chrome, não apenas status HTTP.
+  for(const [file,minImages] of [['demo-cafe-orvalho.html',12],['demo-helena-luz.html',10]]){
+    await page.goto(base+file);
+    const images=await page.evaluate(async()=>{
+      const pics=[...document.images].filter(img=>/^https:\/\/images\.unsplash\.com\/photo-/.test(img.currentSrc||img.src));
+      pics.forEach(img=>img.loading='eager');
+      await Promise.race([Promise.allSettled(pics.map(img=>img.decode())),new Promise(resolve=>setTimeout(resolve,14500))]);
+      return pics.map(img=>({ok:img.naturalWidth>0,url:(img.currentSrc||img.src).split('?')[0]}));
+    });
+    console.log('PORTFOLIO_EDITORIAL_MEDIA',file,JSON.stringify({total:images.length,loaded:images.filter(x=>x.ok).length,failed:images.filter(x=>!x.ok)}));
+    ok(images.length>=minImages,'Galeria de fotos de referência presente em '+file);
+    ok(images.every(x=>x.ok),'Fotos externas decodificadas em '+file+': '+JSON.stringify(images.filter(x=>!x.ok)));
   }
   const dir=path.join(root,'tests','artifacts');fs.mkdirSync(dir,{recursive:true});
   for(const width of [390,1366]){
