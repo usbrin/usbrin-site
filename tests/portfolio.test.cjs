@@ -1,0 +1,79 @@
+'use strict';
+/* USBRIN Portfolio — regressão estrutural sem dependências externas.
+   Executar: node --test tests/portfolio.test.cjs */
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+
+const root = path.resolve(__dirname, '..');
+const read = name => fs.readFileSync(path.join(root, name), 'utf8');
+const portfolio = read('portfolio.html');
+const build = read('scripts/build-static.cjs');
+const titles = [...portfolio.matchAll(/<article class="project"[^>]*data-category="([^"]+)"[^>]*>/g)];
+const cards = [...portfolio.matchAll(/<article class="project"[^>]*data-category="([^"]+)"[^>]*>\s*<a class="preview" href="([^"]+)"/g)];
+const filters = new Set([...portfolio.matchAll(/data-filter="([^"]+)"/g)].map(x => x[1]));
+const imagePaths = [...portfolio.matchAll(/<img[^>]+src="([^"]+)"[^>]*>/g)].map(x => x[1]);
+const localFiles = new Set(fs.readdirSync(root));
+
+test('O portfólio lista exatamente oito projetos disponíveis nesta fase', () => {
+  assert.equal(titles.length, 8);
+  assert.equal(cards.length, 8);
+  assert.equal(new Set(cards.map(x => x[2])).size, 8);
+});
+
+test('Todos os projetos publicados têm arquivo, rótulo de autoria e noindex', () => {
+  for (const [, category, url] of cards) {
+    assert.ok(filters.has(category), 'Categoria sem filtro: ' + category);
+    assert.ok(localFiles.has(url), 'Demonstração ausente: ' + url);
+    assert.ok(build.includes("'" + url + "'"), 'Fora do build estático: ' + url);
+    const page = read(url);
+    assert.match(page, /<meta name="robots" content="noindex,\s*follow"/i, url);
+    assert.match(page, /projeto (autoral|demonstrativo)/i, url);
+  }
+});
+
+test('As prévias visuais e o CSS/JS do portfólio existem', () => {
+  for (const name of [...imagePaths, 'css/portfolio.css', 'js/portfolio.js']) {
+    assert.ok(fs.existsSync(path.join(root, name)), 'Asset ausente: ' + name);
+  }
+});
+
+test('Links de navegação por âncora nas novas páginas são válidos', () => {
+  for (const name of ['portfolio.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html']) {
+    const html = read(name);
+    const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(x => x[1]);
+    assert.equal(ids.length, new Set(ids).size, 'IDs repetidos em ' + name);
+    const links = [...html.matchAll(/href="#([^"]+)"/g)].map(x => x[1]);
+    for (const id of links) assert.ok(ids.includes(id), 'Âncora #' + id + ' não existe em ' + name);
+  }
+});
+
+test('Scripts do portfólio são sintaticamente válidos', () => {
+  new vm.Script(read('js/portfolio.js'), {filename:'portfolio.js'});
+  for (const name of ['demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html']) {
+    const html = read(name);
+    for (const [, js] of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
+      new vm.Script(js, {filename:name});
+    }
+  }
+});
+
+test('A meta de cinquenta é apenas plano: inventário numerado e sem links fantasmas', () => {
+  const doc = read('docs/USBRIN-PORTFOLIO-PLANO.md');
+  const ids = [...doc.matchAll(/^\| (\d+) \|/gm)].map(x=>Number(x[1]));
+  assert.equal(ids.length, 50);
+  assert.deepEqual(ids, Array.from({length:50},(_,i)=>i+1));
+  assert.match(doc, /planejado/);
+  assert.match(portfolio, /projetos são publicados gradualmente/);
+});
+
+test('Studio, parceiros e estrutura comercial permanecem na entrega', () => {
+  for(const name of ['index.html','studio.html','parceiros.html','js/studio.js','js/studio-pricing.js']){
+    assert.ok(fs.existsSync(path.join(root,name)), 'Arquivo preexistente ausente: '+name);
+  }
+  assert.match(read('index.html'), /href="studio.html"/);
+  assert.match(build, /'studio.html'/);
+  assert.match(build, /'parceiros.html'/);
+});
