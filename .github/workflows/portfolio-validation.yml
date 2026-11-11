@@ -16,6 +16,7 @@ on:
       - 'css/demo-nimbo.css'
       - 'css/demo-suite.css'
       - 'css/demo-commerce.css'
+      - 'css/demo-retail.css'
       - 'js/portfolio.js'
       - 'js/demo-portfolio.js'
       - 'js/portfolio-engine.js'
@@ -25,12 +26,15 @@ on:
       - 'js/demo-suite.js'
       - 'js/portfolio-commerce.js'
       - 'js/demo-commerce.js'
+      - 'js/portfolio-retail.js'
+      - 'js/demo-retail.js'
       - 'docs/USBRIN-PORTFOLIO-PLANO.md'
       - 'scripts/build-static.cjs'
       - 'tests/portfolio.test.cjs'
       - 'tests/portfolio-pro.test.cjs'
       - 'tests/portfolio-suite.test.cjs'
       - 'tests/portfolio-commerce.test.cjs'
+      - 'tests/portfolio-retail.test.cjs'
       - 'tests/portfolio-browser.cjs'
       - 'package.json'
       - '.github/workflows/portfolio-validation.yml'
@@ -58,6 +62,9 @@ jobs:
           node --check js/portfolio-commerce.js
           node --check js/demo-commerce.js
           node --check tests/portfolio-commerce.test.cjs
+          node --check js/portfolio-retail.js
+          node --check js/demo-retail.js
+          node --check tests/portfolio-retail.test.cjs
           node --check tests/portfolio-pro.test.cjs
           node --check tests/portfolio-browser.cjs
           node --check tests/portfolio.test.cjs
@@ -67,6 +74,7 @@ jobs:
           node --test tests/portfolio-pro.test.cjs
           node --test tests/portfolio-suite.test.cjs
           node --test tests/portfolio-commerce.test.cjs
+          node --test tests/portfolio-retail.test.cjs
       - name: Regressão do USBRIN Studio
         run: npm run test:pricing
       - name: Validar pacote estático
@@ -82,6 +90,8 @@ jobs:
           test -f dist/demo-nexo-automacao.html
           test -f dist/demo-volta-tech.html
           test -f dist/demo-casa-patta.html
+          test -f dist/demo-lume-moda.html
+          test -f dist/demo-base-norte.html
           test -f dist/demo-atelier.html
           test -f dist/demo-fluxo.html
           test -f dist/demo-flor-raiz.html
@@ -97,6 +107,9 @@ jobs:
           test -f dist/css/demo-nimbo.css
           test -f dist/css/demo-suite.css
           test -f dist/css/demo-commerce.css
+          test -f dist/css/demo-retail.css
+          test -f dist/js/portfolio-retail.js
+          test -f dist/js/demo-retail.js
           test -f dist/js/portfolio-commerce.js
           test -f dist/js/demo-commerce.js
           test -f dist/js/portfolio-suite.js
