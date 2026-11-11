@@ -24,7 +24,7 @@ const server=http.createServer((req,res)=>{
   page.on('pageerror',e=>errors.push(e.message));
   page.on('response',resp=>{if(resp.url().startsWith('http://127.0.0.1:'+port)&&resp.status()>=400)errors.push(resp.status()+' '+resp.url());});
   const base='http://127.0.0.1:'+port+'/';
-  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html','demo-pilar.html','demo-nimbo.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-volta-tech.html','demo-casa-patta.html','demo-lume-moda.html','demo-base-norte.html','demo-aurea-joias.html','demo-essencia-cosmeticos.html','demo-vista-hotel.html','demo-motor-forma.html'];
+  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html','demo-pilar.html','demo-nimbo.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-volta-tech.html','demo-casa-patta.html','demo-lume-moda.html','demo-base-norte.html','demo-aurea-joias.html','demo-essencia-cosmeticos.html','demo-vista-hotel.html','demo-motor-forma.html','demo-vereda-planejados.html','demo-sorriso-claro.html'];
   for(const width of [360,390,768,1366]){
     await page.setViewportSize({width,height:850});
     for(const filename of demos){
@@ -40,7 +40,7 @@ const server=http.createServer((req,res)=>{
           ok(await page.locator('a[href^="studio.html"]').count()>=1,'Projeto inicial encaminha para Studio em '+filename);
         }else{
           ok(await page.locator('img').count()>=(filename.includes('contabil')||filename.includes('automacao')?1:2),'Arte em '+filename);
-          ok(await page.locator('[data-demo], [data-suite], [data-shop], [data-retail], [data-atelier], [data-experience]').count()===1,'Id da demonstração em '+filename);
+          ok(await page.locator('[data-demo], [data-suite], [data-shop], [data-retail], [data-atelier], [data-experience], [data-specialist]').count()===1,'Id da demonstração em '+filename);
         }
       }
     }
@@ -52,7 +52,7 @@ const server=http.createServer((req,res)=>{
   await page.locator('#portfolio-search').fill('Vitta');
   ok(await page.locator('.project:not([hidden])').count()===1,'Busca de projeto');
   await page.locator('#portfolio-search').fill('');
-  ok(await page.locator('.project:not([hidden])').count()===20,'Galeria mantém 20 projetos');
+  ok(await page.locator('.project:not([hidden])').count()===22,'Galeria mantém 22 projetos');
 
   await page.goto(base+'demo-restaurante.html');
   await page.locator('[data-menu-filter="sobremesas"]').click();
@@ -341,10 +341,46 @@ const server=http.createServer((req,res)=>{
   await page.locator('[data-card-service="express"]').click();
   ok((await page.locator('#auto-package-title').innerText()).includes('Essencial'),'Botão do serviço preenche configurador');
 
+
+  // Vereda Planejados — opções, medidas hipotéticas e geração local de briefing.
+  await page.goto(base+'demo-vereda-planejados.html');
+  ok(await page.locator('.vereda-room').count()===3,'Vereda mostra três ambientes fotográficos');
+  await page.locator('[data-room="closet"]').click();
+  ok((await page.locator('#vereda-summary-room').innerText()).includes('Closet'),'Vereda muda o ambiente de referência');
+  await page.locator('[data-finish="grafite"]').click();
+  ok((await page.locator('#vereda-summary-finish').innerText()).includes('Grafite'),'Acabamento ilustrativo atualizado');
+  await page.locator('[data-layout="l"]').click();
+  await page.locator('#vereda-width').fill('4.4');
+  await page.locator('#vereda-height').fill('2.7');
+  await page.locator('#vereda-notes').fill('Quero armazenamento funcional com acabamento discreto.');
+  ok((await page.locator('#vereda-dimensions').innerText()).includes('4,4 m'),'Dimensão aproximada é formatada');
+  ok((await page.locator('#vereda-summary-detail').innerText()).includes('duas paredes'),'Opção de layout altera resumo');
+  await page.locator('#vereda-width').fill('0.3');
+  ok(await page.locator('#vereda-error').isVisible(),'Vereda valida medida fora dos limites');
+  ok(await page.locator('#vereda-copy').isDisabled(),'Vereda impede cópia de medida inválida');
+  await page.locator('#vereda-width').fill('4.4');
+  ok(await page.locator('#vereda-error').isHidden(),'Vereda revalida medida corrigida');
+  await page.locator('#vereda-reset').click();
+  ok((await page.locator('#vereda-summary-room').innerText()).includes('Cozinha'),'Vereda reseta ambiente');
+  ok((await page.locator('#vereda-summary-finish').innerText()).includes('Madeira'),'Vereda reseta acabamento');
+
+  // Sorriso Claro — navegação institucional sem anamnese ou dados médicos.
+  await page.goto(base+'demo-sorriso-claro.html');
+  ok(await page.locator('.specialty-card').count()===4,'Sorriso Claro mostra quatro áreas conceituais');
+  await page.locator('[data-specialty="ortodontia"]').click();
+  ok(await page.locator('#dental-specialty').inputValue()==='ortodontia','Escolher área prepara mensagem');
+  ok((await page.locator('#dental-message').innerText()).includes('Ortodontia'),'Mensagem institucional acompanha especialidade');
+  await page.locator('#dental-topic').selectOption('avaliacao');
+  await page.locator('#dental-shift').selectOption('tarde');
+  ok((await page.locator('#dental-message').innerText()).includes('Saber como solicitar uma avaliação'),'Tema de contato atualizado');
+  ok((await page.locator('#dental-message').innerText()).includes('tarde'),'Preferência de horário atualizada');
+  ok((await page.locator('#dental-message').innerText()).includes('Não inclua dados de saúde'),'Aviso de privacidade visível no resumo');
+  await page.locator('#dental-reset').click();
+  ok((await page.locator('#dental-message').innerText()).includes('Clínica geral'),'Reset da mensagem funciona');
   // Portfolio 2.0: o interesse por cada projeto vira um briefing contextual copiável.
   await page.goto(base+'portfolio.html');
   const firstBrief=page.locator('[data-project-brief]').first();
-  ok(await page.locator('[data-project-brief]').count()===20,'Vinte CTAs de briefing contextual');
+  ok(await page.locator('[data-project-brief]').count()===22,'Vinte e dois CTAs de briefing contextual');
   await firstBrief.click();
   ok(await page.locator('#project-brief-dialog').isVisible(),'Briefing abre ao escolher referência');
   ok((await page.locator('#brief-project-name').innerText()).includes('Brasa & Mesa'),'Nome correto da referência comercial');
@@ -419,6 +455,14 @@ const server=http.createServer((req,res)=>{
   }
 
 
+  for(const file of ['demo-vereda-planejados.html','demo-sorriso-claro.html']){
+    await page.goto(base+file);
+    const control=page.locator('.nav-toggle');
+    await control.click();
+    ok(await control.getAttribute('aria-expanded')==='true','Menu abre no celular em '+file);
+    await page.keyboard.press('Escape');
+    ok(await control.getAttribute('aria-expanded')==='false','Menu fecha via teclado em '+file);
+  }
   // Os novos sites devem manter navegação utilizável no celular.
   for(const file of ['demo-vista-hotel.html','demo-motor-forma.html']){
     await page.goto(base+file);
@@ -458,6 +502,18 @@ const server=http.createServer((req,res)=>{
     console.log('PORTFOLIO_NEW_MEDIA',file,JSON.stringify({total:images.length,loaded:images.filter(x=>x.ok).length,failed:images.filter(x=>!x.ok)}));
     ok(images.length>=minimum,'Catálogo fotográfico completo em '+file);
     ok(images.every(img=>img.ok),'Fotografia não decodificada em '+file+': '+JSON.stringify(images.filter(img=>!img.ok)));
+  }
+  for(const [file,minimum] of [['demo-vereda-planejados.html',7],['demo-sorriso-claro.html',6]]){
+    await page.goto(base+file);
+    const media=await page.evaluate(async()=>{
+      const list=[...document.images].filter(img=>/^https:\/\/images\.unsplash\.com\/photo-/.test(img.currentSrc||img.src));
+      list.forEach(img=>img.loading='eager');
+      await Promise.race([Promise.allSettled(list.map(img=>img.decode())),new Promise(resolve=>setTimeout(resolve,14000))]);
+      return list.map(img=>({ok:img.naturalWidth>0,url:(img.currentSrc||img.src).split('?')[0]}));
+    });
+    console.log('PORTFOLIO_SPECIALIST_MEDIA',file,JSON.stringify({total:media.length,loaded:media.filter(m=>m.ok).length,failed:media.filter(m=>!m.ok)}));
+    ok(media.length>=minimum,'Fotos de apresentação e catálogo em '+file);
+    ok(media.every(m=>m.ok),'Fotos decodificadas em '+file+': '+JSON.stringify(media.filter(m=>!m.ok)));
   }
   const dir=path.join(root,'tests','artifacts');fs.mkdirSync(dir,{recursive:true});
   for(const width of [390,1366]){
