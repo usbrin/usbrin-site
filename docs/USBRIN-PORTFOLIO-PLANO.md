@@ -73,7 +73,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 | 30 | Nimbo Móveis | Móveis | planejado | Busca por ambientes e catálogo |
 | 31 | Pet Ninho | Pet shop | planejado | Produtos, serviços e cuidados |
 | 32 | TecnoHub | Eletrônicos | planejado | Filtros e comparações demonstrativas |
-| 33 | Flor & Raiz | Floricultura | planejado | Presentes e coleções florais |
+| 33 | Flor & Raiz | Floricultura | novo | Presentes e coleções florais |
 | 34 | Construbase | Materiais de construção | planejado | Categorias e solicitações de cotação |
 
 ### Educação (4)
@@ -81,7 +81,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 | Nº | Projeto autoral | Modelo de negócio | Situação nesta fase | Experiência diferencial |
 |---:|---|---|---|---|
 | 35 | Escola Trilhas | Escola | planejado | Proposta pedagógica e inscrições |
-| 36 | Ponte Idiomas | Idiomas | planejado | Trilhas de aprendizagem |
+| 36 | Ponte Idiomas | Idiomas | novo | Trilhas de aprendizagem |
 | 37 | Ofício Técnico | Cursos técnicos | planejado | Grade curricular e modalidades |
 | 38 | Aulas Prisma | Cursos online | planejado | Programas e comunidade |
 
@@ -122,6 +122,6 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 6. Transparência: marca e dados conceituais; não inventar clientes, avaliações ou números de desempenho reais.
 7. Rastreável: registrar revisão visual e regressão antes de promoção de preview para produção.
 
-**Nesta etapa:** 4 demonstrações legadas disponíveis e 2 novas experiências em branch de preview. As quatro legadas ainda devem passar por auditoria visual antes de serem consideradas no padrão final de excelência.
+**Nesta etapa:** 4 demonstrações legadas disponíveis e 4 novas experiências em branch de preview. As quatro legadas ainda devem passar por auditoria visual antes de serem consideradas no padrão final de excelência.
 
 **Meta comercial a observar após lançamento:** visitas por categoria, cliques em "Explorar site", cliques em "Quero algo assim", solicitações de proposta e conversões qualificadas. Sem fingir que há dados antes de instrumentar mensuração consentida.
