@@ -8,11 +8,14 @@ on:
       - 'portfolio.html'
       - 'demo-*.html'
       - 'assets/preview-*'
+      - 'assets/portfolio-*'
       - 'css/portfolio.css'
       - 'js/portfolio.js'
+      - 'js/demo-portfolio.js'
       - 'docs/USBRIN-PORTFOLIO-PLANO.md'
       - 'scripts/build-static.cjs'
       - 'tests/portfolio.test.cjs'
+      - 'tests/portfolio-browser.cjs'
       - 'package.json'
       - '.github/workflows/portfolio-validation.yml'
 permissions:
@@ -29,6 +32,7 @@ jobs:
       - name: Verificar sintaxe do projeto
         run: |
           node --check js/portfolio.js
+          node --check js/demo-portfolio.js
           node --check tests/portfolio.test.cjs
       - name: Testar integridade do portfólio
         run: npm run test:portfolio
@@ -47,6 +51,35 @@ jobs:
           test -f dist/demo-ponte-idiomas.html
           test -f dist/assets/preview-flor-raiz.svg
           test -f dist/assets/preview-ponte-idiomas.svg
+          test -f dist/assets/portfolio-vitta.svg
+          test -f dist/assets/portfolio-prime.svg
+          test -f dist/js/demo-portfolio.js
           test -f dist/js/portfolio.js
           test -f dist/css/portfolio.css
           test ! -f dist/tests/portfolio.test.cjs
+
+  browser:
+    needs: portfolio
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar Chromium de teste
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Testar responsividade, filtros, simulações e diálogos
+        run: |
+          export CHROMIUM_PATH="$(node -e "process.stdout.write(require('playwright').chromium.executablePath())")"
+          node tests/portfolio-browser.cjs
+      - name: Guardar capturas do portfólio
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: usbrin-portfolio-ux-capturas
+          path: tests/artifacts/portfolio-*.png
+          if-no-files-found: warn
+          retention-days: 7
