@@ -5,8 +5,8 @@
 'use strict';
 const photo=id=>'https://images.unsplash.com/'+id+'?auto=format&fit=crop&w=1250&q=78';
 const rooms=Object.freeze([
- Object.freeze({id:'cozinha',name:'Cozinha',subtitle:'Funcionalidade e matéria em equilíbrio.',photo:photo('photo-1600585154340-be6161a56a0c'),secondary:photo('photo-1600607687920-4e2a09cf159d'),highlights:['Organização inteligente','Acabamentos resistentes','Integração de ambientes']}),
- Object.freeze({id:'closet',name:'Closet',subtitle:'Cada detalhe pensado para a rotina.',photo:photo('photo-1558997519-83ea9252edf8'),secondary:photo('photo-1615874694520-474822394e73'),highlights:['Setorização pessoal','Iluminação funcional','Aproveitamento do espaço']}),
+ Object.freeze({id:'cozinha',name:'Cozinha',subtitle:'Funcionalidade e matéria em equilíbrio.',photo:photo('photo-1764526624453-db32c24eca55'),secondary:photo('photo-1600607687920-4e2a09cf159d'),highlights:['Organização inteligente','Acabamentos resistentes','Integração de ambientes']}),
+ Object.freeze({id:'closet',name:'Closet',subtitle:'Cada detalhe pensado para a rotina.',photo:photo('photo-1791140842017-ff731195de5c'),secondary:photo('photo-1615874694520-474822394e73'),highlights:['Setorização pessoal','Iluminação funcional','Aproveitamento do espaço']}),
  Object.freeze({id:'estar',name:'Sala de estar',subtitle:'Arquitetura que acolhe diferentes momentos.',photo:photo('photo-1600607687939-ce8a6c25118c'),secondary:photo('photo-1600566753190-17f0baa2a6c3'),highlights:['Painéis integrados','Volumes discretos','Materiais harmônicos']})
 ]);
 const finishes=Object.freeze([
