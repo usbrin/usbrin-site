@@ -251,3 +251,33 @@ A partir do 9º projeto, os conceitos devem demonstrar lógica funcional real, a
 - Ajustado o teste para solicitar imagens lazy antes da captura; registramos o número de imagens carregadas nas duas novas vitrines, evitando declarar qualidade fotográfica sem inspeção.
 - Referências de produtos da Áurea e Essência substituídas por fotos licenciadas relacionadas aos itens; não afirmamos correspondência com SKU, metal, fórmula, marca ou composição reais.
 - Sem liberação para produção; aprovação visual final ainda exigida, e a dependência de CDN externa é um risco conhecido.
+
+
+## USBRIN Portfolio 2.0 — refinamento antes de criar novos conceitos (11/11/2026)
+
+### Decisão estratégica
+Congelar provisoriamente a expansão da coleção em **18/50**, priorizando qualidade real, confiabilidade de mídia, leitura comercial e conversão. Os 32 conceitos restantes permanecem planejados; não há promessa de publicação sem validação.
+
+### Sprint 1 — intenção comercial qualificada (implementada em preview)
+- Os 18 cartões receberam CTA contextual `data-project-brief`. Um diálogo acessível apresenta a referência selecionada e deixa o visitante escolher um objetivo e adicionar observações opcionais.
+- `js/portfolio-brief.js` gera um resumo editável indiretamente pelos campos, com ações de cópia e `mailto:` pré-preenchido para contato. O botão alternativo abre o USBRIN Studio.
+- **Privacidade:** nenhum dado é salvo, transmitido por API ou enviado sem ação voluntária do visitante. O navegador pode transferir conteúdo ao aplicativo de e-mail escolhido apenas quando o visitante aciona a opção.
+- Não foi integrado backend, CRM, sistema de métricas, cookies ou armazenamento. Não afirmar que leads foram captados/medidos sem uma fonte de dados.
+- `tests/portfolio-brief.test.cjs` e cenários de `tests/portfolio-browser.cjs` validam conteúdo dinâmico, mudança de referência, opções, acessibilidade móvel e preparação do e-mail.
+
+### Sprint 1 — mídia fotográfica e confiabilidade
+- `scripts/audit-portfolio-media.cjs` verifica respostas HTTP e MIME das referências fotográficas das experiências mais recentes e apresenta relatório em CI. A auditoria inicial encontrou **19/19 URLs acessíveis** no ambiente de execução; isto não substitui visualização em navegador.
+- Teste de navegador adicional força decodificação das imagens das experiências Áurea e Essência e exige que hero, catálogo e editorial renderizem; falhas precisam ser tratadas antes de produção.
+- As imagens são referências fotográficas, não prova do produto anunciado; fazer auditoria visual de correspondência editorial e substituir o que for incoerente.
+- Para operação de e-commerce real, trocar por fotos autorizadas dos SKUs exatos, revisar direitos de imagem e preferir hospedagem/CDN controlada. Não baixar ou redistribuir coleções de fotos em massa.
+- Caso haja falha remota, não ocultar nem considerar aprovado apenas pelo HTTP 200: documentar os endereços quebrados e priorizar uma solução de imagens estáveis.
+
+### Critérios de aceite e priorização
+1. **Estabilidade:** nenhuma imagem quebrada nos projetos prioritários; nenhum erro de script; versões mobile sem rolagem horizontal inesperada.
+2. **Comercial:** CTA por referência abre briefing coerente e oferece caminho inequívoco de contato e Studio, sem prometer integração automática.
+3. **Transparência:** demonstrações continuam identificadas como autorais; sem preços, reviews, estoques ou transações reais indevidamente representados.
+4. **Validação de demanda:** antes de retomar os 32 projetos, expor 3–5 referências a potenciais clientes reais, registrar objeções e medir interesse qualitativo. Após aprovação de produção e política de privacidade, avaliar mensuração agregada de visitas, aberturas, intenções e propostas.
+5. **Custo:** reutilizar páginas, serviços e CI existentes; nenhuma contratação ou serviço pago foi incluído.
+6. **Governança:** preview isolado e PR em rascunho até revisão visual, testes, autorização específica e plano de reversão.
+
+**Próximo lote de melhoria:** fotos fielmente relacionadas a cada modelo, layouts menos repetidos, páginas de produto completas e um experimento comercial para verificar demanda, **antes** de iniciar novos conceitos.
