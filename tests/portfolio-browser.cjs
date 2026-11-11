@@ -24,7 +24,7 @@ const server=http.createServer((req,res)=>{
   page.on('pageerror',e=>errors.push(e.message));
   page.on('response',resp=>{if(resp.url().startsWith('http://127.0.0.1:'+port)&&resp.status()>=400)errors.push(resp.status()+' '+resp.url());});
   const base='http://127.0.0.1:'+port+'/';
-  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-pilar.html','demo-nimbo.html'];
+  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-pilar.html','demo-nimbo.html','demo-norte-contabil.html','demo-nexo-automacao.html'];
   for(const width of [360,390,768,1366]){
     await page.setViewportSize({width,height:850});
     for(const filename of demos){
@@ -34,8 +34,8 @@ const server=http.createServer((req,res)=>{
         'Rolagem horizontal '+filename+' width='+width+' atual='+await page.evaluate(()=>document.documentElement.scrollWidth));
       ok(await page.locator('a[href="portfolio.html"]').count()>=1||filename==='portfolio.html','Retorno Portfolio em '+filename);
       if(filename.startsWith('demo-')){
-        ok(await page.locator('img').count()>=2,'Arte em '+filename);
-        ok(await page.locator('[data-demo]').count()===1,'Id da demonstração em '+filename);
+        ok(await page.locator('img').count()>=(filename.includes('contabil')||filename.includes('automacao')?1:2),'Arte em '+filename);
+        ok(await page.locator('[data-demo], [data-suite]').count()===1,'Id da demonstração em '+filename);
       }
     }
   }
@@ -46,7 +46,7 @@ const server=http.createServer((req,res)=>{
   await page.locator('#portfolio-search').fill('Vitta');
   ok(await page.locator('.project:not([hidden])').count()===1,'Busca de projeto');
   await page.locator('#portfolio-search').fill('');
-  ok(await page.locator('.project:not([hidden])').count()===10,'Galeria mantém 10 projetos');
+  ok(await page.locator('.project:not([hidden])').count()===12,'Galeria mantém 12 projetos');
 
   await page.goto(base+'demo-restaurante.html');
   await page.locator('[data-menu-filter="sobremesas"]').click();
@@ -125,6 +125,35 @@ const server=http.createServer((req,res)=>{
   ok((await page.locator('#preview-summary').innerText()).includes('Nogueira'),'Resumo de acabamento atualizado');
   await page.locator('#config-product').selectOption('n03');
   ok((await page.locator('#preview-model').innerText()).includes('ORLA'),'Modelo escolhido sincronizado');
+
+  // Norte: cenários e indicadores financeiros com campos editáveis.
+  await page.goto(base+'demo-norte-contabil.html');
+  ok((await page.locator('#finance-result').innerText()).includes('11.860'),'Resultado inicial do cenário base');
+  await page.locator('[data-scenario="conservador"]').click();
+  ok((await page.locator('#finance-result').innerText()).includes('-1.180'),'Cenário conservador apresenta déficit ilustrativo');
+  await page.locator('#finance-revenue').fill('64000');
+  ok((await page.locator('#result-title').innerText()).includes('personalizado'),'Edição marca cenário personalizado');
+  await page.locator('#finance-variable').fill('150');
+  ok(await page.locator('#finance-validation').isVisible(),'Valores inválidos indicados');
+  await page.locator('#finance-form .reset-btn').click();
+  ok(await page.locator('#finance-validation').isHidden(),'Restauração limpa validação');
+  ok((await page.locator('#finance-result').innerText()).includes('11.860'),'Reset retorna ao cenário base');
+
+  // Nexo: configuração funcional e simulação passo a passo.
+  await page.goto(base+'demo-nexo-automacao.html');
+  ok(await page.locator('#flow-nodes li').count()===4,'Fluxo apresenta quatro etapas');
+  await page.locator('#flow-template').selectOption('operacoes');
+  await page.locator('#flow-channel').selectOption('interno');
+  await page.locator('[data-priority="alta"]').click();
+  await page.locator('#flow-delay').evaluate(el=>{el.value='20';el.dispatchEvent(new Event('input',{bubbles:true}));});
+  ok((await page.locator('#flow-heading').innerText()).includes('Operações'),'Modelo de fluxo atualizado');
+  ok((await page.locator('#flow-nodes li').nth(1).innerText()).includes('Alta'),'Prioridade aplicada');
+  for(let n=0;n<4;n++)await page.locator('#flow-next').click();
+  ok(await page.locator('#flow-next').isDisabled(),'Execução finaliza após quatro etapas');
+  ok(await page.locator('#flow-nodes li.completed').count()===4,'Todas as etapas marcadas como executadas');
+  ok(await page.locator('#flow-log li').count()===4,'Log registra quatro eventos');
+  await page.locator('#flow-restart').click();
+  ok(await page.locator('#flow-nodes li.completed').count()===0,'Reinício limpa execução');
   await page.setViewportSize({width:390,height:844});
   for(const filename of ['demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html']){
     await page.goto(base+filename);
@@ -140,6 +169,14 @@ const server=http.createServer((req,res)=>{
     ok(await control.getAttribute('aria-expanded')==='true','Menu novo abre em '+filename);
     await page.keyboard.press('Escape');
     ok(await control.getAttribute('aria-expanded')==='false','Menu novo fecha por Escape em '+filename);
+  }
+  for(const filename of ['demo-norte-contabil.html','demo-nexo-automacao.html']){
+    await page.goto(base+filename);
+    const control=page.locator('.menu-toggle');
+    await control.click();
+    ok(await control.getAttribute('aria-expanded')==='true','Menu B2B abre em '+filename);
+    await page.keyboard.press('Escape');
+    ok(await control.getAttribute('aria-expanded')==='false','Menu B2B fecha com Escape em '+filename);
   }
   const dir=path.join(root,'tests','artifacts');fs.mkdirSync(dir,{recursive:true});
   for(const width of [390,1366]){
