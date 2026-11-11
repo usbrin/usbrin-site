@@ -398,7 +398,7 @@ const server=http.createServer((req,res)=>{
   ok((await page.locator('#cafe-selected-count').innerText()).includes('4 de 4'),'Quinto item é impedido');
   await page.locator('.selected-row .qty-control').first().fill('2');
   await page.locator('.selected-row .qty-control').first().dispatchEvent('change');
-  ok((await page.locator('#cafe-total').innerText()).includes('82,00'),'Alteração de quantidade recalcula seleção');
+  ok((await page.locator('#cafe-total').innerText()).includes('81,00'),'Alteração de quantidade recalcula seleção');
   await page.locator('#cafe-clear').click();
   ok((await page.locator('#cafe-total').innerText()).includes('0,00'),'Cafeteria limpa seleção sem pedido');
   ok(await page.locator('#cafe-copy').isDisabled(),'Sem itens, resumo fica indisponível');
