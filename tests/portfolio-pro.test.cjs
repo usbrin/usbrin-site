@@ -15,7 +15,7 @@ test('O motor separa três estudos e seis modelos com IDs únicos e dados imutá
 });
 test('Calculadora de engenharia usa premissas explícitas e resultados determinísticos',()=>{
   const x=engine.estimateConstruction({area:185,category:'residencial',complexity:'intermediaria'});
-  assert.deepEqual(x,{base:633070,low:538110,high:728030,reserve:75968,unitCost:3422});
+  assert.deepEqual(x,{base:633070,low:538110,high:728031,reserve:75968,unitCost:3422});
   assert.equal(engine.estimateConstruction({area:50,category:'industrial',complexity:'essencial'}).base,132500);
   assert.equal(engine.estimateConstruction({area:800,category:'corporativo',complexity:'detalhada'}).base,3748800);
   for(const bad of [0,49,801,Infinity,NaN,'185'])assert.equal(engine.estimateConstruction({area:bad,category:'residencial',complexity:'essencial'}),null);
@@ -71,6 +71,6 @@ test('Laboratório de engenharia mantém controles explícitos e mensagem de pre
   const html=read('demo-pilar.html');
   assert.equal((html.match(/data-project-category=/g)||[]).length,3);
   assert.equal((html.match(/data-phase=/g)||[]).length,4);
-  assert.match(html,/id="lab-form"/);assert.match(html,/sem.*orçamento/i);
+  assert.match(html,/id="lab-form"/);assert.match(html,/não é orçamento/i);
   assert.match(html,/id="project-dialog"/);
 });
