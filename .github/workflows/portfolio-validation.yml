@@ -19,6 +19,7 @@ on:
       - 'css/demo-retail.css'
       - 'css/demo-atelier.css'
       - 'js/portfolio.js'
+      - 'js/portfolio-brief.js'
       - 'js/demo-portfolio.js'
       - 'js/portfolio-engine.js'
       - 'js/demo-pilar.js'
@@ -34,6 +35,8 @@ on:
       - 'docs/USBRIN-PORTFOLIO-PLANO.md'
       - 'scripts/build-static.cjs'
       - 'tests/portfolio.test.cjs'
+      - 'tests/portfolio-brief.test.cjs'
+      - 'scripts/audit-portfolio-media.cjs'
       - 'tests/portfolio-pro.test.cjs'
       - 'tests/portfolio-suite.test.cjs'
       - 'tests/portfolio-commerce.test.cjs'
@@ -56,6 +59,9 @@ jobs:
       - name: Verificar sintaxe do projeto
         run: |
           node --check js/portfolio.js
+          node --check js/portfolio-brief.js
+          node --check tests/portfolio-brief.test.cjs
+          node --check scripts/audit-portfolio-media.cjs
           node --check js/demo-portfolio.js
           node --check js/portfolio-engine.js
           node --check js/demo-pilar.js
@@ -78,11 +84,14 @@ jobs:
       - name: Testar integridade do portfólio
         run: |
           npm run test:portfolio
+          node --test tests/portfolio-brief.test.cjs
           node --test tests/portfolio-pro.test.cjs
           node --test tests/portfolio-suite.test.cjs
           node --test tests/portfolio-commerce.test.cjs
           node --test tests/portfolio-retail.test.cjs
           node --test tests/portfolio-atelier.test.cjs
+      - name: Auditar mídia fotográfica (diagnóstico informativo)
+        run: node scripts/audit-portfolio-media.cjs
       - name: Regressão do USBRIN Studio
         run: npm run test:pricing
       - name: Validar pacote estático
@@ -92,6 +101,7 @@ jobs:
           test -f dist/studio.html
           test -f dist/parceiros.html
           test -f dist/portfolio.html
+          test -f dist/js/portfolio-brief.js
           test -f dist/demo-pilar.html
           test -f dist/demo-nimbo.html
           test -f dist/demo-norte-contabil.html
