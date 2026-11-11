@@ -24,7 +24,7 @@ const server=http.createServer((req,res)=>{
   page.on('pageerror',e=>errors.push(e.message));
   page.on('response',resp=>{if(resp.url().startsWith('http://127.0.0.1:'+port)&&resp.status()>=400)errors.push(resp.status()+' '+resp.url());});
   const base='http://127.0.0.1:'+port+'/';
-  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-pilar.html','demo-nimbo.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-volta-tech.html','demo-casa-patta.html'];
+  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-pilar.html','demo-nimbo.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-volta-tech.html','demo-casa-patta.html','demo-lume-moda.html','demo-base-norte.html'];
   for(const width of [360,390,768,1366]){
     await page.setViewportSize({width,height:850});
     for(const filename of demos){
@@ -35,7 +35,7 @@ const server=http.createServer((req,res)=>{
       ok(await page.locator('a[href="portfolio.html"]').count()>=1||filename==='portfolio.html','Retorno Portfolio em '+filename);
       if(filename.startsWith('demo-')){
         ok(await page.locator('img').count()>=(filename.includes('contabil')||filename.includes('automacao')?1:2),'Arte em '+filename);
-        ok(await page.locator('[data-demo], [data-suite], [data-shop]').count()===1,'Id da demonstração em '+filename);
+        ok(await page.locator('[data-demo], [data-suite], [data-shop], [data-retail]').count()===1,'Id da demonstração em '+filename);
       }
     }
   }
@@ -46,7 +46,7 @@ const server=http.createServer((req,res)=>{
   await page.locator('#portfolio-search').fill('Vitta');
   ok(await page.locator('.project:not([hidden])').count()===1,'Busca de projeto');
   await page.locator('#portfolio-search').fill('');
-  ok(await page.locator('.project:not([hidden])').count()===14,'Galeria mantém 14 projetos');
+  ok(await page.locator('.project:not([hidden])').count()===16,'Galeria mantém 16 projetos');
 
   await page.goto(base+'demo-restaurante.html');
   await page.locator('[data-menu-filter="sobremesas"]').click();
@@ -203,6 +203,51 @@ const server=http.createServer((req,res)=>{
   ok((await page.locator('#cart-delivery').innerText()).includes('Grátis'),'Frete ilustrativo ao cruzar limite');
   await page.locator('[data-close-cart]').click();
 
+
+  // Lume Moda — busca e editor de looks com até três peças.
+  await page.goto(base+'demo-lume-moda.html');
+  ok(await page.locator('.product-card').count()===6,'Lume exibe seis produtos');
+  await page.locator('[data-category="Alfaiataria"]').click();
+  ok(await page.locator('.product-card').count()===2,'Lume filtra alfaiataria');
+  await page.locator('#retail-search').fill('Blazer');
+  ok(await page.locator('.product-card').count()===1,'Lume pesquisa peças');
+  await page.locator('#retail-search').fill('');
+  await page.locator('[data-category="Todos"]').click();
+  await page.locator('.product-card[data-product="f01"] .product-media').click();
+  ok(await page.locator('#retail-dialog').isVisible(),'Lume abre detalhe');
+  await page.locator('#detail-size').selectOption('G');
+  ok((await page.locator('#size-guide').innerText()).includes('108 cm'),'Guia de tamanho reage');
+  await page.locator('#detail-action').click();
+  ok((await page.locator('#look-count').innerText()).includes('1 de 3'),'Look recebe primeira peça');
+  await page.locator('[data-add="f02"]').click();
+  await page.locator('[data-add="f03"]').click();
+  ok((await page.locator('#look-count').innerText()).includes('3 de 3'),'Look recebe três peças');
+  const lookBefore=await page.locator('#look-total').innerText();
+  await page.locator('[data-add="f04"]').click();
+  ok((await page.locator('#look-total').innerText())===lookBefore,'Limite de três peças é respeitado');
+  await page.locator('#clear-look').click();
+  ok((await page.locator('#look-total').innerText()).includes('0,00'),'Limpeza do look zera valor');
+
+  // Base Norte — cálculo de revestimento, pintura e lista orientada a projeto.
+  await page.goto(base+'demo-base-norte.html');
+  ok(await page.locator('.product-card').count()===6,'Base Norte exibe seis materiais');
+  await page.locator('[data-category="Revestimentos"]').click();
+  ok(await page.locator('.product-card').count()===2,'Base Norte filtra revestimentos');
+  await page.locator('#retail-search').fill('Mineral');
+  ok(await page.locator('.product-card').count()===1,'Base Norte pesquisa material');
+  await page.locator('#retail-search').fill('');
+  await page.locator('[data-category="Todos"]').click();
+  ok((await page.locator('#floor-result').innerText()).includes('20 caixas'),'Cálculo de caixas informativo');
+  await page.locator('#apply-floor').click();
+  ok((await page.locator('#quote-total').innerText()).includes('3.316,00'),'Lista inclui revestimento em m²');
+  await page.locator('[data-tool="paint"]').click();
+  ok(await page.locator('#paint-tool').isVisible(),'Aba de pintura selecionada');
+  ok((await page.locator('#paint-result').innerText()).includes('9,6 litros'),'Cálculo de tinta correto');
+  await page.locator('#apply-paint').click();
+  ok((await page.locator('#quote-total').innerText()).includes('3.535,00'),'Lista combina materiais de categorias diferentes');
+  ok(!(await page.locator('#copy-quote').isDisabled()),'Resumo da cotação disponível para copiar');
+  await page.locator('#clear-quote').click();
+  ok((await page.locator('#quote-total').innerText()).includes('0,00'),'Lista de cotação reiniciada');
   await page.setViewportSize({width:390,height:844});
   for(const filename of ['demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html']){
     await page.goto(base+filename);
@@ -235,6 +280,14 @@ const server=http.createServer((req,res)=>{
     await page.keyboard.press('Escape');
     ok(await control.getAttribute('aria-expanded')==='false','Menu comércio fecha por Escape em '+filename);
     ok(await page.locator('[data-open-cart]').isVisible(),'Sacola acessível no celular em '+filename);
+  }
+  for(const filename of ['demo-lume-moda.html','demo-base-norte.html']){
+    await page.goto(base+filename);
+    const toggle=page.locator('.menu-toggle');
+    await toggle.click();
+    ok(await toggle.getAttribute('aria-expanded')==='true','Menu retail abre em '+filename);
+    await page.keyboard.press('Escape');
+    ok(await toggle.getAttribute('aria-expanded')==='false','Menu retail fecha por Escape em '+filename);
   }
   const dir=path.join(root,'tests','artifacts');fs.mkdirSync(dir,{recursive:true});
   for(const width of [390,1366]){
