@@ -179,7 +179,16 @@ const server=http.createServer((req,res)=>{
   ok(await page.locator('.button-disabled').isDisabled(),'Finalização real desativada na VOLTA');
   await page.locator('.cart-line .remove').click();
   ok(await page.locator('#cart-empty').isVisible(),'Remoção esvazia sacola');
-  await page.locator('[data-close-cart]').click();
+  console.log('CART_GEOMETRY',JSON.stringify(await page.evaluate(()=>{
+    const d=document.querySelector('#cart-dialog'),b=document.querySelector('[data-close-cart]');
+    const dr=d.getBoundingClientRect(),br=b.getBoundingClientRect();
+    const cx=br.left+br.width/2,cy=br.top+br.height/2;
+    const hit=document.elementFromPoint(cx,cy);
+    return {dialog:{x:dr.x,y:dr.y,w:dr.width,h:dr.height},button:{x:br.x,y:br.y,w:br.width,h:br.height},topElement:hit?.outerHTML?.slice(0,250),viewport:{w:innerWidth,h:innerHeight},dialogScroll:{top:d.scrollTop,left:d.scrollLeft},innerScroll:document.querySelector('#cart-dialog .dialog-inner')?.scrollTop};
+  })));
+  fs.mkdirSync(path.join(root,'tests','artifacts'),{recursive:true});
+  await page.screenshot({path:path.join(root,'tests','artifacts','portfolio-cart-debug.png')});
+  await page.locator('[data-close-cart]').click({timeout:3000});
 
   await page.goto(base+'demo-casa-patta.html');
   ok(await page.locator('.product-card').count()===6,'Casa Patta apresenta seis produtos');
