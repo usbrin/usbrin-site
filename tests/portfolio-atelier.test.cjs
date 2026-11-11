@@ -11,7 +11,7 @@ test('Joias e cosméticos têm seis referências distintas por segmento',()=>{
  assert.equal(api.catalog('jewelry','Todos','Colar').length,2);
  assert.equal(api.catalog('cosmetics','Todos','bruma').length,1);
  assert.equal(api.catalog('unknown').length,0);
- for(const product of [...api.jewelry,...api.cosmetics]){assert.ok(product.photo.startsWith('https://images.unsplash.com/photo-'));assert.ok(product.price>0);assert.ok(product.detail.length>25);}
+ for(const product of [...api.jewelry,...api.cosmetics]){assert.match(product.photo,/^https:\/\/images\.(unsplash\.com\/photo-|pexels\.com\/photos\/)/);assert.ok(product.price>0);assert.ok(product.detail.length>25);}
 });
 test('Curadoria organiza sugestões de presentes por orçamento e ocasião',()=>{
  const b=api.giftFinder('aniversario',50000);
