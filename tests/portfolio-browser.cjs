@@ -300,7 +300,35 @@ const server=http.createServer((req,res)=>{
   await page.locator('.product[data-product="c02"] .product-photo').click();
   ok(await page.locator('#atelier-dialog').isVisible(),'Ficha de cosmético abre');
   await page.locator('#dialog-close').click();
+
+  // Portfolio 2.0: o interesse por cada projeto vira um briefing contextual copiável.
+  await page.goto(base+'portfolio.html');
+  const firstBrief=page.locator('[data-project-brief]').first();
+  ok(await page.locator('[data-project-brief]').count()===18,'Dezoito CTAs de briefing contextual');
+  await firstBrief.click();
+  ok(await page.locator('#project-brief-dialog').isVisible(),'Briefing abre ao escolher referência');
+  ok((await page.locator('#brief-project-name').innerText()).includes('Brasa & Mesa'),'Nome correto da referência comercial');
+  ok((await page.locator('#brief-preview').innerText()).includes('Brasa & Mesa'),'Resumo inclui referência');
+  await page.locator('#brief-objective').selectOption('contatos');
+  await page.locator('#brief-notes').fill('Quero um site de restaurante com cardápio e contato por WhatsApp.');
+  ok((await page.locator('#brief-preview').innerText()).includes('cardápio e contato por WhatsApp'),'Resumo reage às informações opcionais');
+  const mailto=await page.locator('#brief-email').getAttribute('href');
+  ok(mailto.startsWith('mailto:usbrin.contato@gmail.com?'),'E-mail é preparado sem envio automático');
+  ok(mailto.includes(encodeURIComponent('Brasa & Mesa')),'E-mail inclui contexto do projeto');
+  await page.locator('#brief-close').click();
+  ok(await page.locator('#project-brief-dialog').isHidden(),'Modal fecha sem interferir nos filtros');
+  await page.locator('[data-filter="moda"]').click();
+  await page.locator('[data-project-brief]').last().click();
+  ok((await page.locator('#brief-project-name').innerText()).includes('Essência Cosméticos'),'Seleciona corretamente outra referência');
+  await page.keyboard.press('Escape');
+  ok(await page.locator('#project-brief-dialog').isHidden(),'Briefing fecha pelo teclado');
   await page.setViewportSize({width:390,height:844});
+  await page.goto(base+'portfolio.html');
+  await page.locator('[data-project-brief]').first().click();
+  ok(await page.locator('#project-brief-dialog').isVisible(),'Briefing acessível no celular');
+  const modalWidth=await page.locator('#project-brief-dialog').evaluate(el=>el.getBoundingClientRect().width);
+  ok(modalWidth<=390,'Briefing não ultrapassa a tela mobile');
+  await page.keyboard.press('Escape');
   for(const filename of ['demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html']){
     await page.goto(base+filename);
     const toggle=page.locator('.menu-toggle');
