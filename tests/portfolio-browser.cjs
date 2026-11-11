@@ -445,6 +445,20 @@ const server=http.createServer((req,res)=>{
     ok(media.length>=8,'Fotografias de hero, catálogo e editorial presentes em '+filename);
     ok(media.every(item=>item.loaded),'Imagens efetivamente decodificadas em '+filename+': '+JSON.stringify(media.filter(item=>!item.loaded)));
   }
+
+  // Imagens externas das novas experiências: validar decodificação no Chrome.
+  for(const [file,minimum] of [['demo-vista-hotel.html',6],['demo-motor-forma.html',3]]){
+    await page.goto(base+file);
+    const images=await page.evaluate(async()=>{
+      const list=[...document.images].filter(img=>/^https:\/\/images\.unsplash\.com\/photo-/.test(img.currentSrc||img.src));
+      list.forEach(img=>{img.loading='eager';});
+      await Promise.race([Promise.allSettled(list.map(img=>img.decode())),new Promise(resolve=>setTimeout(resolve,13000))]);
+      return list.map(img=>({ok:img.naturalWidth>0,url:(img.currentSrc||img.src).split('?')[0]}));
+    });
+    console.log('PORTFOLIO_NEW_MEDIA',file,JSON.stringify({total:images.length,loaded:images.filter(x=>x.ok).length,failed:images.filter(x=>!x.ok)}));
+    ok(images.length>=minimum,'Catálogo fotográfico completo em '+file);
+    ok(images.every(img=>img.ok),'Fotografia não decodificada em '+file+': '+JSON.stringify(images.filter(img=>!img.ok)));
+  }
   const dir=path.join(root,'tests','artifacts');fs.mkdirSync(dir,{recursive:true});
   for(const width of [390,1366]){
     await page.setViewportSize({width,height:width===390?844:900});
