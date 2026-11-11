@@ -47,7 +47,7 @@ const server=http.createServer((req,res)=>{
   }
   await page.setViewportSize({width:1366,height:900});
   await page.goto(base+'portfolio.html');await page.locator('[data-filter="construcao"]').click();
-  ok(await page.locator('.project:not([hidden])').count()===4,'Filtro construção na galeria');
+  ok(await page.locator('.project:not([hidden])').count()===5,'Filtro construção na galeria com Vereda Planejados');
   await page.locator('[data-filter="todos"]').click();
   await page.locator('#portfolio-search').fill('Vitta');
   ok(await page.locator('.project:not([hidden])').count()===1,'Busca de projeto');
