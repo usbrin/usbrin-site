@@ -383,7 +383,7 @@ const server=http.createServer((req,res)=>{
     await page.goto(base+filename);
     ok(await page.locator('.product').count()===6,'Catálogo fotográfico disponível em '+filename);
     const media=await page.evaluate(async ()=>{
-      const imgs=[...document.images].filter(img=>/^https?:/.test(img.src));
+      const imgs=[...document.images].filter(img=>/^https:\/\/images\.(?:unsplash|pexels)\.com\//.test(img.currentSrc||img.src));
       imgs.forEach(img=>{img.loading='eager';});
       await Promise.race([
         Promise.allSettled(imgs.map(img=>img.decode())),
