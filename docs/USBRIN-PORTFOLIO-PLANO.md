@@ -241,5 +241,13 @@ A partir do 9º projeto, os conceitos devem demonstrar lógica funcional real, a
 - `js/portfolio-atelier.js`: modelo puro de catálogo, filtro, curadoria, comparação e rotina sem dados pessoais.
 - `js/demo-atelier-market.js` e `css/demo-atelier.css`: interface responsiva especializada para duas marcas independentes.
 - `tests/portfolio-atelier.test.cjs`: teste de cálculos, limites, integridade e lógica. `tests/portfolio-browser.cjs`: cenários de interação e responsividade, inclusive navegação móvel.
-- Fonte de imagens: Unsplash, com identificação de natureza editorial. Para vender SKUs reais, exigir documentação e fotos autorizadas do produto exato.
+- Fontes fotográficas: Unsplash (https://unsplash.com/license) e Pexels (https://www.pexels.com/pt-br/licenca/), com identificação de natureza editorial. Dez referências de produto foram substituídas por fotografias mais correspondentes; fallback visual para falha de imagem remota. As imagens não representam necessariamente o SKU fictício. Para vender SKUs reais, exigir documentação e fotos autorizadas do produto exato.
 - **Estado:** 18 experiências conceituais no preview; 32 conceitos previstos restantes. Studio, produção, parceiros, USBRIN ID e integrações preservados.
+
+### Auditoria visual e fotografia (11/11/2026)
+
+- A execução Chromium com 18 projetos aprovou **428 verificações de UX** e gerou 30 capturas em 390 e 1366 px na primeira homologação.
+- A revisão visual apontou imagens de produto abaixo da dobra não carregadas no instante da captura; hipótese inclui carregamento lazy e indisponibilidade das URLs terceirizadas.
+- Ajustado o teste para solicitar imagens lazy antes da captura; registramos o número de imagens carregadas nas duas novas vitrines, evitando declarar qualidade fotográfica sem inspeção.
+- Referências de produtos da Áurea e Essência substituídas por fotos licenciadas relacionadas aos itens; não afirmamos correspondência com SKU, metal, fórmula, marca ou composição reais.
+- Sem liberação para produção; aprovação visual final ainda exigida, e a dependência de CDN externa é um risco conhecido.
