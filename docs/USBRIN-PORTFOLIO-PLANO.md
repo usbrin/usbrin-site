@@ -63,8 +63,8 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 | 25 | Lume Moda | Moda / e-commerce | novo · fotográfico | Look Studio, guia de medidas e catálogo editorial |
 | 26 | Salão Orla | Salão de beleza | planejado | Serviços, equipe e agendamento |
 | 27 | Barbearia Quadro | Barbearia | planejado | Pacotes e experiência urbana |
-| 28 | Áurea Joias | Joalheria | planejado | Produtos e storytelling de luxo |
-| 29 | Essência Cosméticos | Cosméticos | planejado | Coleções e categorias |
+| 28 | Áurea Joias | Joalheria | novo · fotográfico/premium | Curadoria de presentes e comparação ilustrativa |
+| 29 | Essência Cosméticos | Cosméticos | novo · fotográfico | Routine Studio cosmético sem diagnóstico |
 
 ### Comércio e catálogos (5)
 
@@ -122,7 +122,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 6. Transparência: marca e dados conceituais; não inventar clientes, avaliações ou números de desempenho reais.
 7. Rastreável: registrar revisão visual e regressão antes de promoção de preview para produção.
 
-**Nesta etapa:** 4 demonstrações legadas reformuladas e 12 experiências novas na branch de preview, totalizando 16 projetos navegáveis. As legadas receberam novas artes autorais, navegação móvel e interações específicas. Os testes automatizados de desktop/mobile em Chromium concluíram 118 verificações de UX e 10 capturas em 2026-11-11. Ainda é necessária revisão final em dispositivos reais e aprovação para publicação oficial.
+**Nesta etapa:** 4 demonstrações legadas reformuladas e 14 experiências novas na branch de preview, totalizando 18 projetos navegáveis. As legadas receberam novas artes autorais, navegação móvel e interações específicas. Os testes automatizados de desktop/mobile em Chromium concluíram 118 verificações de UX e 10 capturas em 2026-11-11. Ainda é necessária revisão final em dispositivos reais e aprovação para publicação oficial.
 
 **Meta comercial a observar após lançamento:** visitas por categoria, cliques em "Explorar site", cliques em "Quero algo assim", solicitações de proposta e conversões qualificadas. Sem fingir que há dados antes de instrumentar mensuração consentida.
 
@@ -157,7 +157,7 @@ A partir do 9º projeto, os conceitos devem demonstrar lógica funcional real, a
 - `tests/portfolio-browser.cjs` ampliado para interações dos dois conceitos, erros de script e responsividade.
 - CI e build allowlist incluem apenas arquivos estáticos do Portfolio, mantendo Studio, Store, parceiros e ID inalterados.
 
-**Estado:** dezesseis experiências navegáveis em preview; trinta e quatro conceitos restantes no planejamento. Não há autorização para promover à produção até testes e revisão final.
+**Estado:** dezoito experiências navegáveis em preview; trinta e dois conceitos restantes no planejamento. Não há autorização para promover à produção até testes e revisão final.
 
 ## Terceiro lote técnico — identidade corporativa e padrão USBRIN (11/11/2026)
 
@@ -167,7 +167,7 @@ A partir do 9º projeto, os conceitos devem demonstrar lógica funcional real, a
 - Três modelos de processos, escolha de origem ilustrativa, prioridade, intervalo e execução local de quatro etapas, com indicadores de progresso e registro de eventos.
 - Motor compartilhado puro `js/portfolio-suite.js`, teste independente `tests/portfolio-suite.test.cjs`, interface em `js/demo-suite.js` e estilos isolados em `css/demo-suite.css`.
 - Não há cadastro, conexão de sistemas, envio de e-mails, operação fiscal, processamento de pagamentos, persistência ou qualquer execução externa.
-- Os 16 projetos permanecem em preview protegido. A homologação inclui testes estruturais, simulações de navegador e regressão do Studio. Não publicar em produção antes de revisão humana e autorização expressa.
+- Os 18 projetos permanecem em preview protegido. A homologação inclui testes estruturais, simulações de navegador e regressão do Studio. Não publicar em produção antes de revisão humana e autorização expressa.
 
 ## Quarto lote — comércio e e-commerce com fotografia real (11/11/2026)
 
@@ -193,7 +193,7 @@ A partir do 9º projeto, os conceitos devem demonstrar lógica funcional real, a
 - `js/demo-commerce.js` fornece filtros, busca, opções, diálogos, sacola e cálculo de entrega local.
 - Sem conta, coleta de dados, persistência, integração de pagamento, pedido, checkout ou cálculo real de CEP. O botão de finalização fica desativado.
 - `tests/portfolio-commerce.test.cjs` valida catálogos e limites; `tests/portfolio-browser.cjs` exercita compra simulada e responsividade.
-- **Estado:** 16 projetos navegáveis em preview de Cloudflare; 34 conceitos a desenvolver. Publicação em produção continua condicionada a revisão e autorização.
+- **Estado:** 18 projetos navegáveis em preview de Cloudflare; 32 conceitos a desenvolver. Publicação em produção continua condicionada a revisão e autorização.
 
 ## Quinto lote — fotografia editorial e experiência útil (11/11/2026)
 
@@ -220,3 +220,26 @@ A partir do 9º projeto, os conceitos devem demonstrar lógica funcional real, a
 - Testes em `tests/portfolio-retail.test.cjs` e E2E ampliados em `tests/portfolio-browser.cjs` com mobile.
 - Fotos remotas Unsplash devem ser auditadas antes de qualquer apresentação comercial como produto real; para clientes reais, utilizar acervo próprio licenciado dos respectivos SKUs.
 - **Status:** PR de preview. Produção, Studio, Store, parceiros e autenticação USBRIN ID sem alterações.
+
+## Sexto lote — fotografia premium, curadoria e escolha informada (11/11/2026)
+
+**Padrão criativo mantido:** fotografia editorial real de referência, uso moderado de elementos gráficos, navegação limpa e características comerciais verificáveis; não inventar depoimentos, avaliações, estoque, metais preciosos, testes dermatológicos nem prazos de entrega.
+
+### Áurea Joias
+- Joalheria conceitual com identidade editorial sóbria, fotografias de acessórios e seis produtos hipotéticos.
+- Busca, filtros por categoria e ordenação. Curadoria de presentes por ocasião e teto de valor.
+- Seleção de até duas peças, comparação e uma única cobrança hipotética de embalagem opcional.
+- Composição de metais, joias e materiais das fotos não foi verificada. Não anunciar como ouro, prata, pedras genuínas ou estoque.
+
+### Essência Cosméticos
+- Conceito de beleza e cosméticos com identidade visual independente, foto editorial e seis produtos conceituais.
+- Catálogo por etapa Limpar/Hidratar/Finalizar, pesquisa e ordenação.
+- Routine Studio para escolher preferência de textura (leve ou cremosa), montar três etapas e substituir produtos manualmente.
+- Não realizar diagnóstico, recomendação dermatológica, alegação de eficácia, composição real ou aconselhamento sobre alergias.
+
+### Técnica e escopo
+- `js/portfolio-atelier.js`: modelo puro de catálogo, filtro, curadoria, comparação e rotina sem dados pessoais.
+- `js/demo-atelier-market.js` e `css/demo-atelier.css`: interface responsiva especializada para duas marcas independentes.
+- `tests/portfolio-atelier.test.cjs`: teste de cálculos, limites, integridade e lógica. `tests/portfolio-browser.cjs`: cenários de interação e responsividade, inclusive navegação móvel.
+- Fonte de imagens: Unsplash, com identificação de natureza editorial. Para vender SKUs reais, exigir documentação e fotos autorizadas do produto exato.
+- **Estado:** 18 experiências conceituais no preview; 32 conceitos previstos restantes. Studio, produção, parceiros, USBRIN ID e integrações preservados.
