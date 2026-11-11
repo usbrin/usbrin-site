@@ -19,13 +19,17 @@ Abra http://localhost:8000. O servidor não é necessário em produção; publiq
 - `css/style.css`: identidade e responsividade.
 - `js/main.js`: navegação, carrossel e interações visuais.
 - `js/quote.js`: validação, prévia e composição do link WhatsApp.
-- `portfolio.html`: catálogo autoral com busca, filtros por setor e dezesseis projetos navegáveis na branch de preview.
-- `demo-*.html`: dezesseis experiências conceituais: quatro demonstrações reformuladas e doze projetos novos, incluindo Pilar Engenharia e Nimbo Móveis.
+- `portfolio.html`: catálogo autoral com busca, filtros por setor e dezoito projetos navegáveis na branch de preview.
+- `demo-*.html`: dezoito experiências conceituais: quatro demonstrações reformuladas e quatorze projetos novos, incluindo Pilar Engenharia e Nimbo Móveis.
 - `js/demo-portfolio.js`: filtro de obras/imóveis, galeria, diálogo de detalhes e experiências demonstrativas; não envia, salva ou processa transações.
 - `js/portfolio-engine.js`: motor puro de cálculos e dados de produto, testável em Node.js e executado no navegador.
 - `js/portfolio-suite.js`: regras ilustrativas puras para cenários B2B e fluxos simulados, sem rede.
 - `js/portfolio-commerce.js`: regras puras de catálogo, busca, opções de produto, carrinho e entrega fictícia.
 - `js/portfolio-retail.js`: regras puras de looks, medidas ilustrativas, cálculo de materiais e lista de referência.
+- `js/portfolio-atelier.js`: catálogo, curadoria de presentes, comparador e rotina cosmética não clínica.
+- `demo-aurea-joias.html`: joalheria premium conceitual com seleção de presentes, busca e comparação.
+- `demo-essencia-cosmeticos.html`: cosméticos conceituais com catálogo e Routine Studio de textura e etapas.
+- `js/demo-atelier-market.js` e `css/demo-atelier.css`: interações e estilos editoriais separados por marca.
 - `demo-lume-moda.html`: e-commerce editorial de moda com fotografia, Look Studio e guia de medidas.
 - `demo-base-norte.html`: catálogo de materiais de construção, cálculo didático de quantidades e lista local.
 - `js/demo-retail.js` e `css/demo-retail.css`: interações e estilos responsivos dessas novas experiências.
@@ -64,4 +68,4 @@ Instale Playwright no ambiente de desenvolvimento e disponibilize Chromium. Exec
 
 Para o Studio: execute `npm run test:pricing` e, com Playwright/Chromium, `CHROMIUM_PATH=/caminho/do/chromium node tests/studio-browser.cjs`.
 
-Para o Portfolio: execute `npm run test:portfolio`, `node --test tests/portfolio-pro.test.cjs`, `node --test tests/portfolio-suite.test.cjs`, `node --test tests/portfolio-commerce.test.cjs`, `node --test tests/portfolio-retail.test.cjs` e `CHROMIUM_PATH=/caminho/do/chromium node tests/portfolio-browser.cjs`. O workflow `USBRIN Portfolio — validação` confere a integridade, as interações e a responsividade (360, 390, 768 e 1366 px), além da regressão do Studio. Ele produz capturas de tela para revisão visual. A documentação de operação e pré-lançamento está em `docs/USBRIN-STUDIO-OPERACAO.md`.
+Para o Portfolio: execute `npm run test:portfolio`, `node --test tests/portfolio-pro.test.cjs`, `node --test tests/portfolio-suite.test.cjs`, `node --test tests/portfolio-commerce.test.cjs`, `node --test tests/portfolio-retail.test.cjs`, `node --test tests/portfolio-atelier.test.cjs` e `CHROMIUM_PATH=/caminho/do/chromium node tests/portfolio-browser.cjs`. O workflow `USBRIN Portfolio — validação` confere a integridade, as interações e a responsividade (360, 390, 768 e 1366 px), além da regressão do Studio. Ele produz capturas de tela para revisão visual. A documentação de operação e pré-lançamento está em `docs/USBRIN-STUDIO-OPERACAO.md`.
