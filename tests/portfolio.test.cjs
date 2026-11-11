@@ -17,10 +17,10 @@ const filters = new Set([...portfolio.matchAll(/data-filter="([^"]+)"/g)].map(x 
 const imagePaths = [...portfolio.matchAll(/<img[^>]+src="([^"]+)"[^>]*>/g)].map(x => x[1]);
 const localFiles = new Set(fs.readdirSync(root));
 
-test('O portfólio lista exatamente doze projetos disponíveis nesta fase', () => {
-  assert.equal(titles.length, 12);
-  assert.equal(cards.length, 12);
-  assert.equal(new Set(cards.map(x => x[2])).size, 12);
+test('O portfólio lista exatamente quatorze projetos disponíveis nesta fase', () => {
+  assert.equal(titles.length, 14);
+  assert.equal(cards.length, 14);
+  assert.equal(new Set(cards.map(x => x[2])).size, 14);
 });
 
 test('Todos os projetos publicados têm arquivo, rótulo de autoria e noindex', () => {
@@ -36,12 +36,16 @@ test('Todos os projetos publicados têm arquivo, rótulo de autoria e noindex', 
 
 test('As prévias visuais e o CSS/JS do portfólio existem', () => {
   for (const name of [...imagePaths, 'css/portfolio.css', 'js/portfolio.js']) {
-    assert.ok(fs.existsSync(path.join(root, name)), 'Asset ausente: ' + name);
+    if(name.startsWith('https://')) {
+      assert.match(name, /^https:\/\/images\.unsplash\.com\/photo-/, 'Foto deve usar fonte aprovada: ' + name);
+    } else {
+      assert.ok(fs.existsSync(path.join(root, name)), 'Asset ausente: ' + name);
+    }
   }
 });
 
 test('Links de navegação por âncora nas novas páginas são válidos', () => {
-  for (const name of ['portfolio.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-pilar.html','demo-nimbo.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html']) {
+  for (const name of ['portfolio.html','demo-volta-tech.html','demo-casa-patta.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-pilar.html','demo-nimbo.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html']) {
     const html = read(name);
     const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(x => x[1]);
     assert.equal(ids.length, new Set(ids).size, 'IDs repetidos em ' + name);
@@ -53,7 +57,7 @@ test('Links de navegação por âncora nas novas páginas são válidos', () => 
 test('Scripts do portfólio são sintaticamente válidos', () => {
   new vm.Script(read('js/portfolio.js'), {filename:'portfolio.js'});
   new vm.Script(read('js/demo-portfolio.js'), {filename:'demo-portfolio.js'});
-  for (const name of ['demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-pilar.html','demo-nimbo.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html']) {
+  for (const name of ['demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-volta-tech.html','demo-casa-patta.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-pilar.html','demo-nimbo.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html']) {
     const html = read(name);
     for (const [, js] of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
       new vm.Script(js, {filename:name});
