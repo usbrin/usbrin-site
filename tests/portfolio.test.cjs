@@ -17,10 +17,10 @@ const filters = new Set([...portfolio.matchAll(/data-filter="([^"]+)"/g)].map(x 
 const imagePaths = [...portfolio.matchAll(/<img[^>]+src="([^"]+)"[^>]*>/g)].map(x => x[1]);
 const localFiles = new Set(fs.readdirSync(root));
 
-test('O portfólio lista exatamente oito projetos disponíveis nesta fase', () => {
-  assert.equal(titles.length, 8);
-  assert.equal(cards.length, 8);
-  assert.equal(new Set(cards.map(x => x[2])).size, 8);
+test('O portfólio lista exatamente dez projetos disponíveis nesta fase', () => {
+  assert.equal(titles.length, 10);
+  assert.equal(cards.length, 10);
+  assert.equal(new Set(cards.map(x => x[2])).size, 10);
 });
 
 test('Todos os projetos publicados têm arquivo, rótulo de autoria e noindex', () => {
@@ -41,7 +41,7 @@ test('As prévias visuais e o CSS/JS do portfólio existem', () => {
 });
 
 test('Links de navegação por âncora nas novas páginas são válidos', () => {
-  for (const name of ['portfolio.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html']) {
+  for (const name of ['portfolio.html','demo-pilar.html','demo-nimbo.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html']) {
     const html = read(name);
     const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(x => x[1]);
     assert.equal(ids.length, new Set(ids).size, 'IDs repetidos em ' + name);
@@ -53,7 +53,7 @@ test('Links de navegação por âncora nas novas páginas são válidos', () => 
 test('Scripts do portfólio são sintaticamente válidos', () => {
   new vm.Script(read('js/portfolio.js'), {filename:'portfolio.js'});
   new vm.Script(read('js/demo-portfolio.js'), {filename:'demo-portfolio.js'});
-  for (const name of ['demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html']) {
+  for (const name of ['demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-pilar.html','demo-nimbo.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html']) {
     const html = read(name);
     for (const [, js] of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
       new vm.Script(js, {filename:name});
