@@ -276,6 +276,7 @@ const server=http.createServer((req,res)=>{
   await page.locator('.product[data-product="j01"] .product-photo').click();
   ok(await page.locator('#atelier-dialog').isVisible(),'Ficha de joia abre');
   await page.locator('#detail-select').click();
+  ok(await page.locator('#atelier-dialog').isHidden(),'Ficha de joia fecha após seleção; erros: '+JSON.stringify(errors.slice(-4)));
   await page.locator('[data-choose="j02"]').click();
   ok((await page.locator('#comparison-total').innerText()).includes('688,00'),'Comparação soma peças');
   await page.locator('#gift-wrap').check();
