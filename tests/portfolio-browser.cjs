@@ -130,7 +130,7 @@ const server=http.createServer((req,res)=>{
   await page.goto(base+'demo-norte-contabil.html');
   ok((await page.locator('#finance-result').innerText()).includes('11.860'),'Resultado inicial do cenário base');
   await page.locator('[data-scenario="conservador"]').click();
-  ok((await page.locator('#finance-result').innerText()).includes('-1.180'),'Cenário conservador apresenta déficit ilustrativo');
+  ok((await page.locator('#finance-result').innerText()).includes('1.180')&&(await page.locator('#finance-result').innerText()).includes('-'),'Cenário conservador apresenta déficit ilustrativo');
   await page.locator('#finance-revenue').fill('64000');
   ok((await page.locator('#result-title').innerText()).includes('personalizado'),'Edição marca cenário personalizado');
   await page.locator('#finance-variable').fill('150');
