@@ -358,7 +358,7 @@ const server=http.createServer((req,res)=>{
   await page.locator('#brief-close').click();
   ok(await page.locator('#project-brief-dialog').isHidden(),'Modal fecha sem interferir nos filtros');
   await page.locator('[data-filter="moda"]').click();
-  await page.locator('[data-project-brief]').last().click();
+  await page.locator('.project[data-search*="Essência Cosméticos"] [data-project-brief]').click();
   ok((await page.locator('#brief-project-name').innerText()).includes('Essência Cosméticos'),'Seleciona corretamente outra referência');
   await page.keyboard.press('Escape');
   ok(await page.locator('#project-brief-dialog').isHidden(),'Briefing fecha pelo teclado');
