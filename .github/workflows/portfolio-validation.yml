@@ -1,0 +1,52 @@
+name: USBRIN Portfolio — validação
+on:
+  push:
+    branches:
+      - 'feature/usbrin-portfolio-*'
+  pull_request:
+    paths:
+      - 'portfolio.html'
+      - 'demo-*.html'
+      - 'assets/preview-*'
+      - 'css/portfolio.css'
+      - 'js/portfolio.js'
+      - 'docs/USBRIN-PORTFOLIO-PLANO.md'
+      - 'scripts/build-static.cjs'
+      - 'tests/portfolio.test.cjs'
+      - 'package.json'
+      - '.github/workflows/portfolio-validation.yml'
+permissions:
+  contents: read
+jobs:
+  portfolio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verificar sintaxe do projeto
+        run: |
+          node --check js/portfolio.js
+          node --check tests/portfolio.test.cjs
+      - name: Testar integridade do portfólio
+        run: npm run test:portfolio
+      - name: Regressão do USBRIN Studio
+        run: npm run test:pricing
+      - name: Validar pacote estático
+        run: |
+          npm run build
+          test -f dist/index.html
+          test -f dist/studio.html
+          test -f dist/parceiros.html
+          test -f dist/portfolio.html
+          test -f dist/demo-atelier.html
+          test -f dist/demo-fluxo.html
+          test -f dist/demo-flor-raiz.html
+          test -f dist/demo-ponte-idiomas.html
+          test -f dist/assets/preview-flor-raiz.svg
+          test -f dist/assets/preview-ponte-idiomas.svg
+          test -f dist/js/portfolio.js
+          test -f dist/css/portfolio.css
+          test ! -f dist/tests/portfolio.test.cjs
