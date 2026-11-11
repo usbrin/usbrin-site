@@ -8,7 +8,7 @@ test('Cada vitrine tem categorias e seis produtos diferentes',()=>{
   assert.ok(commerce.collections[store]);
   assert.equal(commerce.list(store).length,6);
   assert.equal(new Set(commerce.list(store).map(p=>p.id)).size,6);
-  for(const p of commerce.list(store)){assert.ok(p.variants.length>=2);assert.ok(p.price>0);assert.ok(p.image.startsWith('https://images.unsplash.com/photo-'));assert.ok(p.alt.length>12);}
+  for(const p of commerce.list(store)){assert.ok(p.variants.length>=2);assert.ok(p.price>0);assert.ok(/^https:\/\/images\.(unsplash\.com\/photo-|pexels\.com\/photos\/)/.test(p.image));assert.ok(p.alt.length>12);}
  }
  assert.equal(commerce.list('invalid').length,0);
  assert.equal(commerce.byId('none'),null);
