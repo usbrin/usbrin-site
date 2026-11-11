@@ -118,7 +118,7 @@ const server=http.createServer((req,res)=>{
 })().catch(e=>{console.error(e.stack||e);process.exitCode=1;});
 ),'Laboratório exibe faixa monetária');
   const prior=await page.locator('#lab-range').innerText();
-  await page.locator('#lab-area').fill('260');
+  await page.locator('#lab-area').evaluate(el=>{el.value='260';el.dispatchEvent(new Event('input',{bubbles:true}));});
   await page.locator('#lab-category').selectOption('industrial');
   ok(await page.locator('#lab-range').innerText()!==prior,'Estimativa atualiza ao alterar cenário');
   await page.locator('[data-project-filter="Industrial"]').click();
@@ -145,7 +145,7 @@ const server=http.createServer((req,res)=>{
   ok(await page.locator('.compare-item').count()===2,'Comparador mostra duas fichas');
   await page.locator('#compare-close').click();
   const furnitureBefore=await page.locator('#preview-cost').innerText();
-  await page.locator('#config-width').fill('280');
+  await page.locator('#config-width').evaluate(el=>{el.value='280';el.dispatchEvent(new Event('input',{bubbles:true}));});
   await page.locator('[data-finish="nogueira"]').click();
   await page.locator('#config-hardware').check();
   ok(await page.locator('#preview-cost').innerText()!==furnitureBefore,'Custo ilustrativo atualizado');
