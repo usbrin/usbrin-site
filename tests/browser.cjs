@@ -1,7 +1,7 @@
 const fs=require('fs'), path=require('path'),http=require('http');
 const {chromium}=require('playwright');
 const root=path.resolve(__dirname,'..');
-const server=http.createServer((req,res)=>{let f=path.join(root,decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(f.endsWith('/'))f+='index.html';try{const b=fs.readFileSync(f);res.setHeader('Content-Type',({'html':'text/html','js':'text/javascript','css':'text/css','webp':'image/webp','png':'image/png'})[f.split('.').pop()]||'application/octet-stream');res.end(b);}catch{res.statusCode=404;res.end('Not found');}});
+const server=http.createServer((req,res)=>{let f=path.join(root,decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(f.endsWith('/'))f+='index.html';try{const b=fs.readFileSync(f);res.setHeader('Content-Type',({'html':'text/html','js':'text/javascript','css':'text/css','webp':'image/webp','png':'image/png','svg':'image/svg+xml'})[f.split('.').pop()]||'application/octet-stream');res.end(b);}catch{res.statusCode=404;res.end('Not found');}});
 
 const assert=require('node:assert/strict');
 (async()=>{
