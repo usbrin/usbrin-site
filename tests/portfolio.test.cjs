@@ -20,7 +20,7 @@ const localFiles = new Set(fs.readdirSync(root));
 test('O portfólio lista exatamente vinte e cinco projetos disponíveis nesta fase', () => {
   assert.equal(titles.length, 25);
   assert.equal(cards.length, 25);
-  assert.equal(new Set(cards.map(x => x[2])).size, 24);
+  assert.equal(new Set(cards.map(x => x[2])).size, 25);
 });
 
 test('Todos os projetos publicados têm arquivo, rótulo de autoria e noindex', () => {
