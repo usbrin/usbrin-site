@@ -133,6 +133,18 @@ a:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-off
 .dish-img,.work-img,.prop-img{overflow:hidden}
 @media(max-width:720px){.hero-art{min-height:240px}.hero-art>img{min-height:240px}}
 
+
+/* Responsividade de títulos e cartões no limite de 320px. */
+@media(max-width:480px){
+ header .container{gap:8px}
+ header .logo{min-width:0;max-width:100%;font-size:15px;overflow-wrap:break-word}
+ header .container>.btn{font-size:11px;padding:9px 10px}
+ .demo-hero-grid>div{min-width:0}
+ .hero h1{overflow-wrap:break-word;font-size:clamp(37px,10vw,50px)}
+ .project-row{grid-template-columns:minmax(0,1fr);gap:13px}
+ .project-row>*{min-width:0}
+ .work-card,.work-body,.project-row{min-width:0}
+}
 </style>
 </head>
 <body data-demo="construtora">
