@@ -24,7 +24,7 @@ const server=http.createServer((req,res)=>{
   page.on('pageerror',e=>errors.push(e.message));
   page.on('response',resp=>{if(resp.url().startsWith('http://127.0.0.1:'+port)&&resp.status()>=400)errors.push(resp.status()+' '+resp.url());});
   const base='http://127.0.0.1:'+port+'/';
-  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html','demo-pilar.html','demo-nimbo.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-volta-tech.html','demo-casa-patta.html','demo-lume-moda.html','demo-base-norte.html','demo-aurea-joias.html','demo-essencia-cosmeticos.html','demo-vista-hotel.html','demo-motor-forma.html','demo-vereda-planejados.html','demo-sorriso-claro.html','demo-cafe-orvalho.html','demo-helena-luz.html','demo-forno-82.html','demo-salao-orla.html','demo-eixo-consultoria.html'];
+  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html','demo-pilar.html','demo-nimbo.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-volta-tech.html','demo-casa-patta.html','demo-lume-moda.html','demo-base-norte.html','demo-aurea-joias.html','demo-essencia-cosmeticos.html','demo-vista-hotel.html','demo-motor-forma.html','demo-vereda-planejados.html','demo-sorriso-claro.html','demo-cafe-orvalho.html','demo-helena-luz.html','demo-forno-82.html','demo-salao-orla.html','demo-eixo-consultoria.html','demo-doce-mira.html','demo-opala-cloud.html'];
   for(const width of [360,390,768,1366]){
     await page.setViewportSize({width,height:850});
     for(const filename of demos){
@@ -52,7 +52,7 @@ const server=http.createServer((req,res)=>{
   await page.locator('#portfolio-search').fill('Vitta');
   ok(await page.locator('.project:not([hidden])').count()===1,'Busca de projeto');
   await page.locator('#portfolio-search').fill('');
-  ok(await page.locator('.project:not([hidden])').count()===27,'Galeria mantém 27 projetos');
+  ok(await page.locator('.project:not([hidden])').count()===29,'Galeria mantém 29 projetos');
 
   // Forno 82: filtro, cálculo didático, seleção local e limpeza.
   await page.goto(base+'demo-forno-82.html');
@@ -113,6 +113,52 @@ const server=http.createServer((req,res)=>{
   ok(await page.locator('.nav-toggle').getAttribute('aria-expanded')==='true','Eixo abre menu móvel');
   await page.keyboard.press('Escape');
   ok(await page.locator('.nav-toggle').getAttribute('aria-expanded')==='false','Eixo fecha menu via teclado');
+  await page.setViewportSize({width:1366,height:900});
+
+  // Lote 28–29: interações reais de interface, dados inteiramente simulados.
+  await page.goto(base+'demo-doce-mira.html');
+  await page.locator('button[data-filter="bolos"]').click();
+  ok(await page.locator('.product:not([hidden])').count()===2,'Doce Mira filtra bolos');
+  await page.locator('#doce-search').fill('cacau');
+  ok(await page.locator('.product:not([hidden])').count()===1,'Doce Mira combina busca e filtro');
+  await page.locator('button[data-filter="todos"]').click();
+  await page.locator('#doce-search').fill('');
+  await page.locator('#doce-flavor').selectOption('chocolate');
+  await page.locator('#doce-size').selectOption('20');
+  await page.locator('#doce-finish').selectOption('floral');
+  await page.locator('#doce-extra').selectOption('frutas');
+  ok((await page.locator('#doce-price').innerText()).includes('182,00'),'Doce Mira estima configuração em centavos');
+  await page.locator('#doce-form button[type="submit"]').click();
+  ok(await page.locator('#doce-summary-lines .summary-line').count()===5,'Doce Mira prepara cinco campos');
+  ok(await page.locator('#doce-copy').isEnabled(),'Doce Mira permite cópia voluntária');
+  await page.locator('#doce-reset').click();
+  ok((await page.locator('#doce-price').innerText()).includes('89,00'),'Doce Mira restaura estimativa inicial');
+  ok(await page.locator('#doce-copy').isDisabled(),'Doce Mira limpa resumo após reset');
+  await page.setViewportSize({width:390,height:844});
+  await page.locator('.mobile-toggle').click();
+  ok(await page.locator('.mobile-toggle').getAttribute('aria-expanded')==='true','Doce Mira abre menu móvel');
+  await page.keyboard.press('Escape');
+  ok(await page.locator('.mobile-toggle').getAttribute('aria-expanded')==='false','Doce Mira fecha menu via Escape');
+  await page.setViewportSize({width:1366,height:900});
+
+  await page.goto(base+'demo-opala-cloud.html');
+  await page.locator('#opala-profile').selectOption('growth');
+  await page.locator('#opala-instances').fill('2');
+  await page.locator('#opala-storage').selectOption('200');
+  await page.locator('#opala-policy').selectOption('extra');
+  ok((await page.locator('#opala-estimate').innerText()).includes('661,00'),'Opala estima valor hipotético em centavos');
+  await page.locator('#opala-form button[type="submit"]').click();
+  ok((await page.locator('#opala-cpu').innerText()).includes('8 vCPU'),'Opala dimensiona CPU ilustrativa');
+  ok((await page.locator('#opala-ram').innerText()).includes('16 GB'),'Opala dimensiona RAM ilustrativa');
+  ok(await page.locator('#opala-copy').isEnabled(),'Opala permite copiar cenário');
+  await page.locator('#opala-reset').click();
+  ok((await page.locator('#opala-estimate').innerText()).includes('138,00'),'Opala restaura orçamento fictício inicial');
+  ok(await page.locator('#opala-copy').isDisabled(),'Opala bloqueia cópia de cenário antigo');
+  await page.setViewportSize({width:390,height:844});
+  await page.locator('.mobile-toggle').click();
+  ok(await page.locator('.mobile-toggle').getAttribute('aria-expanded')==='true','Opala abre menu móvel');
+  await page.keyboard.press('Escape');
+  ok(await page.locator('.mobile-toggle').getAttribute('aria-expanded')==='false','Opala fecha menu via Escape');
   await page.setViewportSize({width:1366,height:900});
 
   await page.goto(base+'demo-restaurante.html');
@@ -491,7 +537,7 @@ const server=http.createServer((req,res)=>{
   // Portfolio 2.0: o interesse por cada projeto vira um briefing contextual copiável.
   await page.goto(base+'portfolio.html');
   const firstBrief=page.locator('[data-project-brief]').first();
-  ok(await page.locator('[data-project-brief]').count()===27,'Vinte e sete CTAs de briefing contextual');
+  ok(await page.locator('[data-project-brief]').count()===29,'Vinte e nove CTAs de briefing contextual');
   await firstBrief.click();
   ok(await page.locator('#project-brief-dialog').isVisible(),'Briefing abre ao escolher referência');
   ok((await page.locator('#brief-project-name').innerText()).includes('Brasa & Mesa'),'Nome correto da referência comercial');
@@ -649,7 +695,7 @@ const server=http.createServer((req,res)=>{
     ok(images.length>=minImages,'Galeria de fotos de referência presente em '+file);
     ok(images.every(x=>x.ok),'Fotos externas decodificadas em '+file+': '+JSON.stringify(images.filter(x=>!x.ok)));
   }
-  for(const [file,minimum] of [['demo-salao-orla.html',4],['demo-eixo-consultoria.html',3]]){
+  for(const [file,minimum] of [['demo-salao-orla.html',4],['demo-eixo-consultoria.html',3],['demo-doce-mira.html',9],['demo-opala-cloud.html',2]]){
     await page.goto(base+file);
     const images=await page.evaluate(async()=>{
       const list=[...document.images].filter(img=>(img.currentSrc||img.src).startsWith('https://images.unsplash.com/photo-'));
