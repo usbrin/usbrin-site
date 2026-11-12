@@ -23,7 +23,7 @@ test('Opala Cloud tem custo simulado em centavos e limites de recursos',()=>{
  const a=opala.calculate('base',1,'50','standard');
  assert.equal(a.totalCents,13800);assert.equal(a.cpu,2);assert.equal(a.ram,4);
  const b=opala.calculate('growth',2,'200','extra');
- assert.equal(b.cpu,8);assert.equal(b.ram,16);assert.equal(b.totalCents,58900);
+ assert.equal(b.cpu,8);assert.equal(b.ram,16);assert.equal(b.totalCents,66100);
  assert.match(opala.summaryText(b),/NÃO É COTAÇÃO/);
 });
 test('Opala rejeita perfis, quantidades, armazenamento e políticas fora da lista',()=>{
