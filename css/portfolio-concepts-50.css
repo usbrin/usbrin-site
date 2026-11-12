@@ -37,3 +37,14 @@ body[data-layout=creative] h1,body[data-layout=creative] h2,body[data-layout=cre
     background:linear-gradient(0deg,rgba(6,15,16,.92) 0%,rgba(6,15,16,.78) 58%,rgba(6,15,16,.48) 100%);
   }
 }
+
+/* Mobile: acomodar nomes de marca longos sem provocar scroll horizontal. */
+@media(max-width:530px){
+ .header-inner{gap:10px}
+ .brand{font-size:19px;gap:8px;flex:1 1 auto;min-width:0;max-width:calc(100% - 75px)}
+ .brand-mark{width:28px;height:28px;flex:0 0 28px;font-size:18px}
+ .brand>span:last-child{min-width:0;overflow-wrap:anywhere}
+ .brand small{font-size:7px;letter-spacing:.1em}
+ .menu-trigger{flex:0 0 auto}
+ h1,h2,h3{overflow-wrap:break-word}
+}
