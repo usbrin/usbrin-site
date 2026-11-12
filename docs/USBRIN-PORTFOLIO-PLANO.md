@@ -40,7 +40,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 |---:|---|---|---|---|
 | 13 | Brasa & Mesa | Restaurante | revisado em preview | Cardápio e experiência gastronômica |
 | 14 | Café Orvalho | Cafeteria | novo · editorial/fotográfico | Cardápio filtrável e seleção ilustrativa por momento |
-| 15 | Forno 82 | Pizzaria | planejado | Cardápio visual e pedidos demonstrativos |
+| 15 | Forno 82 | Pizzaria | novo · fotográfico/interativo, em preview | Cardápio filtrável e seleção ilustrativa, sem pedidos reais |
 | 16 | Doce Mira | Confeitaria | planejado | Coleções e encomendas |
 | 17 | Casa Smash | Hamburgueria | planejado | Identidade ousada e cardápio |
 | 18 | Aurora Eventos | Buffet | planejado | Pacotes e eventos corporativos |
@@ -358,3 +358,15 @@ Congelar provisoriamente a expansão da coleção em **18/50**, priorizando qual
 - `portfolio.html` agora contém 24 projetos, incluindo filtro de criativos/fotografia; os 24 links de briefing contextual continuam vinculados ao Studio ou e-mail voluntário.
 
 **Governança:** tudo segue no preview protegido, PR #5 em rascunho; não promover a produção, alterar Studio/Store, APIs, autenticação ou Cloudflare Access sem autorização explícita. Continuar criando os 26 projetos pendentes com o padrão alto e reformular os antigos na etapa final.
+
+## Décimo lote — Forno 82, pizzaria editorial (11/11/2026)
+
+**Progresso de código:** 25/50 experiências desenvolvidas na branch de preview, 25 restantes. Esta anotação não é aprovação de publicação, nem declaração de homologação concluída.
+
+- **Identidade independente:** apresentação editorial com contraste grafite/creme/terracota, tipografia condensada, fotografias de referência e navegação responsiva.
+- **Catálogo conceitual:** seis sabores ilustrativos, busca sem acentos e filtros Clássicas, Especiais e Vegetarianas. Fotografias não certificam ingredientes ou produtos.
+- **Configuração:** sabor, tamanho, acabamento e quantidade entre 1 e 5 por inclusão; cálculo inteiramente local em centavos, com limites de até 8 pizzas ao todo.
+- **Seleção:** inclusão, remoção, soma, limpeza e cópia voluntária. Sem pedidos, preço real, estoque, reserva, pagamento, dados pessoais, integração, armazenamento ou transmissão.
+- **Arquivos:** `demo-forno-82.html`, `css/demo-forno-82.css`, `js/demo-forno-82.js` e `tests/portfolio-forno.test.cjs`. Cartão integrado à galeria e ao manifest de build.
+- **Validação necessária:** CI estrutural, navegador nas larguras 360/390/768/1366, decodificação de fotos externas, revisão editorial de imagens e teste manual antes de qualquer publicação oficial.
+- **Governança:** preservar a produção e os sistemas Studio, Store, Parceiros e USBRIN ID. PR #5 continua como rascunho.
