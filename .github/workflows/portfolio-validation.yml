@@ -22,6 +22,8 @@ on:
       - 'css/demo-specialists.css'
       - 'css/demo-editorial.css'
       - 'css/demo-forno-82.css'
+      - 'css/demo-salao-orla.css'
+      - 'css/demo-eixo-consultoria.css'
       - 'js/portfolio.js'
       - 'js/portfolio-brief.js'
       - 'js/demo-portfolio.js'
@@ -43,6 +45,8 @@ on:
       - 'js/portfolio-editorial.js'
       - 'js/demo-editorial.js'
       - 'js/demo-forno-82.js'
+      - 'js/demo-salao-orla.js'
+      - 'js/demo-eixo-consultoria.js'
       - 'docs/USBRIN-PORTFOLIO-PLANO.md'
       - 'scripts/build-static.cjs'
       - 'tests/portfolio.test.cjs'
@@ -57,6 +61,7 @@ on:
       - 'tests/portfolio-specialists.test.cjs'
       - 'tests/portfolio-editorial.test.cjs'
       - 'tests/portfolio-forno.test.cjs'
+      - 'tests/portfolio-lote-26-27.test.cjs'
       - 'tests/portfolio-browser.cjs'
       - 'package.json'
       - '.github/workflows/portfolio-validation.yml'
@@ -105,6 +110,9 @@ jobs:
           node --check js/portfolio-editorial.js
           node --check js/demo-editorial.js
           node --check js/demo-forno-82.js
+          node --check js/demo-salao-orla.js
+          node --check js/demo-eixo-consultoria.js
+          node --check tests/portfolio-lote-26-27.test.cjs
           node --check tests/portfolio-forno.test.cjs
           node --check tests/portfolio-editorial.test.cjs
           node --check tests/portfolio-pro.test.cjs
@@ -123,6 +131,7 @@ jobs:
           node --test tests/portfolio-specialists.test.cjs
           node --test tests/portfolio-editorial.test.cjs
           node --test tests/portfolio-forno.test.cjs
+          node --test tests/portfolio-lote-26-27.test.cjs
       - name: Auditar mídia fotográfica (diagnóstico informativo)
         run: node scripts/audit-portfolio-media.cjs
       - name: Regressão do USBRIN Studio
@@ -152,6 +161,12 @@ jobs:
           test -f dist/demo-cafe-orvalho.html
           test -f dist/demo-helena-luz.html
           test -f dist/demo-forno-82.html
+          test -f dist/demo-salao-orla.html
+          test -f dist/demo-eixo-consultoria.html
+          test -f dist/css/demo-salao-orla.css
+          test -f dist/css/demo-eixo-consultoria.css
+          test -f dist/js/demo-salao-orla.js
+          test -f dist/js/demo-eixo-consultoria.js
           test -f dist/css/demo-forno-82.css
           test -f dist/js/demo-forno-82.js
           test -f dist/demo-atelier.html
