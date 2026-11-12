@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const output = path.join(root, 'dist');
-const pages = ['index.html','studio.html','privacidade.html','parceiros.html','demo-clinica.html','demo-construtora.html','demo-imobiliaria.html','demo-restaurante.html','sitemap.xml','_headers'];
+const pages = ['index.html','studio.html','privacidade.html','parceiros.html','portfolio.html','demo-forno-82.html','demo-salao-orla.html','demo-eixo-consultoria.html','demo-doce-mira.html','demo-opala-cloud.html','demo-nara-derma.html','demo-pausa.html','demo-arena-movimento.html','demo-aflora-spa.html','demo-linho-interiores.html','demo-casa-smash.html','demo-aurora-eventos.html','demo-maia-advocacia.html','demo-brilho-casa.html','demo-luz-solar.html','demo-barbearia-quadro.html','demo-escola-trilhas.html','demo-oficio-tecnico.html','demo-aulas-prisma.html','demo-vertice-digital.html','demo-casa-rio.html','demo-rota-brasil.html','demo-selva-viva.html','demo-ponto-filmes.html','demo-grid-estudio.html','demo-harmonia-lab.html','demo-cafe-orvalho.html','demo-helena-luz.html','demo-vereda-planejados.html','demo-sorriso-claro.html','demo-vista-hotel.html','demo-motor-forma.html','demo-aurea-joias.html','demo-essencia-cosmeticos.html','demo-lume-moda.html','demo-base-norte.html','demo-volta-tech.html','demo-casa-patta.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-pilar.html','demo-nimbo.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html','demo-clinica.html','demo-construtora.html','demo-imobiliaria.html','demo-restaurante.html','sitemap.xml','_headers'];
 const folders = ['assets','css','js'];
 fs.rmSync(output, {recursive:true,force:true});
 fs.mkdirSync(output,{recursive:true});
@@ -30,7 +30,9 @@ function cloudflareProductionUrl(raw){
   }
   return url.origin+url.pathname;
 }
+const productionBranch='feature/usbrin-studio-mvp';
 const configuredURL=process.env.PUBLIC_SITE_URL ||
+  (process.env.CF_PAGES_BRANCH===productionBranch ? 'https://usbrin.com.br/' : '') ||
   cloudflareProductionUrl(process.env.CF_PAGES_URL) ||
   (process.env.VERCEL_PROJECT_PRODUCTION_URL ? 'https://'+process.env.VERCEL_PROJECT_PRODUCTION_URL : '');
 if(configuredURL){
@@ -53,7 +55,16 @@ if(configuredURL){
     const partners=fs.readFileSync(partnersPath,'utf8');
     fs.writeFileSync(partnersPath,partners.replace('<head>','<head><meta name="robots" content="noindex,nofollow">'));
   }
-  const urls=[base+'/',base+'/studio.html',base+'/parceiros'];
+  // O índice comercial é público apenas na branch de produção.
+  const portfolioPath=path.join(output,'portfolio.html');
+  let gallery=fs.readFileSync(portfolioPath,'utf8');
+  if(process.env.CF_PAGES_BRANCH===productionBranch)
+    gallery=gallery.replace('<meta name="robots" content="noindex,follow">','<meta name="robots" content="index,follow">');
+  else if(process.env.CF_PAGES_BRANCH)
+    gallery=gallery.replace('<meta name="robots" content="noindex,follow">','<meta name="robots" content="noindex,nofollow">');
+  fs.writeFileSync(portfolioPath,gallery);
+
+  const urls=[base+'/',base+'/studio.html',base+'/parceiros',base+'/portfolio.html'];
   const sitemap='<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+
     urls.map(x=>'<url><loc>'+x+'</loc></url>').join('\n')+'\n</urlset>\n';
   fs.writeFileSync(path.join(output,'sitemap.xml'),sitemap);

@@ -8,7 +8,7 @@ const server=http.createServer((req,res)=>{
   let f=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://127.0.0.1').pathname));
   if(!f.startsWith(root+path.sep)) {res.writeHead(403);return res.end();}
   if(f.endsWith(path.sep))f=path.join(f,'index.html');
-  try{const b=fs.readFileSync(f);res.setHeader('Content-Type',({'html':'text/html','css':'text/css','js':'text/javascript','png':'image/png','webp':'image/webp'})[path.extname(f).slice(1)]||'application/octet-stream');res.end(b)}
+  try{const b=fs.readFileSync(f);res.setHeader('Content-Type',({'html':'text/html','css':'text/css','js':'text/javascript','png':'image/png','webp':'image/webp','svg':'image/svg+xml'})[path.extname(f).slice(1)]||'application/octet-stream');res.end(b)}
   catch(_){res.writeHead(404);res.end('Not found');}
 });
 (async()=>{
