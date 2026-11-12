@@ -24,6 +24,8 @@ on:
       - 'css/demo-forno-82.css'
       - 'css/demo-salao-orla.css'
       - 'css/demo-eixo-consultoria.css'
+      - 'css/demo-doce-mira.css'
+      - 'css/demo-opala-cloud.css'
       - 'js/portfolio.js'
       - 'js/portfolio-brief.js'
       - 'js/demo-portfolio.js'
@@ -47,6 +49,8 @@ on:
       - 'js/demo-forno-82.js'
       - 'js/demo-salao-orla.js'
       - 'js/demo-eixo-consultoria.js'
+      - 'js/demo-doce-mira.js'
+      - 'js/demo-opala-cloud.js'
       - 'docs/USBRIN-PORTFOLIO-PLANO.md'
       - 'scripts/build-static.cjs'
       - 'tests/portfolio.test.cjs'
@@ -62,6 +66,7 @@ on:
       - 'tests/portfolio-editorial.test.cjs'
       - 'tests/portfolio-forno.test.cjs'
       - 'tests/portfolio-lote-26-27.test.cjs'
+      - 'tests/portfolio-lote-28-29.test.cjs'
       - 'tests/portfolio-browser.cjs'
       - 'package.json'
       - '.github/workflows/portfolio-validation.yml'
@@ -112,6 +117,9 @@ jobs:
           node --check js/demo-forno-82.js
           node --check js/demo-salao-orla.js
           node --check js/demo-eixo-consultoria.js
+          node --check js/demo-doce-mira.js
+          node --check js/demo-opala-cloud.js
+          node --check tests/portfolio-lote-28-29.test.cjs
           node --check tests/portfolio-lote-26-27.test.cjs
           node --check tests/portfolio-forno.test.cjs
           node --check tests/portfolio-editorial.test.cjs
@@ -132,6 +140,7 @@ jobs:
           node --test tests/portfolio-editorial.test.cjs
           node --test tests/portfolio-forno.test.cjs
           node --test tests/portfolio-lote-26-27.test.cjs
+          node --test tests/portfolio-lote-28-29.test.cjs
       - name: Auditar mídia fotográfica (diagnóstico informativo)
         run: node scripts/audit-portfolio-media.cjs
       - name: Regressão do USBRIN Studio
@@ -163,6 +172,12 @@ jobs:
           test -f dist/demo-forno-82.html
           test -f dist/demo-salao-orla.html
           test -f dist/demo-eixo-consultoria.html
+          test -f dist/demo-doce-mira.html
+          test -f dist/demo-opala-cloud.html
+          test -f dist/css/demo-doce-mira.css
+          test -f dist/css/demo-opala-cloud.css
+          test -f dist/js/demo-doce-mira.js
+          test -f dist/js/demo-opala-cloud.js
           test -f dist/css/demo-salao-orla.css
           test -f dist/css/demo-eixo-consultoria.css
           test -f dist/js/demo-salao-orla.js
