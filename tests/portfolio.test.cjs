@@ -79,7 +79,10 @@ test('Todos os conceitos têm estrutura válida, imagens locais e acesso ao Port
     assert.match(html,/href="portfolio\.html"/,'volta ao Portfolio ausente em '+name);
     const imgs=[...html.matchAll(/<img[^>]+src="([^"]+)"/g)].map(x=>x[1]);
     assert.ok(imgs.length>=2,'falta arte no demo '+name);
-    for(const img of imgs)assert.ok(fs.existsSync(path.join(root,img)),'Imagem não existe: '+img);
+    for(const img of imgs){
+      if(img.startsWith('https://')) assert.match(img,/^https:\/\/images\.unsplash\.com\/photo-/,'Fonte editorial inesperada: '+img);
+      else assert.ok(fs.existsSync(path.join(root,img)),'Imagem local não existe: '+img);
+    }
   }
 });
 test('Interações por segmento são expostas como controles reais', () => {
@@ -93,12 +96,13 @@ test('Interações por segmento são expostas como controles reais', () => {
   assert.equal((read('demo-imobiliaria.html').match(/data-prop-type=/g)||[]).length,3);
   assert.match(read('demo-imobiliaria.html'), /id="property-dialog"/);
 });
-test('Capa da galeria atualizada corresponde às artes autorais locais',()=>{
+test('Vitrine apresenta fotografia editorial para os quatro primeiros projetos',()=>{
   for(const path of ['index.html','portfolio.html']){
     const html=read(path);
-    for(const name of ['brasa','alto','vitta','prime']){
-      assert.match(html,new RegExp('assets/portfolio-'+name+'\\.svg'),path+' sem capa '+name);
+    for(const name of ['Brasa & Mesa','Alto Norte Engenharia','Vitta Clínica','PrimeLar']){
+      assert.ok(html.includes(name),'Conceito ausente em '+path+': '+name);
     }
+    assert.ok((html.match(/images\.unsplash\.com\/photo-/g)||[]).length>=4,'Fotografias editoriais ausentes em '+path);
   }
 });
 
@@ -109,7 +113,7 @@ test('Coleção de cinquenta: inventário numerado e links existentes', () => {
   assert.deepEqual(ids, Array.from({length:50},(_,i)=>i+1));
   assert.match(doc, /50\/50 páginas HTML autorais/);
   assert.match(portfolio, /50 projetos disponíveis/);
-  assert.match(portfolio, /A coleção reúne 50 projetos conceituais/);
+  assert.match(portfolio, /50 maneiras de/);
 });
 
 test('Studio, parceiros e estrutura comercial permanecem na entrega', () => {
