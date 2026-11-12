@@ -82,3 +82,22 @@
 @media(max-width:900px){.hero-grid{gap:30px}.featured-card:first-child{grid-column:span 2;aspect-ratio:1.95}.featured-card:nth-child(2){aspect-ratio:.93}.demo-journey-heading{gap:25px;grid-template-columns:1fr}}
 @media(max-width:670px){.hero{padding:74px 0 68px}.hero-grid{grid-template-columns:1fr;gap:35px}.hero h1{font-size:clamp(46px,10vw,70px)}.hero-aside{border-left:0;border-top:1px solid var(--line);padding:22px 0 0}.hero-figures{max-width:360px}.hero-aside .aside-note{margin-top:14px}.featured-projects{padding:60px 0}.featured-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.featured-card:first-child{grid-column:span 2;aspect-ratio:1.5}.featured-card:nth-child(2){aspect-ratio:1}.featured-card:not(:first-child){aspect-ratio:1}.featured-card:first-child .featured-caption strong{font-size:33px}.demo-journey{padding:55px 0}.demo-journey-heading{grid-template-columns:1fr}.demo-journey-grid{grid-template-columns:1fr;gap:9px}.journey-step{min-height:0;padding:23px}.journey-step h3{margin:15px 0 7px}.journey-links{align-items:stretch;flex-direction:column;gap:8px}.journey-simple{align-self:flex-start}}
 @media(prefers-reduced-motion:reduce){.featured-card img{transition:none!important}}
+
+/* Curadoria final: bento 2+2 sobre quatro cartões, sem item órfão na última linha. */
+@media(min-width:901px){
+  .featured-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+  .featured-grid .featured-card:nth-child(-n+2){grid-column:span 2;aspect-ratio:1.85}
+  .featured-grid .featured-card:nth-child(n+3){grid-column:span 1;aspect-ratio:1}
+  .featured-grid .featured-card:nth-child(2) .featured-caption strong{font-size:clamp(29px,3vw,43px)}
+}
+@media(min-width:671px) and (max-width:900px){
+  .featured-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .featured-grid .featured-card:nth-child(-n+2){grid-column:span 1;aspect-ratio:1.15}
+  .featured-grid .featured-card:nth-child(n+3){aspect-ratio:1.15}
+}
+@media(max-width:670px){
+  .featured-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .featured-grid .featured-card:first-child{grid-column:span 2;aspect-ratio:1.5}
+  .featured-grid .featured-card:nth-child(2){grid-column:span 1;aspect-ratio:1}
+  .featured-grid .featured-card:last-child{grid-column:span 2;aspect-ratio:1.7}
+}
