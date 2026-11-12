@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const notes = modal.querySelector('#brief-notes');
   const preview = modal.querySelector('#brief-preview');
   const email = modal.querySelector('#brief-email');
+  const whatsapp = modal.querySelector('#brief-whatsapp');
   const copy = modal.querySelector('#brief-copy');
   const close = modal.querySelector('#brief-close');
   const targets = Array.from(document.querySelectorAll('[data-project-brief]'));
@@ -40,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     email.href = 'mailto:usbrin.contato@gmail.com?subject=' +
       encodeURIComponent('Projeto USBRIN — referência ' + projectName) +
       '&body=' + encodeURIComponent(value);
+    if (whatsapp) whatsapp.href = 'https://wa.me/5569992967459?text=' + encodeURIComponent(value);
   }
   for (const link of targets) link.addEventListener('click', event => {
     const card = link.closest('.project');

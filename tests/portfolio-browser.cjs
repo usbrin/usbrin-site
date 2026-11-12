@@ -54,6 +54,19 @@ const server=http.createServer((req,res)=>{
   await page.locator('#portfolio-search').fill('');
   ok(await page.locator('.project:not([hidden])').count()===50,'Galeria mantém 50 projetos');
 
+  // A apresentação oficial preserva filtros e permite contato apenas por ação explícita.
+  await page.goto(base+'portfolio.html');
+  ok(await page.locator('#destaques .featured-card').count()===6,'Demonstração tem seis projetos destacados');
+  ok(await page.locator('.demo-journey .journey-step').count()===3,'Demonstração explica três passos');
+  ok(await page.locator('#portfolio-title').innerText().then(x=>x.includes('50 maneiras')),'Demonstração apresenta coleção completa');
+  await page.locator('[data-project-brief]').first().click();
+  ok(await page.locator('#project-brief-dialog').evaluate(x=>x.open),'Briefing abre por ação do visitante');
+  ok((await page.locator('#brief-whatsapp').getAttribute('href')).startsWith('https://wa.me/5569992967459?text='),'WhatsApp recebe referência contextual');
+  await page.locator('#brief-close').click();
+  await page.goto(base+'index.html');
+  ok(await page.locator('.main-nav a[href="portfolio.html"]').innerText()==='Demonstração','Menu oficial usa Demonstração');
+  await page.goto(base+'portfolio.html');
+
   // Forno 82: filtro, cálculo didático, seleção local e limpeza.
   await page.goto(base+'demo-forno-82.html');
   await page.locator('button[data-kind="vegetarianas"]').click();
@@ -727,6 +740,22 @@ const server=http.createServer((req,res)=>{
     ok(images.length>=minimum,'Fotografias de ambientação em '+file);
     ok(images.every(x=>x.ok),'Fotografias decodificadas em '+file+': '+JSON.stringify(images.filter(x=>!x.ok)));
   }
+
+  // Fotografias editoriais das quatro primeiras demonstrações modernizadas.
+  const legacyFailures=[];
+  for(const file of ['demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html']){
+    await page.goto(base+file,{waitUntil:'domcontentloaded'});
+    const images=await page.evaluate(async()=>{
+      const all=[...document.images].filter(x=>(x.currentSrc||x.src).startsWith('https://images.unsplash.com/photo-'));
+      all.forEach(x=>x.loading='eager');
+      await Promise.race([Promise.allSettled(all.map(x=>x.decode())),new Promise(done=>setTimeout(done,10000))]);
+      return all.map(x=>({ok:x.naturalWidth>0,url:(x.currentSrc||x.src).split('?')[0]}));
+    });
+    console.log('LEGACY_IMAGE_CHECK',file,JSON.stringify({total:images.length,loaded:images.filter(x=>x.ok).length,failed:images.filter(x=>!x.ok)}));
+    if(images.length<2||images.some(x=>!x.ok)) legacyFailures.push({file,images});
+  }
+  ok(legacyFailures.length===0,'Fotografias dos quatro conceitos iniciais: '+JSON.stringify(legacyFailures));
+  await page.goto(base+'portfolio.html');
 
   // Checar no navegador real as fotografias de todos os 21 novos conceitos.
   const photoFailures=[];

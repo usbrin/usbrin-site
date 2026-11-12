@@ -9,6 +9,9 @@ test('Os cinquenta conceitos têm CTA de referência sem alterar o Studio',()=>{
  assert.equal((html.match(/data-project-brief/g)||[]).length,50);
  assert.match(html,/id="project-brief-dialog"/);
  assert.match(html,/id="brief-email"/);
+ assert.match(html,/id="brief-whatsapp"/);
+ assert.match(html,/id="destaques"/);
+ assert.match(html,/id="journey-title"/);
  assert.match(html,/id="brief-preview"/);
  assert.match(html,/id="brief-objective"/);
  assert.match(html,/id="brief-notes"/);

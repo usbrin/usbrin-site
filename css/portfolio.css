@@ -44,3 +44,41 @@
 @media(max-width:900px){.featured-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.featured-top{align-items:flex-start;flex-direction:column;gap:4px}}
 @media(max-width:530px){.featured-projects{padding:50px 0}.featured-grid{gap:10px}.featured-card{aspect-ratio:.79}.featured-caption{left:12px;right:12px;bottom:13px}.featured-caption small{font-size:8px}.featured-caption strong{font-size:19px}.featured-caption>span{font-size:20px}}
 @media(prefers-reduced-motion:reduce){.featured-card>img{transition:none!important}}
+
+/* Demonstração USBRIN — apresentação institucional e orientação comercial */
+.hero{padding:104px 0 92px;background:radial-gradient(ellipse at 83% 25%,rgba(141,117,240,.21),transparent 48%),linear-gradient(130deg,#111217 0%,#161320 100%)}
+.hero-grid{grid-template-columns:minmax(0,1.35fr) minmax(290px,.65fr);align-items:center}
+.hero h1{font-size:clamp(52px,6.25vw,91px);max-width:14ch}
+.hero-story .intro{max-width:61ch}
+.hero-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:26px}
+.hero-actions .btn-outline{background:#ffffff09;border-color:#48465a;color:#ebe8fc}
+.hero-honesty{font-size:11px;color:#aba9bf;max-width:640px;margin:24px 0 0;line-height:1.8}
+.hero-figures{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.hero-figures>div{min-width:0}.hero-figures strong{font-size:clamp(38px,4vw,58px);color:#f8f7fe}
+.hero-figures p{font-size:12px;line-height:1.5}
+.hero-aside .aside-note{margin-top:24px;max-width:320px}
+.hero-studio{display:inline-block;margin-top:15px;color:#c7c2ff;font-size:12px;font-weight:800;border-bottom:1px solid #8f87ed;padding-bottom:5px}
+.featured-projects{padding:90px 0 84px}
+.featured-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.featured-card:first-child{grid-column:span 2;aspect-ratio:2.35}
+.featured-card:first-child .featured-caption strong{font-size:clamp(30px,4vw,50px)}
+.featured-card:not(:first-child){aspect-ratio:1.1}
+.featured-card:nth-child(2){aspect-ratio:auto;grid-row:span 1}
+.demo-journey{background:#ebe9f2;color:#22202d;padding:75px 0 80px}
+.demo-journey .eyebrow{color:#655bd1}
+.demo-journey-heading{display:grid;grid-template-columns:1.2fr .8fr;gap:30px 70px;align-items:end;margin-bottom:32px}
+.demo-journey-heading .eyebrow{grid-column:1/-1;margin-bottom:-15px}
+.demo-journey-heading h2{font-size:clamp(38px,4.2vw,58px);margin:0;max-width:660px}
+.demo-journey-heading h2 em{font-style:normal;color:#655bd1}
+.demo-journey-heading>p{font-size:14px;color:#656174;line-height:1.8;max-width:420px;margin:0}
+.demo-journey-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.journey-step{background:#fff;padding:30px;border:1px solid #d9d6e2;min-height:215px}
+.journey-step>span{font-size:10px;font-weight:800;letter-spacing:.16em;color:#7569d1}
+.journey-step h3{font-size:22px;margin:27px 0 12px;color:#25232e}
+.journey-step p{font-size:13px;color:#6b6875;line-height:1.7;margin:0}
+.journey-links{display:flex;align-items:center;flex-wrap:wrap;gap:24px;margin-top:28px}
+.journey-simple{font-size:12px;font-weight:800;color:#484168;border-bottom:1px solid #6b618f;padding:11px 0}
+.brief-actions .btn{min-width:155px}
+@media(max-width:900px){.hero-grid{gap:30px}.featured-card:first-child{grid-column:span 2;aspect-ratio:1.95}.featured-card:nth-child(2){aspect-ratio:.93}.demo-journey-heading{gap:25px;grid-template-columns:1fr}}
+@media(max-width:670px){.hero{padding:74px 0 68px}.hero-grid{grid-template-columns:1fr;gap:35px}.hero h1{font-size:clamp(46px,10vw,70px)}.hero-aside{border-left:0;border-top:1px solid var(--line);padding:22px 0 0}.hero-figures{max-width:360px}.hero-aside .aside-note{margin-top:14px}.featured-projects{padding:60px 0}.featured-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.featured-card:first-child{grid-column:span 2;aspect-ratio:1.5}.featured-card:nth-child(2){aspect-ratio:1}.featured-card:not(:first-child){aspect-ratio:1}.featured-card:first-child .featured-caption strong{font-size:33px}.demo-journey{padding:55px 0}.demo-journey-heading{grid-template-columns:1fr}.demo-journey-grid{grid-template-columns:1fr;gap:9px}.journey-step{min-height:0;padding:23px}.journey-step h3{margin:15px 0 7px}.journey-links{align-items:stretch;flex-direction:column;gap:8px}.journey-simple{align-self:flex-start}}
+@media(prefers-reduced-motion:reduce){.featured-card img{transition:none!important}}
