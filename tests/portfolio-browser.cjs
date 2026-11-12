@@ -451,7 +451,7 @@ const server=http.createServer((req,res)=>{
   // Portfolio 2.0: o interesse por cada projeto vira um briefing contextual copiável.
   await page.goto(base+'portfolio.html');
   const firstBrief=page.locator('[data-project-brief]').first();
-  ok(await page.locator('[data-project-brief]').count()===24,'Vinte e quatro CTAs de briefing contextual');
+  ok(await page.locator('[data-project-brief]').count()===25,'Vinte e cinco CTAs de briefing contextual');
   await firstBrief.click();
   ok(await page.locator('#project-brief-dialog').isVisible(),'Briefing abre ao escolher referência');
   ok((await page.locator('#brief-project-name').innerText()).includes('Brasa & Mesa'),'Nome correto da referência comercial');
