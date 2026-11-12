@@ -49,9 +49,9 @@ jobs:
           test -f dist/css/studio.css
           test -f dist/_headers
           CF_PAGES=1 CF_PAGES_URL=https://abcdef123.usbrin-site.pages.dev CF_PAGES_BRANCH=feature/usbrin-studio-mvp npm run build
-          grep -q 'https://usbrin-site.pages.dev/' dist/index.html
-          grep -q 'https://usbrin-site.pages.dev/studio.html' dist/studio.html
-          grep -q 'https://usbrin-site.pages.dev/studio.html' dist/sitemap.xml
+          grep -q 'https://usbrin.com.br/' dist/index.html
+          grep -q 'https://usbrin.com.br/studio.html' dist/studio.html
+          grep -q 'https://usbrin.com.br/studio.html' dist/sitemap.xml
           test ! -f dist/tests/studio-browser.cjs
           test ! -f dist/docs/USBRIN-STUDIO-OPERACAO.md
   browser:
@@ -65,10 +65,16 @@ jobs:
       - name: Instalar navegador de testes
         run: |
           npm install --no-save playwright
-          npx playwright install --with-deps chromium
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "Usando Google Chrome pré-instalado"
+          elif command -v chromium >/dev/null 2>&1; then
+            echo "Usando Chromium pré-instalado"
+          else
+            npx playwright install chromium
+          fi
       - name: Testar Studio e site original
         run: |
-          export CHROMIUM_PATH="$(node -e "process.stdout.write(require('playwright').chromium.executablePath())")"
+          export CHROMIUM_PATH="$(command -v google-chrome || command -v chromium || node -e "process.stdout.write(require('playwright').chromium.executablePath())")"
           node tests/studio-browser.cjs
           node tests/browser.cjs
       - name: Guardar capturas de tela do Studio
