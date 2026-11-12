@@ -41,7 +41,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 | 13 | Brasa & Mesa | Restaurante | revisado em preview | Cardápio e experiência gastronômica |
 | 14 | Café Orvalho | Cafeteria | novo · editorial/fotográfico | Cardápio filtrável e seleção ilustrativa por momento |
 | 15 | Forno 82 | Pizzaria | novo · fotográfico/interativo, em preview | Cardápio filtrável e seleção ilustrativa, sem pedidos reais |
-| 16 | Doce Mira | Confeitaria | planejado | Coleções e encomendas |
+| 16 | Doce Mira | Confeitaria | novo · editorial e ateliê ilustrativo em preview | Coleção filtrável e composição de bolo, sem encomendas reais |
 | 17 | Casa Smash | Hamburgueria | planejado | Identidade ousada e cardápio |
 | 18 | Aurora Eventos | Buffet | planejado | Pacotes e eventos corporativos |
 
@@ -90,7 +90,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 | Nº | Projeto autoral | Modelo de negócio | Situação nesta fase | Experiência diferencial |
 |---:|---|---|---|---|
 | 39 | Fluxo | SaaS | novo | Dashboard interativo com dados demonstrativos |
-| 40 | Opala Cloud | Cloud | planejado | Infraestrutura e recursos |
+| 40 | Opala Cloud | Cloud | novo · técnico e interativo em preview | Recursos, arquitetura simulada e estimativas hipotéticas |
 | 41 | Vértice Digital | Marketing digital | planejado | Serviços, processo e portfólio |
 | 42 | Nexo Automação | Automação | novo · padrão USBRIN | Orquestrador local de fluxos por etapas |
 
@@ -391,3 +391,26 @@ Congelar provisoriamente a expansão da coleção em **18/50**, priorizando qual
 - Testes de regras puras e conteúdo em `tests/portfolio-lote-26-27.test.cjs`; regressão da coleção e do Studio, navegador desktop/mobile, imagens decodificadas e capturas em CI.
 - **Política do usuário:** criar os projetos novos em lotes de 2; ao concluir a série, revisar e aperfeiçoar os primeiros projetos para adequá-los ao padrão fotográfico/funcional atual.
 - **Status:** código em preview protegido, sem merge. Avaliação CI e revisão de capturas necessárias antes de considerar homologado; produção, Studio, Store, Parceiros e USBRIN ID preservados.
+
+## Décimo segundo lote — Doce Mira + Opala Cloud (12/11/2026)
+
+**Progresso do código:** 29/50 experiências implementadas na branch de preview (21 conceitos planejados restantes). Este número não representa publicação no domínio oficial.
+
+### Doce Mira (item 16 · Confeitaria)
+- Estética editorial com creme, ameixa e rosa antigo, fotografias de referência e conteúdo próprio para um ateliê de doces.
+- Seis produtos conceituais com filtro Bolos / Docinhos / Presentes e busca acento-insensível.
+- Compositor didático de bolo: sabores fictícios, 10/20/30 porções, acabamento e complemento, valores sempre em centavos, resumo textual copiável somente por ação voluntária.
+- Sem produção, encomenda, precificação comercial, pagamento, estoque, alergênicos certificados, entrega ou cadastro. Fotos são ilustrativas e podem não representar ingredientes descritos.
+
+### Opala Cloud (item 40 · Tecnologia)
+- Identidade técnico-editorial com fundo petróleo, fotografia de infraestrutura, módulos de serviço, metodologia de quatro fases e painel local com diagrama de arquitetura.
+- Três perfis de referência, até quatro instâncias, armazenamento fixo ilustrativo (50–500 GB) e política de cópias. Fórmulas de custo hipotéticas e determinísticas, sem preço atual de fornecedor ou proposta comercial.
+- Sem rede, provisionamento, armazenamento de dados, contratação, login, segurança certificada, redundância real, performance ou compromisso de disponibilidade.
+
+### Arquitetura, validação e limites
+- Arquivos isolados: `demo-doce-mira.html`, `css/demo-doce-mira.css`, `js/demo-doce-mira.js`; `demo-opala-cloud.html`, `css/demo-opala-cloud.css`, `js/demo-opala-cloud.js`.
+- `portfolio.html` contém 29 cartões e 29 ações contextuais; `scripts/build-static.cjs` inclui as duas páginas na lista explícita.
+- Novos testes puros e estruturais em `tests/portfolio-lote-28-29.test.cjs`, E2E de interação/responsividade/fotografia em `tests/portfolio-browser.cjs` e workflow de CI.
+- Desenvolvimento apenas na branch `feature/usbrin-portfolio-20261110`, PR #5 em rascunho, preview protegido por Cloudflare Access. Nenhuma alteração de produção ou sistemas Studio, Store, Parceiros e USBRIN ID.
+- **Próximas etapas:** novos lotes de exatamente dois conceitos; após completar os 50, reavaliar e modernizar as primeiras demonstrações conforme orientação do usuário.
+- **Homologação:** verificar CI, carregamento real de fotos, capturas desktop/mobile e revisões humanas antes de anunciar o lote aprovado.
