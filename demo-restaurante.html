@@ -161,12 +161,23 @@ button.btn{border:0;cursor:pointer;font-family:inherit}.btn-outline{border:1px s
 .visual-dialog{max-height:90vh;max-width:min(750px,calc(100% - 24px));padding:0;border:1px solid #ad815c;background:var(--bg-2);color:var(--text);border-radius:10px;box-shadow:0 40px 90px #0009}.visual-dialog::backdrop{background:#060403bb}.dialog-panel{padding:25px 32px 30px}.dialog-panel img{max-height:55vh;width:100%;height:auto;object-fit:contain;background:#271a13}.dialog-panel h2{font-size:clamp(28px,4vw,45px);margin:22px 0 10px}.dialog-panel p{color:var(--text-secondary);font-size:14px}.dialog-close{display:block;margin:0 0 20px auto;background:transparent;border:1px solid #917456;color:var(--text);padding:8px 14px;border-radius:5px}.reservation-dialog{width:min(590px,calc(100% - 24px))}.reservation-dialog fieldset{border:0;padding:0;margin:22px 0}.reservation-dialog legend{font-weight:700;margin-bottom:10px}.reserve-options{display:flex;gap:9px;flex-wrap:wrap}.reservation-summary{border:1px solid #86684e;padding:18px;margin-bottom:21px;color:#f6dec1;background:#34251a;font-size:14px}
 @media(max-width:800px){header .container{height:auto;min-height:75px;flex-wrap:wrap;padding-top:10px;padding-bottom:10px}.menu-toggle{display:inline-flex;margin-left:auto}header nav{display:none;width:100%;order:3;flex-direction:column;gap:0;padding:10px 0}header nav.open{display:flex}header nav a{display:block;padding:11px 4px;border-top:1px solid var(--border)}header .container>.btn{order:1;margin-left:auto}.hero .demo-hero-grid{min-height:0}.hero h1{font-size:clamp(48px,11vw,75px)}}
 @media(max-width:560px){.container{padding-inline:18px}.hero-art{aspect-ratio:1.2}.hero h1{font-size:48px}.gallery{gap:6px}.dialog-panel{padding:17px}.menu-tabs button{padding:9px 12px}.hero-actions .btn{width:100%;justify-content:center}}
+
+/* USBRIN — atualização fotográfica e editorial das demonstrações iniciais */
+.hero-art{position:relative;isolation:isolate;box-shadow:0 22px 65px rgba(0,0,0,.16)}
+.hero-art>img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;filter:saturate(.86) contrast(1.03)}
+.hero-art::after{content:"";position:absolute;inset:65% 0 0;z-index:0;pointer-events:none;background:linear-gradient(transparent,rgba(4,9,12,.42))}
+.hero-art>.art-caption,.hero-art>.hero-stamp{z-index:1}
+.dish-img img,.work-img img,.prop-img img,.gallery img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;transition:transform .3s}
+.dish-card:hover img,.work-card:hover img,.prop-card:hover img{transform:scale(1.035)}
+.dish-img,.work-img,.prop-img{overflow:hidden}
+@media(max-width:720px){.hero-art{min-height:240px}.hero-art>img{min-height:240px}}
+
 </style>
 </head>
 <body data-demo="restaurante">
 
 <div class="case-bar" id="aviso-demonstracao">Projeto autoral · Conceito USBRIN — marca, informações e ofertas ilustrativas; sem reservas, agendamentos ou vendas reais. <a href="portfolio.html">← Voltar ao USBRIN Portfolio</a> &nbsp;·&nbsp; <a href="studio.html?demo=restaurante">Configurar um site assim ↗</a></div>
-
+<p class="editorial-asset-disclaimer" style="font-size:12px;line-height:1.6;opacity:.8;max-width:1140px;margin:14px auto;padding:0 24px">Imagens fotográficas meramente editoriais, usadas como referências visuais. Não são registros de clientes, profissionais, obras, imóveis ou produtos vinculados à marca conceitual.</p>
 <header>
   <div class="container">
     <div class="logo">Brasa <span>&amp; Mesa</span></div>
@@ -193,7 +204,7 @@ button.btn{border:0;cursor:pointer;font-family:inherit}.btn-outline{border:1px s
         <button type="button" class="btn btn-outline" data-open-reservation>Simular reserva</button>
       </div>
     </div>
-    <div class="hero-art"><img src="assets/portfolio-brasa.svg" alt="Composição ilustrada de pratos na brasa sobre louça artesanal" width="900" height="640" fetchpriority="high"><span class="art-caption">COZINHA DE BRASA / CONCEITO 01</span></div>
+    <div class="hero-art"><img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" alt="Fotografia editorial de referência — pratos na brasa sobre louça artesanal (não representa um serviço ou produto real)" width="900" height="640" fetchpriority="high"><span class="art-caption">FOTOGRAFIA EDITORIAL · CONCEITO</span></div>
   </div>
 </section>
 
@@ -205,7 +216,7 @@ button.btn{border:0;cursor:pointer;font-family:inherit}.btn-outline{border:1px s
     </div>
     <div class="dishes">
       <div class="dish-card">
-        <div class="dish-img"><img src="assets/portfolio-prato-picanha.svg" width="900" height="640" loading="lazy" decoding="async" alt="Ilustração autoral de picanha na brasa em prato de cerâmica"></div>
+        <div class="dish-img"><img src="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" width="900" height="640" loading="lazy" decoding="async" alt="Fotografia editorial de referência — autoral de picanha na brasa em prato de cerâmica (não representa um serviço ou produto real)"></div>
         <div class="dish-body">
           <h3>Picanha na brasa</h3>
           <p>Cortada na hora, com farofa da casa e vinagrete.</p>
@@ -213,7 +224,7 @@ button.btn{border:0;cursor:pointer;font-family:inherit}.btn-outline{border:1px s
         </div>
       </div>
       <div class="dish-card">
-        <div class="dish-img"><img src="assets/portfolio-prato-risoto.svg" width="900" height="640" loading="lazy" decoding="async" alt="Ilustração autoral de risoto com cogumelos"></div>
+        <div class="dish-img"><img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" width="900" height="640" loading="lazy" decoding="async" alt="Fotografia editorial de referência — autoral de risoto com cogumelos (não representa um serviço ou produto real)"></div>
         <div class="dish-body">
           <h3>Risoto de cogumelos</h3>
           <p>Arroz arbóreo cremoso com uma seleção de cogumelos frescos.</p>
@@ -221,7 +232,7 @@ button.btn{border:0;cursor:pointer;font-family:inherit}.btn-outline{border:1px s
         </div>
       </div>
       <div class="dish-card">
-        <div class="dish-img"><img src="assets/portfolio-prato-polvo.svg" width="900" height="640" loading="lazy" decoding="async" alt="Ilustração autoral de prato de polvo grelhado"></div>
+        <div class="dish-img"><img src="https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" width="900" height="640" loading="lazy" decoding="async" alt="Fotografia editorial de referência — autoral de prato de polvo grelhado (não representa um serviço ou produto real)"></div>
         <div class="dish-body">
           <h3>Polvo grelhado</h3>
           <p>Com purê de batata-doce e azeite defumado.</p>
@@ -263,17 +274,17 @@ button.btn{border:0;cursor:pointer;font-family:inherit}.btn-outline{border:1px s
       <h2>O ambiente da casa.</h2>
     </div>
     <div class="gallery">
-      <button type="button" class="gallery-shot" data-gallery-src="assets/portfolio-brasa.svg" data-gallery-title="Da brasa à mesa" aria-label="Ampliar arte Da brasa à mesa"><img src="assets/portfolio-brasa.svg" alt="Composição conceitual de um prato à brasa" width="900" height="640" loading="lazy"></button>
-      <button type="button" class="gallery-shot" data-gallery-src="assets/portfolio-prato-risoto.svg" data-gallery-title="Sabores da estação" aria-label="Ampliar arte Sabores da estação"><img src="assets/portfolio-prato-risoto.svg" alt="Prato ilustrado de risoto de cogumelos" width="900" height="640" loading="lazy"></button>
-      <button type="button" class="gallery-shot" data-gallery-src="assets/portfolio-prato-polvo.svg" data-gallery-title="Ingredientes em destaque" aria-label="Ampliar arte Ingredientes em destaque"><img src="assets/portfolio-prato-polvo.svg" alt="Prato ilustrado de polvo grelhado" width="900" height="640" loading="lazy"></button>
-      <button type="button" class="gallery-shot" data-gallery-src="assets/portfolio-prato-picanha.svg" data-gallery-title="A tradição da brasa" aria-label="Ampliar arte A tradição da brasa"><img src="assets/portfolio-prato-picanha.svg" alt="Ilustração de picanha na brasa" width="900" height="640" loading="lazy"></button>
+      <button type="button" class="gallery-shot" data-gallery-src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" data-gallery-title="Da brasa à mesa" aria-label="Ampliar arte Da brasa à mesa"><img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" alt="Fotografia editorial de referência — um prato à brasa (não representa um serviço ou produto real)" width="900" height="640" loading="lazy"></button>
+      <button type="button" class="gallery-shot" data-gallery-src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" data-gallery-title="Sabores da estação" aria-label="Ampliar arte Sabores da estação"><img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" alt="Fotografia editorial de referência — Prato  de risoto de cogumelos (não representa um serviço ou produto real)" width="900" height="640" loading="lazy"></button>
+      <button type="button" class="gallery-shot" data-gallery-src="https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" data-gallery-title="Ingredientes em destaque" aria-label="Ampliar arte Ingredientes em destaque"><img src="https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" alt="Fotografia editorial de referência — Prato  de polvo grelhado (não representa um serviço ou produto real)" width="900" height="640" loading="lazy"></button>
+      <button type="button" class="gallery-shot" data-gallery-src="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" data-gallery-title="A tradição da brasa" aria-label="Ampliar arte A tradição da brasa"><img src="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" alt="Fotografia editorial de referência — picanha na brasa (não representa um serviço ou produto real)" width="900" height="640" loading="lazy"></button>
     </div>
   </div>
 </section>
 
 <section id="sobre" class="menu-alt">
   <div class="container about-grid">
-<div class="about-art"><img src="assets/portfolio-brasa.svg" alt="Detalhe ilustrado do conceito gastronômico Brasa & Mesa" width="900" height="640" loading="lazy"></div>
+<div class="about-art"><img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" alt="Fotografia editorial de referência — do conceito gastronômico Brasa & Mesa (não representa um serviço ou produto real)" width="900" height="640" loading="lazy"></div>
     <div>
       <span class="eyebrow">Nossa história</span>
       <h2 style="font-size:30px;margin-bottom:18px;">Tradição na brasa, todos os dias.</h2>

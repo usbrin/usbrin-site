@@ -122,12 +122,23 @@ a:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-off
 .work-dialog{border:1px solid #927044;background:#151f26;color:#f0f2f4;border-radius:5px;width:min(750px,calc(100% - 25px));max-height:91vh;padding:0;box-shadow:0 40px 90px #000a}.work-dialog::backdrop{background:rgba(4,8,10,.78)}.work-dialog-inner{padding:26px 30px 34px}.work-dialog img{width:100%;max-height:47vh;object-fit:cover}.work-dialog h2{font-size:clamp(30px,4vw,46px);margin:18px 0 10px}.work-dialog p{font-size:14px;color:var(--text-secondary)}.work-dialog .disclosure{font-size:12px}.dialog-close{display:block;margin:0 0 19px auto;border:1px solid #69808b;background:transparent;color:#fff;padding:8px 15px}
 @media(max-width:800px){header .container{height:auto;min-height:76px;flex-wrap:wrap;gap:12px;padding-block:12px}.menu-toggle{display:inline-flex;margin-left:auto;order:2}header nav{display:none;width:100%;order:3;flex-direction:column;gap:0;padding:9px 0}header nav.open{display:flex}header nav a{display:block;padding:12px 4px;border-top:1px solid var(--border)}header .container>.btn{order:1;margin-left:auto}.hero .demo-hero-grid{min-height:0}.hero h1{font-size:clamp(44px,10vw,75px)}}
 @media(max-width:600px){.container{padding-inline:18px}.stats-strip .container{grid-template-columns:repeat(3,minmax(0,1fr))}.stats-strip .stat{padding:20px 8px}.stats-strip .num{font-size:27px}.stats-strip .label{font-size:10px}.hero-art{aspect-ratio:1.35}.work-dialog-inner{padding:17px}}
+
+/* USBRIN — atualização fotográfica e editorial das demonstrações iniciais */
+.hero-art{position:relative;isolation:isolate;box-shadow:0 22px 65px rgba(0,0,0,.16)}
+.hero-art>img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;filter:saturate(.86) contrast(1.03)}
+.hero-art::after{content:"";position:absolute;inset:65% 0 0;z-index:0;pointer-events:none;background:linear-gradient(transparent,rgba(4,9,12,.42))}
+.hero-art>.art-caption,.hero-art>.hero-stamp{z-index:1}
+.dish-img img,.work-img img,.prop-img img,.gallery img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;transition:transform .3s}
+.dish-card:hover img,.work-card:hover img,.prop-card:hover img{transform:scale(1.035)}
+.dish-img,.work-img,.prop-img{overflow:hidden}
+@media(max-width:720px){.hero-art{min-height:240px}.hero-art>img{min-height:240px}}
+
 </style>
 </head>
 <body data-demo="construtora">
 
 <div class="case-bar" id="aviso-demonstracao">Projeto autoral · Conceito USBRIN — marca, informações e ofertas ilustrativas; sem reservas, agendamentos ou vendas reais. <a href="portfolio.html">← Voltar ao USBRIN Portfolio</a> &nbsp;·&nbsp; <a href="studio.html?demo=construtora">Configurar um site assim ↗</a></div>
-
+<p class="editorial-asset-disclaimer" style="font-size:12px;line-height:1.6;opacity:.8;max-width:1140px;margin:14px auto;padding:0 24px">Imagens fotográficas meramente editoriais, usadas como referências visuais. Não são registros de clientes, profissionais, obras, imóveis ou produtos vinculados à marca conceitual.</p>
 <header>
   <div class="container">
     <div class="logo"><span class="mark">AN</span>Alto Norte Engenharia</div>
@@ -152,7 +163,7 @@ a:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-off
         <a href="#contato" class="btn btn-outline">Falar com um engenheiro</a>
       </div>
     </div>
-    <div class="hero-art"><img src="assets/portfolio-alto.svg" width="900" height="640" alt="Estudo arquitetônico conceitual de torre com fachada de vidro"><span class="art-caption">VOLUMES / ESTRUTURAS / CONCEITOS</span></div>
+    <div class="hero-art"><img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" width="900" height="640" alt="Fotografia editorial de referência — Estudo arquitetônico  de torre com fachada de vidro (não representa um serviço ou produto real)"><span class="art-caption">REFERÊNCIA ARQUITETÔNICA · CONCEITO</span></div>
   </div>
 </section>
 
@@ -172,13 +183,13 @@ a:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-off
     </div>
     <div class="work-filters" role="group" aria-label="Filtrar estudos por setor"><button type="button" data-work-filter="todos" aria-pressed="true">Todos</button><button type="button" data-work-filter="residencial" aria-pressed="false">Residenciais</button><button type="button" data-work-filter="comercial" aria-pressed="false">Comerciais</button><button type="button" data-work-filter="industrial" aria-pressed="false">Industriais</button></div><p id="work-count" class="filter-count" role="status" aria-live="polite">3 estudos disponíveis</p><div class="works-grid">
       <article class="work-card" data-work-category="residencial">
-        <button type="button" class="work-img" data-work-open="vertice" aria-label="Explorar estudo vertice"><img src="assets/portfolio-alto.svg" width="900" height="640" alt="Ilustração de torre residencial" loading="lazy"></button>
+        <button type="button" class="work-img" data-work-open="vertice" aria-label="Explorar estudo vertice"><img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" width="900" height="640" alt="Fotografia editorial de referência — torre residencial (não representa um serviço ou produto real)" loading="lazy"></button>
         <div class="work-body"><span class="tag">Residencial</span><h3>Edifício Vértice</h3><p>Estudo de torre residencial com 18 pavimentos e fachada modular.</p><button type="button" class="work-view" data-work-open="vertice">Explorar estudo ↗</button></div></article>
       <article class="work-card" data-work-category="comercial">
-        <button type="button" class="work-img" data-work-open="centro" aria-label="Explorar estudo centro"><img src="assets/portfolio-obra-comercial.svg" width="900" height="640" alt="Ilustração de centro empresarial" loading="lazy"></button>
+        <button type="button" class="work-img" data-work-open="centro" aria-label="Explorar estudo centro"><img src="https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" width="900" height="640" alt="Fotografia editorial de referência — centro empresarial (não representa um serviço ou produto real)" loading="lazy"></button>
         <div class="work-body"><span class="tag">Comercial</span><h3>Centro Empresarial Norte</h3><p>Conceito de complexo corporativo com quatro blocos e estacionamento.</p><button type="button" class="work-view" data-work-open="centro">Explorar estudo ↗</button></div></article>
       <article class="work-card" data-work-category="industrial">
-        <button type="button" class="work-img" data-work-open="galpao" aria-label="Explorar estudo galpao"><img src="assets/portfolio-obra-industrial.svg" width="900" height="640" alt="Ilustração de galpão logístico" loading="lazy"></button>
+        <button type="button" class="work-img" data-work-open="galpao" aria-label="Explorar estudo galpao"><img src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" width="900" height="640" alt="Fotografia editorial de referência — galpão logístico (não representa um serviço ou produto real)" loading="lazy"></button>
         <div class="work-body"><span class="tag">Industrial</span><h3>Galpão Logístico Sul</h3><p>Estudo de centro logístico com área ilustrativa de 8.000 m².</p><button type="button" class="work-view" data-work-open="galpao">Explorar estudo ↗</button></div></article>
     </div>
   </div>
@@ -250,5 +261,5 @@ a:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-off
 
 <footer>Alto Norte Engenharia — projeto autoral da USBRIN.</footer>
 
-<dialog id="work-dialog" class="work-dialog" aria-labelledby="work-title"><div class="work-dialog-inner"><button type="button" data-close-dialog="work-dialog" class="dialog-close">Fechar ×</button><span class="eyebrow">Estudo conceitual</span><img id="work-dialog-img" width="900" height="640" alt="Ilustração arquitetônica do estudo selecionado"><h2 id="work-title">Estudo de obra</h2><p id="work-detail"></p><p class="disclosure">Todos os estudos e dados são ilustrativos, não representam obras executadas por uma empresa real.</p><a href="studio.html?demo=construtora" class="btn">Criar um site semelhante ↗</a></div></dialog><script src="js/demo-portfolio.js" defer></script></body>
+<dialog id="work-dialog" class="work-dialog" aria-labelledby="work-title"><div class="work-dialog-inner"><button type="button" data-close-dialog="work-dialog" class="dialog-close">Fechar ×</button><span class="eyebrow">Estudo conceitual</span><img id="work-dialog-img" width="900" height="640" alt="Fotografia editorial de referência — arquitetônica do estudo selecionado (não representa um serviço ou produto real)"><h2 id="work-title">Estudo de obra</h2><p id="work-detail"></p><p class="disclosure">Todos os estudos e dados são ilustrativos, não representam obras executadas por uma empresa real.</p><a href="studio.html?demo=construtora" class="btn">Criar um site semelhante ↗</a></div></dialog><script src="js/demo-portfolio.js" defer></script></body>
 </html>
