@@ -24,7 +24,7 @@ const server=http.createServer((req,res)=>{
   page.on('pageerror',e=>errors.push(e.message));
   page.on('response',resp=>{if(resp.url().startsWith('http://127.0.0.1:'+port)&&resp.status()>=400)errors.push(resp.status()+' '+resp.url());});
   const base='http://127.0.0.1:'+port+'/';
-  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html','demo-pilar.html','demo-nimbo.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-volta-tech.html','demo-casa-patta.html','demo-lume-moda.html','demo-base-norte.html','demo-aurea-joias.html','demo-essencia-cosmeticos.html','demo-vista-hotel.html','demo-motor-forma.html','demo-vereda-planejados.html','demo-sorriso-claro.html','demo-cafe-orvalho.html','demo-helena-luz.html'];
+  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html','demo-pilar.html','demo-nimbo.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-volta-tech.html','demo-casa-patta.html','demo-lume-moda.html','demo-base-norte.html','demo-aurea-joias.html','demo-essencia-cosmeticos.html','demo-vista-hotel.html','demo-motor-forma.html','demo-vereda-planejados.html','demo-sorriso-claro.html','demo-cafe-orvalho.html','demo-helena-luz.html','demo-forno-82.html'];
   for(const width of [360,390,768,1366]){
     await page.setViewportSize({width,height:850});
     for(const filename of demos){
@@ -52,7 +52,28 @@ const server=http.createServer((req,res)=>{
   await page.locator('#portfolio-search').fill('Vitta');
   ok(await page.locator('.project:not([hidden])').count()===1,'Busca de projeto');
   await page.locator('#portfolio-search').fill('');
-  ok(await page.locator('.project:not([hidden])').count()===24,'Galeria mantém 24 projetos');
+  ok(await page.locator('.project:not([hidden])').count()===25,'Galeria mantém 25 projetos');
+
+  // Forno 82: filtro, cálculo didático, seleção local e limpeza.
+  await page.goto(base+'demo-forno-82.html');
+  await page.locator('[data-kind="vegetarianas"]').click();
+  ok(await page.locator('.pizza:not([hidden])').count()===2,'Forno 82 filtra vegetarianas');
+  await page.locator('#pizza-search').fill('jardim');
+  ok(await page.locator('.pizza:not([hidden])').count()===1,'Forno 82 combina busca e categoria');
+  await page.locator('[data-kind="todos"]').click();
+  await page.locator('#pizza-search').fill('');
+  await page.locator('[data-pick="brasata"]').click();
+  ok(await page.locator('#pizza-flavor').inputValue()==='brasata','Forno 82 seleciona sabor do cardápio');
+  await page.locator('#pizza-size').selectOption('grande');
+  await page.locator('#pizza-edge').selectOption('recheada');
+  await page.locator('#pizza-qty').fill('2');
+  ok((await page.locator('#pizza-preview').innerText()).includes('190,00'),'Forno 82 calcula escolha em centavos');
+  await page.locator('#pizza-add').click();
+  ok((await page.locator('#order-count').innerText()).includes('2 de 8'),'Forno 82 soma quantidades');
+  ok((await page.locator('#order-total').innerText()).includes('190,00'),'Forno 82 soma total sem pedido real');
+  ok(await page.locator('#order-copy').isEnabled(),'Forno 82 permite cópia voluntária');
+  await page.locator('#order-clear').click();
+  ok((await page.locator('#order-total').innerText()).includes('0,00'),'Forno 82 limpa carrinho ilustrativo');
 
   await page.goto(base+'demo-restaurante.html');
   await page.locator('[data-menu-filter="sobremesas"]').click();
