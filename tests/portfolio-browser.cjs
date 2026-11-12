@@ -99,7 +99,7 @@ const server=http.createServer((req,res)=>{
   await page.locator('#eixo-stage').selectOption('expansao');
   await page.locator('input[name="challenge"][value="margem"]').check();
   await page.locator('input[name="challenge"][value="caixa"]').check();
-  await page.locator('input[name="challenge"][value="processos"]').check();
+  await page.locator('input[name="challenge"][value="processos"]').click();
   ok(await page.locator('input[name="challenge"]:checked').count()===2,'Eixo respeita limite de dois desafios');
   ok((await page.locator('#eixo-status').innerText()).includes('no máximo dois'),'Eixo explica limite');
   await page.locator('#eixo-form button[type="submit"]').click();
