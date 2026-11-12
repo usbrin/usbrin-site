@@ -1,0 +1,289 @@
+name: USBRIN Portfolio — validação
+on:
+  push:
+    branches:
+      - 'feature/usbrin-portfolio-*'
+  pull_request:
+    paths:
+      - 'portfolio.html'
+      - 'demo-*.html'
+      - 'assets/preview-*'
+      - 'assets/portfolio-*'
+      - 'assets/pilar-*'
+      - 'assets/nimbo-*'
+      - 'css/portfolio.css'
+      - 'css/demo-pilar.css'
+      - 'css/demo-nimbo.css'
+      - 'css/demo-suite.css'
+      - 'css/demo-commerce.css'
+      - 'css/demo-retail.css'
+      - 'css/demo-atelier.css'
+      - 'css/demo-experiences.css'
+      - 'css/demo-specialists.css'
+      - 'css/demo-editorial.css'
+      - 'css/demo-forno-82.css'
+      - 'css/demo-salao-orla.css'
+      - 'css/demo-eixo-consultoria.css'
+      - 'css/demo-doce-mira.css'
+      - 'css/demo-opala-cloud.css'
+      - 'css/portfolio-concepts-50.css'
+      - 'js/portfolio.js'
+      - 'js/portfolio-brief.js'
+      - 'js/demo-portfolio.js'
+      - 'js/portfolio-engine.js'
+      - 'js/demo-pilar.js'
+      - 'js/demo-nimbo.js'
+      - 'js/portfolio-suite.js'
+      - 'js/demo-suite.js'
+      - 'js/portfolio-commerce.js'
+      - 'js/demo-commerce.js'
+      - 'js/portfolio-retail.js'
+      - 'js/demo-retail.js'
+      - 'js/portfolio-atelier.js'
+      - 'js/demo-atelier-market.js'
+      - 'js/portfolio-experiences.js'
+      - 'js/demo-experiences.js'
+      - 'js/portfolio-specialists.js'
+      - 'js/demo-specialists.js'
+      - 'js/portfolio-editorial.js'
+      - 'js/demo-editorial.js'
+      - 'js/demo-forno-82.js'
+      - 'js/demo-salao-orla.js'
+      - 'js/demo-eixo-consultoria.js'
+      - 'js/demo-doce-mira.js'
+      - 'js/demo-opala-cloud.js'
+      - 'js/portfolio-concepts-50.js'
+      - 'docs/USBRIN-PORTFOLIO-PLANO.md'
+      - 'scripts/build-static.cjs'
+      - 'tests/portfolio.test.cjs'
+      - 'tests/portfolio-brief.test.cjs'
+      - 'scripts/audit-portfolio-media.cjs'
+      - 'tests/portfolio-pro.test.cjs'
+      - 'tests/portfolio-suite.test.cjs'
+      - 'tests/portfolio-commerce.test.cjs'
+      - 'tests/portfolio-retail.test.cjs'
+      - 'tests/portfolio-atelier.test.cjs'
+      - 'tests/portfolio-experiences.test.cjs'
+      - 'tests/portfolio-specialists.test.cjs'
+      - 'tests/portfolio-editorial.test.cjs'
+      - 'tests/portfolio-forno.test.cjs'
+      - 'tests/portfolio-lote-26-27.test.cjs'
+      - 'tests/portfolio-lote-28-29.test.cjs'
+      - 'tests/portfolio-final-50.test.cjs'
+      - 'tests/portfolio-browser.cjs'
+      - 'package.json'
+      - '.github/workflows/portfolio-validation.yml'
+permissions:
+  contents: read
+concurrency:
+  group: portfolio-validation-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  portfolio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verificar sintaxe do projeto
+        run: |
+          node --check js/portfolio.js
+          node --check js/portfolio-brief.js
+          node --check tests/portfolio-brief.test.cjs
+          node --check scripts/audit-portfolio-media.cjs
+          node --check js/demo-portfolio.js
+          node --check js/portfolio-engine.js
+          node --check js/demo-pilar.js
+          node --check js/demo-nimbo.js
+          node --check js/portfolio-suite.js
+          node --check js/demo-suite.js
+          node --check tests/portfolio-suite.test.cjs
+          node --check js/portfolio-commerce.js
+          node --check js/demo-commerce.js
+          node --check tests/portfolio-commerce.test.cjs
+          node --check js/portfolio-retail.js
+          node --check js/demo-retail.js
+          node --check tests/portfolio-retail.test.cjs
+          node --check js/portfolio-atelier.js
+          node --check js/demo-atelier-market.js
+          node --check tests/portfolio-atelier.test.cjs
+          node --check js/portfolio-experiences.js
+          node --check js/demo-experiences.js
+          node --check tests/portfolio-experiences.test.cjs
+          node --check js/portfolio-specialists.js
+          node --check js/demo-specialists.js
+          node --check tests/portfolio-specialists.test.cjs
+          node --check js/portfolio-editorial.js
+          node --check js/demo-editorial.js
+          node --check js/demo-forno-82.js
+          node --check js/demo-salao-orla.js
+          node --check js/demo-eixo-consultoria.js
+          node --check js/demo-doce-mira.js
+          node --check js/demo-opala-cloud.js
+          node --check js/portfolio-concepts-50.js
+          node --check tests/portfolio-final-50.test.cjs
+          node --check tests/portfolio-lote-28-29.test.cjs
+          node --check tests/portfolio-lote-26-27.test.cjs
+          node --check tests/portfolio-forno.test.cjs
+          node --check tests/portfolio-editorial.test.cjs
+          node --check tests/portfolio-pro.test.cjs
+          node --check tests/portfolio-browser.cjs
+          node --check tests/portfolio.test.cjs
+      - name: Testar integridade do portfólio
+        run: |
+          npm run test:portfolio
+          node --test tests/portfolio-brief.test.cjs
+          node --test tests/portfolio-pro.test.cjs
+          node --test tests/portfolio-suite.test.cjs
+          node --test tests/portfolio-commerce.test.cjs
+          node --test tests/portfolio-retail.test.cjs
+          node --test tests/portfolio-atelier.test.cjs
+          node --test tests/portfolio-experiences.test.cjs
+          node --test tests/portfolio-specialists.test.cjs
+          node --test tests/portfolio-editorial.test.cjs
+          node --test tests/portfolio-forno.test.cjs
+          node --test tests/portfolio-lote-26-27.test.cjs
+          node --test tests/portfolio-lote-28-29.test.cjs
+          node --test tests/portfolio-final-50.test.cjs
+      - name: Auditar mídia fotográfica (diagnóstico informativo)
+        run: node scripts/audit-portfolio-media.cjs
+      - name: Regressão do USBRIN Studio
+        run: npm run test:pricing
+      - name: Validar pacote estático
+        run: |
+          npm run build
+          test -f dist/index.html
+          test -f dist/studio.html
+          test -f dist/parceiros.html
+          test -f dist/portfolio.html
+          test -f dist/js/portfolio-brief.js
+          test -f dist/demo-pilar.html
+          test -f dist/demo-nimbo.html
+          test -f dist/demo-norte-contabil.html
+          test -f dist/demo-nexo-automacao.html
+          test -f dist/demo-volta-tech.html
+          test -f dist/demo-casa-patta.html
+          test -f dist/demo-lume-moda.html
+          test -f dist/demo-base-norte.html
+          test -f dist/demo-aurea-joias.html
+          test -f dist/demo-essencia-cosmeticos.html
+          test -f dist/demo-vista-hotel.html
+          test -f dist/demo-motor-forma.html
+          test -f dist/demo-vereda-planejados.html
+          test -f dist/demo-sorriso-claro.html
+          test -f dist/demo-cafe-orvalho.html
+          test -f dist/demo-helena-luz.html
+          test -f dist/demo-forno-82.html
+          test -f dist/demo-salao-orla.html
+          test -f dist/demo-eixo-consultoria.html
+          test -f dist/demo-doce-mira.html
+          test -f dist/demo-opala-cloud.html
+          test -f dist/css/portfolio-concepts-50.css
+          test -f dist/js/portfolio-concepts-50.js
+          test -f dist/demo-nara-derma.html
+          test -f dist/demo-pausa.html
+          test -f dist/demo-arena-movimento.html
+          test -f dist/demo-aflora-spa.html
+          test -f dist/demo-linho-interiores.html
+          test -f dist/demo-casa-smash.html
+          test -f dist/demo-aurora-eventos.html
+          test -f dist/demo-maia-advocacia.html
+          test -f dist/demo-brilho-casa.html
+          test -f dist/demo-luz-solar.html
+          test -f dist/demo-barbearia-quadro.html
+          test -f dist/demo-escola-trilhas.html
+          test -f dist/demo-oficio-tecnico.html
+          test -f dist/demo-aulas-prisma.html
+          test -f dist/demo-vertice-digital.html
+          test -f dist/demo-casa-rio.html
+          test -f dist/demo-rota-brasil.html
+          test -f dist/demo-selva-viva.html
+          test -f dist/demo-ponto-filmes.html
+          test -f dist/demo-grid-estudio.html
+          test -f dist/demo-harmonia-lab.html
+          test -f dist/css/demo-doce-mira.css
+          test -f dist/css/demo-opala-cloud.css
+          test -f dist/js/demo-doce-mira.js
+          test -f dist/js/demo-opala-cloud.js
+          test -f dist/css/demo-salao-orla.css
+          test -f dist/css/demo-eixo-consultoria.css
+          test -f dist/js/demo-salao-orla.js
+          test -f dist/js/demo-eixo-consultoria.js
+          test -f dist/css/demo-forno-82.css
+          test -f dist/js/demo-forno-82.js
+          test -f dist/demo-atelier.html
+          test -f dist/demo-fluxo.html
+          test -f dist/demo-flor-raiz.html
+          test -f dist/demo-ponte-idiomas.html
+          test -f dist/assets/preview-flor-raiz.svg
+          test -f dist/assets/preview-ponte-idiomas.svg
+          test -f dist/assets/pilar-corporativo.svg
+          test -f dist/assets/nimbo-cozinha.svg
+          test -f dist/js/portfolio-engine.js
+          test -f dist/js/demo-pilar.js
+          test -f dist/js/demo-nimbo.js
+          test -f dist/css/demo-pilar.css
+          test -f dist/css/demo-nimbo.css
+          test -f dist/css/demo-suite.css
+          test -f dist/css/demo-commerce.css
+          test -f dist/css/demo-retail.css
+          test -f dist/css/demo-atelier.css
+          test -f dist/css/demo-experiences.css
+          test -f dist/css/demo-specialists.css
+          test -f dist/css/demo-editorial.css
+          test -f dist/js/portfolio-editorial.js
+          test -f dist/js/demo-editorial.js
+          test -f dist/js/portfolio-specialists.js
+          test -f dist/js/demo-specialists.js
+          test -f dist/js/portfolio-experiences.js
+          test -f dist/js/demo-experiences.js
+          test -f dist/js/portfolio-atelier.js
+          test -f dist/js/demo-atelier-market.js
+          test -f dist/js/portfolio-retail.js
+          test -f dist/js/demo-retail.js
+          test -f dist/js/portfolio-commerce.js
+          test -f dist/js/demo-commerce.js
+          test -f dist/js/portfolio-suite.js
+          test -f dist/js/demo-suite.js
+          test -f dist/assets/preview-norte-contabil.svg
+          test -f dist/assets/preview-nexo-automacao.svg
+          test -f dist/assets/portfolio-vitta.svg
+          test -f dist/assets/portfolio-prime.svg
+          test -f dist/js/demo-portfolio.js
+          test -f dist/js/portfolio.js
+          test -f dist/css/portfolio.css
+          test ! -f dist/tests/portfolio.test.cjs
+
+  browser:
+    needs: portfolio
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar Chromium de teste
+        run: |
+          npm install --no-save playwright
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "Usando Google Chrome pré-instalado"
+          elif command -v chromium >/dev/null 2>&1; then
+            echo "Usando Chromium pré-instalado"
+          else
+            npx playwright install chromium
+          fi
+      - name: Testar responsividade, filtros, simulações e diálogos
+        run: |
+          export CHROMIUM_PATH="$(command -v google-chrome || command -v chromium || node -e "process.stdout.write(require('playwright').chromium.executablePath())")"
+          node tests/portfolio-browser.cjs
+      - name: Guardar capturas do portfólio
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: usbrin-portfolio-ux-capturas
+          path: tests/artifacts/portfolio-*.png
+          if-no-files-found: warn
+          retention-days: 7

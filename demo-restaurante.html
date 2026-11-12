@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Brasa & Mesa — Projeto demonstrativo da USBRIN</title>
+<title>Brasa & Mesa — Projeto autoral da USBRIN</title>
 <meta name="robots" content="noindex, follow">
-<link rel="icon" href="data:,">
+<meta name="description" content="Brasa & Mesa — experiência editorial de restaurante, cardápio interativo e seleção de mesa ilustrativa. Projeto autoral USBRIN."><link rel="icon" type="image/png" href="assets/favicon-small.png">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&display=swap');
 
@@ -148,23 +148,48 @@ section[id], #aviso-demonstracao{scroll-margin-top:110px;}
 .hero{display:block;}
 .demo-hero-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:50px;align-items:center;}
 @media(max-width:860px){.demo-hero-grid{grid-template-columns:minmax(0,1fr);gap:32px;}}
+
+/* Upgrade editorial USBRIN Portfolio */
+:root{--bg:#17120f;--bg-2:#221a15;--card:#29201a;--accent:#dea978;--accent-2:#f0c89d;--text-secondary:#c1b1a5;--border:rgba(255,239,216,.14)}
+a:focus-visible,button:focus-visible{outline:3px solid #e8b785;outline-offset:4px}
+h1{letter-spacing:-.045em}.hero{background:radial-gradient(ellipse at 20% 20%,rgba(194,110,54,.15),transparent 54%)}.hero .demo-hero-grid{min-height:580px}.hero h1{font-size:clamp(50px,6.3vw,89px);line-height:1.04;max-width:12ch}.hero h1 em{font-weight:500;color:var(--accent-2)}.hero p{font-size:17px;line-height:1.85}
+.hero-art{aspect-ratio:1.13;border-radius:8px;border:1px solid rgba(255,239,216,.18);box-shadow:0 40px 80px -40px #000;display:block;isolation:isolate}.hero-art img{width:100%;height:100%;object-fit:cover}.art-caption{position:absolute;bottom:20px;left:20px;background:rgba(19,16,13,.88);border:1px solid #b2906c;padding:10px 13px;color:#f8e6ce;font-size:10px;letter-spacing:.15em}
+.section-head h2{font-size:clamp(31px,3.4vw,50px)}.dish-card{border-radius:8px;transition:transform .3s,border-color .3s}.dish-card:hover{transform:translateY(-5px);border-color:rgba(240,200,157,.48)}.dish-img{aspect-ratio:1.3;display:block;overflow:hidden}.dish-img img{height:100%;width:100%;object-fit:cover;transition:transform .5s}.dish-card:hover img{transform:scale(1.045)}.dish-body{padding:23px}.dish-body h3{font-size:22px}.dish-price{font-size:16px;margin-top:17px}
+.menu-tabs{display:flex;flex-wrap:wrap;gap:10px;margin:-14px 0 37px}.menu-tabs button,.reserve-options button{padding:10px 17px;background:transparent;border:1px solid #745946;color:#ddc9b3;border-radius:999px;font-size:12px;font-weight:700}.menu-tabs button[aria-pressed=true],.reserve-options button[aria-pressed=true]{background:#e6b88a;border-color:#e6b88a;color:#261a13}.menu-grid:has(.menu-list[hidden]){grid-template-columns:1fr}.menu-list h3{font-size:17px}.gallery{gap:12px}.gallery-shot{aspect-ratio:1;display:block;width:100%;border:1px solid var(--border);background:#342920;padding:0;overflow:hidden;cursor:zoom-in;border-radius:4px}.gallery-shot img{width:100%;height:100%;object-fit:cover;transition:transform .4s}.gallery-shot:hover img{transform:scale(1.06)}.about-art{border-radius:6px;aspect-ratio:1.2;overflow:hidden;display:block}.about-art img{width:100%;height:100%;object-fit:cover}
+.menu-toggle{display:none;color:var(--text);background:transparent;border:1px solid var(--border);padding:9px 14px;border-radius:6px;font-size:12px;font-weight:700;order:2}
+button.btn{border:0;cursor:pointer;font-family:inherit}.btn-outline{border:1px solid #83684d;background:transparent;color:#f4dfc8}.hero-actions{gap:12px}
+.visual-dialog{max-height:90vh;max-width:min(750px,calc(100% - 24px));padding:0;border:1px solid #ad815c;background:var(--bg-2);color:var(--text);border-radius:10px;box-shadow:0 40px 90px #0009}.visual-dialog::backdrop{background:#060403bb}.dialog-panel{padding:25px 32px 30px}.dialog-panel img{max-height:55vh;width:100%;height:auto;object-fit:contain;background:#271a13}.dialog-panel h2{font-size:clamp(28px,4vw,45px);margin:22px 0 10px}.dialog-panel p{color:var(--text-secondary);font-size:14px}.dialog-close{display:block;margin:0 0 20px auto;background:transparent;border:1px solid #917456;color:var(--text);padding:8px 14px;border-radius:5px}.reservation-dialog{width:min(590px,calc(100% - 24px))}.reservation-dialog fieldset{border:0;padding:0;margin:22px 0}.reservation-dialog legend{font-weight:700;margin-bottom:10px}.reserve-options{display:flex;gap:9px;flex-wrap:wrap}.reservation-summary{border:1px solid #86684e;padding:18px;margin-bottom:21px;color:#f6dec1;background:#34251a;font-size:14px}
+@media(max-width:800px){header .container{height:auto;min-height:75px;flex-wrap:wrap;padding-top:10px;padding-bottom:10px}.menu-toggle{display:inline-flex;margin-left:auto}header nav{display:none;width:100%;order:3;flex-direction:column;gap:0;padding:10px 0}header nav.open{display:flex}header nav a{display:block;padding:11px 4px;border-top:1px solid var(--border)}header .container>.btn{order:1;margin-left:auto}.hero .demo-hero-grid{min-height:0}.hero h1{font-size:clamp(48px,11vw,75px)}}
+@media(max-width:560px){.container{padding-inline:18px}.hero-art{aspect-ratio:1.2}.hero h1{font-size:48px}.gallery{gap:6px}.dialog-panel{padding:17px}.menu-tabs button{padding:9px 12px}.hero-actions .btn{width:100%;justify-content:center}}
+
+/* USBRIN — atualização fotográfica e editorial das demonstrações iniciais */
+.hero-art{position:relative;isolation:isolate;box-shadow:0 22px 65px rgba(0,0,0,.16)}
+.hero-art>img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;filter:saturate(.86) contrast(1.03)}
+.hero-art::after{content:"";position:absolute;inset:65% 0 0;z-index:0;pointer-events:none;background:linear-gradient(transparent,rgba(4,9,12,.42))}
+.hero-art>.art-caption,.hero-art>.hero-stamp{z-index:1}
+.dish-img img,.work-img img,.prop-img img,.gallery img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;transition:transform .3s}
+.dish-card:hover img,.work-card:hover img,.prop-card:hover img{transform:scale(1.035)}
+.dish-img,.work-img,.prop-img{overflow:hidden}
+@media(max-width:720px){.hero-art{width:100%;min-width:0;min-height:0}.hero-art>img{width:100%;height:100%;min-height:0;object-fit:cover}}
+
 </style>
 </head>
-<body>
+<body data-demo="restaurante">
 
-<div class="case-bar" id="aviso-demonstracao">Projeto demonstrativo criado pela USBRIN — empresa, dados e ofertas fictícios; não há reservas, agendamentos ou vendas reais. <a href="index.html">← Voltar para a USBRIN</a></div>
-
+<div class="case-bar" id="aviso-demonstracao">Projeto autoral · Conceito USBRIN — marca, informações e ofertas ilustrativas; sem reservas, agendamentos ou vendas reais. <a href="portfolio.html">← Voltar ao USBRIN Portfolio</a> &nbsp;·&nbsp; <a href="studio.html?demo=restaurante">Configurar um site assim ↗</a></div>
+<p class="editorial-asset-disclaimer" style="font-size:12px;line-height:1.6;opacity:.8;max-width:1140px;margin:14px auto;padding:0 24px">Imagens fotográficas meramente editoriais, usadas como referências visuais. Não são registros de clientes, profissionais, obras, imóveis ou produtos vinculados à marca conceitual.</p>
 <header>
   <div class="container">
     <div class="logo">Brasa <span>&amp; Mesa</span></div>
-    <nav>
+    <button class="menu-toggle" type="button" aria-controls="site-nav" aria-expanded="false">Menu</button>
+    <nav id="site-nav" aria-label="Navegação principal">
       <a href="#pratos">Pratos</a>
       <a href="#cardapio">Cardápio</a>
       <a href="#galeria">Galeria</a>
       <a href="#sobre">Sobre</a>
       <a href="#contato">Contato</a>
     </nav>
-    <a href="#contato" class="btn">Reservar mesa</a>
+    <button type="button" class="btn" data-open-reservation>Simular reserva</button>
   </div>
 </header>
 
@@ -172,16 +197,14 @@ section[id], #aviso-demonstracao{scroll-margin-top:110px;}
   <div class="container demo-hero-grid">
     <div>
       <span class="eyebrow">Cozinha de brasa · Ambiente acolhedor</span>
-      <h1>Sabor que conecta pessoas.</h1>
+      <h1>Há histórias que começam <em>à mesa.</em></h1>
       <p>Carnes selecionadas, brasa lenta e um ambiente pensado para boas conversas. Bem-vindo à mesa da Brasa &amp; Mesa.</p>
       <div class="hero-actions">
         <a href="#cardapio" class="btn">Ver cardápio</a>
-        <a href="#contato" class="btn btn-outline">Fazer reserva</a>
+        <button type="button" class="btn btn-outline" data-open-reservation>Simular reserva</button>
       </div>
     </div>
-    <div class="hero-art">
-      <svg viewBox="0 0 100 100" fill="none" stroke="#1B1712" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="50" cy="50" r="34"/><path d="M50 26v10M50 64v10M26 50h10M64 50h10M35 35l7 7M58 58l7 7M65 35l-7 7M42 58l-7 7"/></svg>
-    </div>
+    <div class="hero-art"><img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" alt="Fotografia editorial de referência — pratos na brasa sobre louça artesanal (não representa um serviço ou produto real)" width="900" height="640" fetchpriority="high"><span class="art-caption">FOTOGRAFIA EDITORIAL · CONCEITO</span></div>
   </div>
 </section>
 
@@ -193,7 +216,7 @@ section[id], #aviso-demonstracao{scroll-margin-top:110px;}
     </div>
     <div class="dishes">
       <div class="dish-card">
-        <div class="dish-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 3v7a3 3 0 0 0 6 0V3M9 10v11M17 3c-1.7 0-3 2-3 5s1.3 5 3 5v8"/></svg></div>
+        <div class="dish-img"><img src="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" width="900" height="640" loading="lazy" decoding="async" alt="Fotografia editorial de referência — autoral de picanha na brasa em prato de cerâmica (não representa um serviço ou produto real)"></div>
         <div class="dish-body">
           <h3>Picanha na brasa</h3>
           <p>Cortada na hora, com farofa da casa e vinagrete.</p>
@@ -201,7 +224,7 @@ section[id], #aviso-demonstracao{scroll-margin-top:110px;}
         </div>
       </div>
       <div class="dish-card">
-        <div class="dish-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg></div>
+        <div class="dish-img"><img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" width="900" height="640" loading="lazy" decoding="async" alt="Fotografia editorial de referência — autoral de risoto com cogumelos (não representa um serviço ou produto real)"></div>
         <div class="dish-body">
           <h3>Risoto de cogumelos</h3>
           <p>Arroz arbóreo cremoso com uma seleção de cogumelos frescos.</p>
@@ -209,7 +232,7 @@ section[id], #aviso-demonstracao{scroll-margin-top:110px;}
         </div>
       </div>
       <div class="dish-card">
-        <div class="dish-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 12a8 8 0 1 1 16 0"/><path d="M4 12h16"/></svg></div>
+        <div class="dish-img"><img src="https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" width="900" height="640" loading="lazy" decoding="async" alt="Fotografia editorial de referência — autoral de prato de polvo grelhado (não representa um serviço ou produto real)"></div>
         <div class="dish-body">
           <h3>Polvo grelhado</h3>
           <p>Com purê de batata-doce e azeite defumado.</p>
@@ -226,14 +249,15 @@ section[id], #aviso-demonstracao{scroll-margin-top:110px;}
       <span class="eyebrow">Cardápio</span>
       <h2>Uma seleção para todos os momentos.</h2>
     </div>
+    <div class="menu-tabs" role="group" aria-label="Categorias do cardápio demonstrativo"><button type="button" data-menu-filter="todos" aria-pressed="true">Toda a seleção</button><button type="button" data-menu-filter="entradas" aria-pressed="false">Entradas</button><button type="button" data-menu-filter="sobremesas" aria-pressed="false">Sobremesas</button></div>
     <div class="menu-grid">
-      <div class="menu-list">
+      <div class="menu-list" data-menu-type="entradas">
         <h3>Entradas</h3>
         <div class="menu-item"><div><div class="name">Pão de alho na brasa</div><div class="desc">Com manteiga de ervas</div></div><div class="price">R$ 24</div></div>
         <div class="menu-item"><div><div class="name">Carpaccio de tomate</div><div class="desc">Manjericão e lascas de queijo</div></div><div class="price">R$ 32</div></div>
         <div class="menu-item"><div><div class="name">Tábua de frios</div><div class="desc">Seleção de queijos e carnes curadas</div></div><div class="price">R$ 58</div></div>
       </div>
-      <div class="menu-list">
+      <div class="menu-list" data-menu-type="sobremesas">
         <h3>Sobremesas</h3>
         <div class="menu-item"><div><div class="name">Petit gâteau</div><div class="desc">Com sorvete de creme</div></div><div class="price">R$ 28</div></div>
         <div class="menu-item"><div><div class="name">Cheesecake de frutas vermelhas</div><div class="desc">Base amanteigada</div></div><div class="price">R$ 26</div></div>
@@ -250,14 +274,17 @@ section[id], #aviso-demonstracao{scroll-margin-top:110px;}
       <h2>O ambiente da casa.</h2>
     </div>
     <div class="gallery">
-      <div></div><div></div><div></div><div></div>
+      <button type="button" class="gallery-shot" data-gallery-src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" data-gallery-title="Da brasa à mesa" aria-label="Ampliar arte Da brasa à mesa"><img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" alt="Fotografia editorial de referência — um prato à brasa (não representa um serviço ou produto real)" width="900" height="640" loading="lazy"></button>
+      <button type="button" class="gallery-shot" data-gallery-src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" data-gallery-title="Sabores da estação" aria-label="Ampliar arte Sabores da estação"><img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" alt="Fotografia editorial de referência — Prato  de risoto de cogumelos (não representa um serviço ou produto real)" width="900" height="640" loading="lazy"></button>
+      <button type="button" class="gallery-shot" data-gallery-src="https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" data-gallery-title="Ingredientes em destaque" aria-label="Ampliar arte Ingredientes em destaque"><img src="https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" alt="Fotografia editorial de referência — Prato  de polvo grelhado (não representa um serviço ou produto real)" width="900" height="640" loading="lazy"></button>
+      <button type="button" class="gallery-shot" data-gallery-src="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" data-gallery-title="A tradição da brasa" aria-label="Ampliar arte A tradição da brasa"><img src="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" alt="Fotografia editorial de referência — picanha na brasa (não representa um serviço ou produto real)" width="900" height="640" loading="lazy"></button>
     </div>
   </div>
 </section>
 
 <section id="sobre" class="menu-alt">
   <div class="container about-grid">
-    <div class="about-art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M4 21V9l8-6 8 6v12"/><path d="M9 21v-8h6v8"/></svg></div>
+<div class="about-art"><img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" alt="Fotografia editorial de referência — do conceito gastronômico Brasa & Mesa (não representa um serviço ou produto real)" width="900" height="640" loading="lazy"></div>
     <div>
       <span class="eyebrow">Nossa história</span>
       <h2 style="font-size:30px;margin-bottom:18px;">Tradição na brasa, todos os dias.</h2>
@@ -295,12 +322,15 @@ section[id], #aviso-demonstracao{scroll-margin-top:110px;}
 
 <div class="produced-by">
   <div class="container">
-    <p>Este site é um projeto demonstrativo desenvolvido pela USBRIN para mostrar como sua empresa pode se apresentar na internet.</p>
+    <p>Este é um projeto autoral desenvolvido pela USBRIN para inspirar diferentes possibilidades de apresentação para empresas.</p>
     <a href="index.html?demo=restaurante#contato" class="btn">Quero um site assim para o meu negócio</a>
   </div>
 </div>
 
-<footer>Brasa &amp; Mesa — projeto demonstrativo da USBRIN.</footer>
+<footer>Brasa &amp; Mesa — projeto autoral da USBRIN.</footer>
 
+<dialog class="visual-dialog" id="gallery-dialog" aria-labelledby="gallery-title"><div class="dialog-panel"><button type="button" class="dialog-close" data-close-dialog="gallery-dialog">Fechar ×</button><img id="gallery-large" alt="Visualização ampliada da arte gastronômica" width="900" height="640"><h2 id="gallery-title">Arte gastronômica</h2><p>Representação conceitual produzida para esta experiência digital.</p></div></dialog>
+<dialog class="visual-dialog reservation-dialog" id="reservation-dialog" aria-labelledby="reservation-title"><div class="dialog-panel"><button type="button" class="dialog-close" data-close-dialog="reservation-dialog">Fechar ×</button><span class="eyebrow">Experiência ilustrativa</span><h2 id="reservation-title">Sua mesa, do seu jeito.</h2><p>Escolha suas preferências e veja como uma experiência de reserva poderia ser apresentada. Nenhuma reserva é realizada.</p><fieldset><legend>Para quantas pessoas?</legend><div class="reserve-options" role="group" aria-label="Número de pessoas"><button type="button" data-reserve-people="2" aria-pressed="true">2 pessoas</button><button type="button" data-reserve-people="4" aria-pressed="false">4 pessoas</button><button type="button" data-reserve-people="6" aria-pressed="false">6 pessoas</button></div></fieldset><fieldset><legend>Qual ambiente combina com você?</legend><div class="reserve-options" role="group" aria-label="Ambiente preferido"><button type="button" data-reserve-place="Salão" aria-pressed="true">Salão</button><button type="button" data-reserve-place="Varanda" aria-pressed="false">Varanda</button></div></fieldset><div class="reservation-summary" id="reservation-summary" role="status" aria-live="polite">Uma mesa para 2 pessoas, no salão. Seleção demonstrativa.</div><a href="studio.html?demo=restaurante" class="btn">Quero um site com essa experiência →</a></div></dialog>
+<script src="js/demo-portfolio.js" defer></script>
 </body>
 </html>

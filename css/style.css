@@ -180,7 +180,8 @@ h1,h2,h3,h4{
   align-items:center;
   gap:11px;
 }
-.brand img{ height:30px; width:auto; }
+.brand img{ height:auto; width:200px; max-width:100%; object-fit:contain; object-position:center; display:block; }
+.site-header .brand img{ width:170px; }
 .brand span{
   font-family:var(--font-display);
   font-weight:600;
@@ -265,7 +266,13 @@ h1,h2,h3,h4{
   perspective:1200px;
 }
 .hero-copy h1{
-  font-size:clamp(34px, 4.6vw, 54px);
+  font-family:var(--font-body);
+  font-size:clamp(36px, 4.5vw, 54px);
+  font-weight:600;
+  line-height:1.08;
+  letter-spacing:-0.045em;
+  max-width:17ch;
+  text-wrap:balance;
   margin-bottom:22px;
 }
 .hero-copy p{
@@ -312,12 +319,13 @@ h1,h2,h3,h4{
 }
 .hero-mark{
   position:absolute;
-  right:2%;
-  top:2%;
+  left:18%;
+  right:auto;
+  top:8%;
   width:150px;
-  opacity:0.5;
+  opacity:1;
   z-index:0;
-  filter:drop-shadow(0 0 40px rgba(99,102,241,0.35));
+  filter:none;
 }
 .mock-laptop{
   position:absolute;
@@ -1000,3 +1008,144 @@ body.menu-open{overflow:hidden;}
 @media(max-width:860px){.demo-grid{grid-template-columns:none;}}
 @media(min-width:1101px){.mobile-nav{display:none;}}
 @media(max-width:600px){.form-grid,.feature-options{grid-template-columns:1fr;}.header-actions{display:none;}.contact-panel{padding:36px 16px;}.demo-head-row{align-items:flex-start;flex-wrap:wrap;}.quote-result{padding:14px;}.wa-float{width:46px;height:46px;bottom:12px;right:12px;}.channels{grid-template-columns:1fr;}}
+
+/* USBRIN: navegacao horizontal compacta sem sobrepor a marca e o CTA.
+   Em telas intermediarias, preserva todas as opcoes no menu recolhivel. */
+@media (min-width:1301px){
+  .site-header .container{
+    max-width:1500px;
+    height:78px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:clamp(16px,1.6vw,28px);
+  }
+  .site-header .brand{flex:0 0 auto;}
+  .site-header .main-nav{
+    display:flex;
+    flex:1 1 auto;
+    min-width:0;
+    width:auto;
+    justify-content:center;
+    gap:clamp(12px,1.3vw,22px);
+    white-space:nowrap;
+    border-top:0;
+  }
+  .site-header .main-nav a{
+    font-size:clamp(12px,.95vw,14px);
+    line-height:1.4;
+  }
+  .site-header .header-actions{flex:0 0 auto;}
+  .site-header .header-actions .btn-primary{padding:11px 17px;white-space:nowrap;}
+}
+/* O menu completo passa ao botao em vez de quebrar a linha no desktop estreito. */
+@media (min-width:1101px) and (max-width:1300px){
+  .site-header .container{height:78px;display:flex;align-items:center;justify-content:space-between;}
+  .site-header .main-nav{display:none;}
+  .site-header .nav-toggle{display:flex;}
+  .mobile-nav{display:flex;}
+}
+
+/* USBRIN Studio: apresentacao breve na pagina inicial */
+.studio-home{padding:88px 0;}
+.studio-home-card{
+  padding:clamp(28px,5vw,64px);
+  border:1px solid rgba(129,131,244,.22);
+  border-radius:28px;
+  background:radial-gradient(ellipse at 90% 0%,rgba(99,102,241,.17),transparent 56%),var(--card);
+}
+.studio-home-head{max-width:710px;}
+.studio-home-head h2{
+  font-size:clamp(29px,3.5vw,43px);
+  line-height:1.15;
+  margin-bottom:16px;
+}
+.studio-home-head p{color:var(--text-secondary);font-size:16px;line-height:1.75;}
+.studio-home-steps{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:16px;
+  margin:32px 0 28px;
+}
+.studio-home-step{
+  background:rgba(17,18,23,.55);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:22px;
+  min-width:0;
+}
+.studio-home-step span{
+  display:block;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.08em;
+  color:var(--accent-soft);
+  margin-bottom:14px;
+}
+.studio-home-step h3{font-size:17px;margin-bottom:8px;}
+.studio-home-step p{font-size:14px;line-height:1.6;color:var(--text-secondary);}
+.studio-home-actions{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+.studio-home-note{font-size:13px;line-height:1.6;color:var(--text-secondary);max-width:47ch;}
+@media (max-width:760px){
+  .studio-home{padding:64px 0;}
+  .studio-home-steps{grid-template-columns:1fr;gap:12px;margin:26px 0;}
+  .studio-home-step{padding:18px;}
+  .studio-home-actions .btn{width:100%;white-space:normal;text-align:center;}
+}
+
+/* Assinatura USBRIN: o subtitulo ocupa a area sob o nome, ao lado do simbolo.
+   A altura da marca segue a altura original da imagem e nao altera o cabecalho. */
+.site-header .brand{
+  display:grid;
+  grid-template-columns:50px minmax(0,1fr);
+  grid-template-rows:26px 15px;
+  align-items:center;
+  gap:0;
+  width:170px;
+  flex:0 0 170px;
+  text-decoration:none;
+}
+.site-header .brand img{
+  grid-column:1 / -1;
+  grid-row:1 / 3;
+  display:block;
+  width:170px;
+  max-width:100%;
+  height:auto;
+}
+.site-header .brand .brand-tagline{
+  grid-column:2;
+  grid-row:2;
+  align-self:center;
+  display:block;
+  width:max-content;
+  margin:0;
+  padding:0;
+  color:rgba(255,255,255,.75);
+  font-family:'Inter',sans-serif;
+  font-size:9px;
+  font-weight:600;
+  line-height:1.2;
+  letter-spacing:.10em;
+  text-transform:uppercase;
+  text-align:left;
+  white-space:nowrap;
+}
+@media (max-width:420px){
+  .site-header .brand{
+    width:150px;
+    flex-basis:150px;
+    grid-template-columns:44px minmax(0,1fr);
+    grid-template-rows:23px 13px;
+  }
+  .site-header .brand img{width:150px;}
+  .site-header .brand .brand-tagline{font-size:8px;letter-spacing:.09em;}
+}
+
+
+/* Abertura comercial dos 50 projetos demonstrativos */
+#demonstracoes .demo-preview img{width:100%;height:100%;object-fit:cover;filter:saturate(.9)}
+#demonstracoes .demo-preview{overflow:hidden}
+#demonstracoes .demo-card:hover .demo-preview img{transform:scale(1.035)}
+#demonstracoes .demo-preview img{transition:transform .3s}
+@media(prefers-reduced-motion:reduce){#demonstracoes .demo-preview img{transition:none}}
