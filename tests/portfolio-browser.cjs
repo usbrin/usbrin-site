@@ -597,7 +597,7 @@ const server=http.createServer((req,res)=>{
   }
 
   // Novos projetos fotográficos: validar decodificação no Chrome, não apenas status HTTP.
-  for(const [file,minImages] of [['demo-cafe-orvalho.html',12],['demo-helena-luz.html',10]]){
+  for(const [file,minImages] of [['demo-cafe-orvalho.html',12],['demo-helena-luz.html',10],['demo-forno-82.html',8]]){
     await page.goto(base+file);
     const images=await page.evaluate(async()=>{
       const pics=[...document.images].filter(img=>/^https:\/\/images\.unsplash\.com\/photo-/.test(img.currentSrc||img.src));
