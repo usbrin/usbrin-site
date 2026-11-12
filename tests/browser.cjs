@@ -15,7 +15,9 @@ const assert=require('node:assert/strict');
   await p.setViewportSize({width,height:900});
   for(const file of pages){
    await p.goto('http://localhost:8001/'+file);
-   ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Overflow: '+file+' '+width);
+   const overflowData=await p.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,offenders:[...document.body.querySelectorAll('*')].filter(x=>x.getBoundingClientRect().right>innerWidth+1||x.getBoundingClientRect().left< -1).slice(0,16).map(x=>({tag:x.tagName,className:String(x.className).slice(0,100),width:Math.round(x.getBoundingClientRect().width),left:Math.round(x.getBoundingClientRect().left),right:Math.round(x.getBoundingClientRect().right)}))}));
+   if(overflowData.scroll>overflowData.width)console.log('DIAGNOSTICO_OVERFLOW',file,width,JSON.stringify(overflowData));
+   ok(overflowData.scroll<=overflowData.width,'Overflow: '+file+' '+width);
    ok(await p.locator('h1').count()===1,'h1: '+file);
    const broken=await p.evaluate(()=>[...document.querySelectorAll('a[href^="#"]')].filter(a=>!document.getElementById(a.getAttribute('href').slice(1))).map(a=>a.getAttribute('href')));
    ok(!broken.length,'Anchors: '+JSON.stringify(broken));
