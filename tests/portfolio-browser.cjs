@@ -729,6 +729,7 @@ const server=http.createServer((req,res)=>{
   }
 
   // Checar no navegador real as fotografias de todos os 21 novos conceitos.
+  const photoFailures=[];
   for(const file of ["demo-nara-derma.html","demo-pausa.html","demo-arena-movimento.html","demo-aflora-spa.html","demo-linho-interiores.html","demo-casa-smash.html","demo-aurora-eventos.html","demo-maia-advocacia.html","demo-brilho-casa.html","demo-luz-solar.html","demo-barbearia-quadro.html","demo-escola-trilhas.html","demo-oficio-tecnico.html","demo-aulas-prisma.html","demo-vertice-digital.html","demo-casa-rio.html","demo-rota-brasil.html","demo-selva-viva.html","demo-ponto-filmes.html","demo-grid-estudio.html","demo-harmonia-lab.html"]){
     await page.goto(base+file,{waitUntil:'domcontentloaded'});
     const images=await page.evaluate(async()=>{
@@ -738,9 +739,10 @@ const server=http.createServer((req,res)=>{
       return elements.map(img=>({ok:img.naturalWidth>0,url:(img.currentSrc||img.src).split('?')[0]}));
     });
     console.log('PORTFOLIO_50_MEDIA',file,JSON.stringify({loaded:images.filter(x=>x.ok).length,total:images.length,failed:images.filter(x=>!x.ok)}));
-    ok(images.length>=5,'Fotografias de referência suficientes: '+file);
-    ok(images.every(x=>x.ok),'Imagens decodificadas: '+file+' '+JSON.stringify(images.filter(x=>!x.ok)));
+    if(images.length<5)photoFailures.push({file,reason:'Quantidade insuficiente de imagens',total:images.length});
+    if(images.some(x=>!x.ok))photoFailures.push({file,reason:'Falha no carregamento',images:images.filter(x=>!x.ok)});
   }
+  ok(photoFailures.length===0,'Auditoria completa das 21 demos: '+JSON.stringify(photoFailures));
 
   const dir=path.join(root,'tests','artifacts');fs.mkdirSync(dir,{recursive:true});
   for(const width of [390,1366]){
