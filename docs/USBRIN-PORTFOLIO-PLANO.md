@@ -51,7 +51,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 |---:|---|---|---|---|
 | 19 | Maia Advocacia | Advocacia | planejado | Especialidades e credibilidade |
 | 20 | Norte Contábil | Contabilidade | novo · premium | Painel de cenários financeiros demonstrativos |
-| 21 | Eixo Consultoria | Consultoria | planejado | Soluções, metodologia e diagnóstico |
+| 21 | Eixo Consultoria | Consultoria | novo · corporativo/interativo em preview | Metodologia e mapa editorial de prioridades, sem diagnóstico real |
 | 22 | Brilho Casa | Limpeza | planejado | Solicitação simples e benefícios |
 | 23 | Luz Solar | Energia solar | planejado | Simulação ilustrativa e projetos |
 | 24 | Motor & Forma | Estética automotiva | novo · fotográfico/técnico | Configurador de serviços por porte de veículo e complementos ilustrativos |
@@ -61,7 +61,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 | Nº | Projeto autoral | Modelo de negócio | Situação nesta fase | Experiência diferencial |
 |---:|---|---|---|---|
 | 25 | Lume Moda | Moda / e-commerce | novo · fotográfico | Look Studio, guia de medidas e catálogo editorial |
-| 26 | Salão Orla | Salão de beleza | planejado | Serviços, equipe e agendamento |
+| 26 | Salão Orla | Salão de beleza | novo · editorial/interativo em preview | Serviços filtráveis e briefing ilustrativo, sem agenda |
 | 27 | Barbearia Quadro | Barbearia | planejado | Pacotes e experiência urbana |
 | 28 | Áurea Joias | Joalheria | novo · fotográfico/premium | Curadoria de presentes e comparação ilustrativa |
 | 29 | Essência Cosméticos | Cosméticos | novo · fotográfico | Routine Studio cosmético sem diagnóstico |
@@ -370,3 +370,24 @@ Congelar provisoriamente a expansão da coleção em **18/50**, priorizando qual
 - **Arquivos:** `demo-forno-82.html`, `css/demo-forno-82.css`, `js/demo-forno-82.js` e `tests/portfolio-forno.test.cjs`. Cartão integrado à galeria e ao manifest de build.
 - **Validação necessária:** CI estrutural, navegador nas larguras 360/390/768/1366, decodificação de fotos externas, revisão editorial de imagens e teste manual antes de qualquer publicação oficial.
 - **Governança:** preservar a produção e os sistemas Studio, Store, Parceiros e USBRIN ID. PR #5 continua como rascunho.
+
+## Décimo primeiro lote — dois conceitos independentes (12/11/2026)
+
+**Lote 26–27, projetos construídos em código:** Salão Orla (item 26 do plano) e Eixo Consultoria (item 21). Ao integrar ambos à coleção, o progresso passa a **27 de 50**, com **23 restantes**. São páginas distintas com CSS/JavaScript próprios, não reaproveitamento de um template único.
+
+### Salão Orla — beleza & serviços
+- Direção visual delicada e editorial, com creme, rosa queimado, fotografia de referência e tipografia de luxo, distinta da identidade corporativa Eixo.
+- Seis serviços hipotéticos com filtro por categoria, seleção local de até três opções, soma ilustrativa de minutos, estilo pretendido, período de preferência e resumo copiável.
+- Não há agenda real, profissionais, serviços de saúde, coleta, dados pessoais, orçamento, reserva, pagamento ou contratação. Tempos são fictícios e não atestam disponibilidade.
+
+### Eixo Consultoria — empresa B2B
+- Identidade corporativa em azul petróleo, verde mineral e off-white, fotografia editorial de escritórios, três frentes de atuação e metodologia explicativa de quatro etapas.
+- Ferramenta `Mapa de prioridades`: fase do negócio, um ou dois desafios entre Receita, Margem, Processos e Caixa, horizonte e três passos editoriais determinísticos. Cópia manual, reinício e limites explícitos.
+- Não é diagnóstico de empresa, cálculo financeiro, simulação de ROI, recomendação jurídica/contábil, atendimento real, formulário de leads nem ferramenta de envio. Não inventar clientes, cases, indicadores de performance ou resultados.
+
+### Validação, portfólio e governança
+- Rotas: `demo-salao-orla.html` e `demo-eixo-consultoria.html`. Galeria `portfolio.html` atualizada para 27 cartões, mantendo filtros e briefs contextuais.
+- Código isolado em `css/demo-salao-orla.css`, `css/demo-eixo-consultoria.css`, `js/demo-salao-orla.js`, `js/demo-eixo-consultoria.js`.
+- Testes de regras puras e conteúdo em `tests/portfolio-lote-26-27.test.cjs`; regressão da coleção e do Studio, navegador desktop/mobile, imagens decodificadas e capturas em CI.
+- **Política do usuário:** criar os projetos novos em lotes de 2; ao concluir a série, revisar e aperfeiçoar os primeiros projetos para adequá-los ao padrão fotográfico/funcional atual.
+- **Status:** código em preview protegido, sem merge. Avaliação CI e revisão de capturas necessárias antes de considerar homologado; produção, Studio, Store, Parceiros e USBRIN ID preservados.
