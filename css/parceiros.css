@@ -3,7 +3,7 @@
 .logo { display:inline-flex; align-items:center; min-height:44px; }
 .logo img { display:block; width:clamp(112px,15vw,136px); height:auto; }
 .partner-brand { gap:10px; }
-.partner-brand span { color:var(--purple); font:600 clamp(15px,2.2vw,19px)/1 'Space Grotesk',sans-serif; letter-spacing:0; }
+.partner-brand span { color:var(--purple); font:600 clamp(15px,2.2vw,19px)/1 'Space Grotesk',sans-serif; letter-spacing:0; transform:translateY(-.2em); }
 
 @media(max-width:620px){
   .head>.container{align-items:flex-start;flex-direction:column;padding-block:8px 12px}
