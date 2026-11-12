@@ -18,10 +18,10 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 |---:|---|---|---|---|
 | 1 | Vitta Clínica | Clínica | revisado em preview | Design clean e especialidades claras |
 | 2 | Sorriso Claro | Odontologia | novo · fotográfico/institucional | Especialidades e mensagem preparatória sem dados clínicos |
-| 3 | Nara Derma | Dermatologia | planejado | Elegância e apresentação de tratamentos |
-| 4 | Pausa | Psicologia | planejado | Acolhimento e linguagem acessível |
-| 5 | Arena Movimento | Academia | planejado | Planos e programação de aulas |
-| 6 | Aflora Spa | Spa | planejado | Editorial sensorial e pacotes |
+| 3 | Nara Derma | Dermatologia | novo · conceito interativo em preview | Elegância e apresentação de tratamentos |
+| 4 | Pausa | Psicologia | novo · conceito interativo em preview | Acolhimento e linguagem acessível |
+| 5 | Arena Movimento | Academia | novo · conceito interativo em preview | Planos e programação de aulas |
+| 6 | Aflora Spa | Spa | novo · conceito interativo em preview | Editorial sensorial e pacotes |
 
 ### Construção e imóveis (6)
 
@@ -31,7 +31,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 | 8 | PrimeLar Imóveis | Imobiliária | revisado em preview | Exploração de imóveis em catálogo |
 | 9 | Atelier Forma | Arquitetura | novo | Editorial arquitetônico e filtro de projetos |
 | 10 | Pilar Engenharia | Engenharia | novo · premium | Projetos técnicos, etapas e estimativas didáticas |
-| 11 | Linho Interiores | Design de interiores | planejado | Antes/depois de ambientes |
+| 11 | Linho Interiores | Design de interiores | novo · conceito interativo em preview | Antes/depois de ambientes |
 | 12 | Vereda Planejados | Móveis planejados | novo · fotográfico/técnico | Configurador de ambiente e briefing com medidas aproximadas |
 
 ### Gastronomia (6)
@@ -42,18 +42,18 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 | 14 | Café Orvalho | Cafeteria | novo · editorial/fotográfico | Cardápio filtrável e seleção ilustrativa por momento |
 | 15 | Forno 82 | Pizzaria | novo · fotográfico/interativo, em preview | Cardápio filtrável e seleção ilustrativa, sem pedidos reais |
 | 16 | Doce Mira | Confeitaria | novo · editorial e ateliê ilustrativo em preview | Coleção filtrável e composição de bolo, sem encomendas reais |
-| 17 | Casa Smash | Hamburgueria | planejado | Identidade ousada e cardápio |
-| 18 | Aurora Eventos | Buffet | planejado | Pacotes e eventos corporativos |
+| 17 | Casa Smash | Hamburgueria | novo · conceito interativo em preview | Identidade ousada e cardápio |
+| 18 | Aurora Eventos | Buffet | novo · conceito interativo em preview | Pacotes e eventos corporativos |
 
 ### Serviços profissionais (6)
 
 | Nº | Projeto autoral | Modelo de negócio | Situação nesta fase | Experiência diferencial |
 |---:|---|---|---|---|
-| 19 | Maia Advocacia | Advocacia | planejado | Especialidades e credibilidade |
+| 19 | Maia Advocacia | Advocacia | novo · conceito interativo em preview | Especialidades e credibilidade |
 | 20 | Norte Contábil | Contabilidade | novo · premium | Painel de cenários financeiros demonstrativos |
 | 21 | Eixo Consultoria | Consultoria | novo · corporativo/interativo em preview | Metodologia e mapa editorial de prioridades, sem diagnóstico real |
-| 22 | Brilho Casa | Limpeza | planejado | Solicitação simples e benefícios |
-| 23 | Luz Solar | Energia solar | planejado | Simulação ilustrativa e projetos |
+| 22 | Brilho Casa | Limpeza | novo · conceito interativo em preview | Solicitação simples e benefícios |
+| 23 | Luz Solar | Energia solar | novo · conceito interativo em preview | Simulação ilustrativa e projetos |
 | 24 | Motor & Forma | Estética automotiva | novo · fotográfico/técnico | Configurador de serviços por porte de veículo e complementos ilustrativos |
 
 ### Moda e beleza (5)
@@ -62,7 +62,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 |---:|---|---|---|---|
 | 25 | Lume Moda | Moda / e-commerce | novo · fotográfico | Look Studio, guia de medidas e catálogo editorial |
 | 26 | Salão Orla | Salão de beleza | novo · editorial/interativo em preview | Serviços filtráveis e briefing ilustrativo, sem agenda |
-| 27 | Barbearia Quadro | Barbearia | planejado | Pacotes e experiência urbana |
+| 27 | Barbearia Quadro | Barbearia | novo · conceito interativo em preview | Pacotes e experiência urbana |
 | 28 | Áurea Joias | Joalheria | novo · fotográfico/premium | Curadoria de presentes e comparação ilustrativa |
 | 29 | Essência Cosméticos | Cosméticos | novo · fotográfico | Routine Studio cosmético sem diagnóstico |
 
@@ -80,10 +80,10 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 
 | Nº | Projeto autoral | Modelo de negócio | Situação nesta fase | Experiência diferencial |
 |---:|---|---|---|---|
-| 35 | Escola Trilhas | Escola | planejado | Proposta pedagógica e inscrições |
+| 35 | Escola Trilhas | Escola | novo · conceito interativo em preview | Proposta pedagógica e inscrições |
 | 36 | Ponte Idiomas | Idiomas | novo | Trilhas de aprendizagem |
-| 37 | Ofício Técnico | Cursos técnicos | planejado | Grade curricular e modalidades |
-| 38 | Aulas Prisma | Cursos online | planejado | Programas e comunidade |
+| 37 | Ofício Técnico | Cursos técnicos | novo · conceito interativo em preview | Grade curricular e modalidades |
+| 38 | Aulas Prisma | Cursos online | novo · conceito interativo em preview | Programas e comunidade |
 
 ### Tecnologia (4)
 
@@ -91,7 +91,7 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 |---:|---|---|---|---|
 | 39 | Fluxo | SaaS | novo | Dashboard interativo com dados demonstrativos |
 | 40 | Opala Cloud | Cloud | novo · técnico e interativo em preview | Recursos, arquitetura simulada e estimativas hipotéticas |
-| 41 | Vértice Digital | Marketing digital | planejado | Serviços, processo e portfólio |
+| 41 | Vértice Digital | Marketing digital | novo · conceito interativo em preview | Serviços, processo e portfólio |
 | 42 | Nexo Automação | Automação | novo · padrão USBRIN | Orquestrador local de fluxos por etapas |
 
 ### Turismo e hospedagem (4)
@@ -99,18 +99,18 @@ Meta: **50 projetos autorais conceituais**, divididos em **10 segmentos**. Cada 
 | Nº | Projeto autoral | Modelo de negócio | Situação nesta fase | Experiência diferencial |
 |---:|---|---|---|---|
 | 43 | Vista Hotel | Hotelaria premium | novo · editorial/fotográfico | Comparação de suítes e simulação transparente de estadia |
-| 44 | Casa Rio | Pousada | planejado | Imersão visual e acomodações |
-| 45 | Rota Brasil | Agência | planejado | Roteiros e pacotes |
-| 46 | Selva Viva | Ecoturismo | planejado | Expedições e sustentabilidade |
+| 44 | Casa Rio | Pousada | novo · conceito interativo em preview | Imersão visual e acomodações |
+| 45 | Rota Brasil | Agência | novo · conceito interativo em preview | Roteiros e pacotes |
+| 46 | Selva Viva | Ecoturismo | novo · conceito interativo em preview | Expedições e sustentabilidade |
 
 ### Criativos e portfólios (4)
 
 | Nº | Projeto autoral | Modelo de negócio | Situação nesta fase | Experiência diferencial |
 |---:|---|---|---|---|
 | 47 | Helena Luz | Fotografia | novo · editorial/fotográfico | Galeria ampliável com navegação acessível e briefing de ensaio |
-| 48 | Ponto Filmes | Audiovisual | planejado | Reels e produções conceituais |
-| 49 | Grid Estúdio | Design | planejado | Cases de identidade e processo |
-| 50 | Harmonia Lab | Estúdio musical | planejado | Trabalhos e serviços de produção |
+| 48 | Ponto Filmes | Audiovisual | novo · conceito interativo em preview | Reels e produções conceituais |
+| 49 | Grid Estúdio | Design | novo · conceito interativo em preview | Cases de identidade e processo |
+| 50 | Harmonia Lab | Estúdio musical | novo · conceito interativo em preview | Trabalhos e serviços de produção |
 
 ## Critérios de aceitação por projeto
 
@@ -414,3 +414,39 @@ Congelar provisoriamente a expansão da coleção em **18/50**, priorizando qual
 - Desenvolvimento apenas na branch `feature/usbrin-portfolio-20261110`, PR #5 em rascunho, preview protegido por Cloudflare Access. Nenhuma alteração de produção ou sistemas Studio, Store, Parceiros e USBRIN ID.
 - **Próximas etapas:** novos lotes de exatamente dois conceitos; após completar os 50, reavaliar e modernizar as primeiras demonstrações conforme orientação do usuário.
 - **Homologação:** verificar CI, carregamento real de fotos, capturas desktop/mobile e revisões humanas antes de anunciar o lote aprovado.
+
+## Coleção de 50 conceitos — implementação integral em branch de prévia (12/11/2026)
+
+**Inventário de código:** 50/50 páginas HTML autorais e 50 cartões na galeria. Os 21 itens anteriormente planejados foram adicionados sem remover as 29 experiências existentes.
+
+### Etapa final de criação (21 novos projetos)
+- **Nara Derma** (`demo-nara-derma.html`): Informação dermatológica responsável e experiências editoriais.
+- **Pausa** (`demo-pausa.html`): Experiência acolhedora de psicologia com serviços explicados.
+- **Arena Movimento** (`demo-arena-movimento.html`): Programas de treino e referências de modalidades.
+- **Aflora Spa** (`demo-aflora-spa.html`): Coleção sensorial de experiências de bem-estar.
+- **Linho Interiores** (`demo-linho-interiores.html`): Estúdio editorial com referências de ambientes e design.
+- **Casa Smash** (`demo-casa-smash.html`): Cardápio urbano com seleção ilustrativa de combinações.
+- **Aurora Eventos** (`demo-aurora-eventos.html`): Coleção editorial de experiências de celebração.
+- **Maia Advocacia** (`demo-maia-advocacia.html`): Serviços institucionais com comunicação jurídica responsável.
+- **Brilho Casa** (`demo-brilho-casa.html`): Escopos ilustrativos de serviços residenciais e comerciais.
+- **Luz Solar** (`demo-luz-solar.html`): Apresentação educativa de soluções de energia.
+- **Barbearia Quadro** (`demo-barbearia-quadro.html`): Identidade urbana e seleção de serviços de referência.
+- **Escola Trilhas** (`demo-escola-trilhas.html`): Proposta pedagógica apresentada em trilhas exploráveis.
+- **Ofício Técnico** (`demo-oficio-tecnico.html`): Conteúdo técnico conceitual organizado em percursos.
+- **Aulas Prisma** (`demo-aulas-prisma.html`): Trilhas de conhecimento e módulos demonstrativos.
+- **Vértice Digital** (`demo-vertice-digital.html`): Estratégia, conteúdo e conversão em linguagem corporativa.
+- **Casa Rio** (`demo-casa-rio.html`): Hospitalidade e ambientes de referência editorial.
+- **Rota Brasil** (`demo-rota-brasil.html`): Roteiros inspiracionais e organização de referências.
+- **Selva Viva** (`demo-selva-viva.html`): Exploração visual de experiências na natureza.
+- **Ponto Filmes** (`demo-ponto-filmes.html`): Estúdio audiovisual com galeria conceitual de produções.
+- **Grid Estúdio** (`demo-grid-estudio.html`): Direção de arte, identidade e explorações de design.
+- **Harmonia Lab** (`demo-harmonia-lab.html`): Etapas de produção e identidade de estúdio musical.
+
+### Diferenciação, governança e critérios de publicação
+- Os novos projetos utilizam seis composições editoriais distintas, 21 combinações de paleta, identidade e textos próprios, fotografias de referência e três mecanismos de exploração: galeria filtrável com foco, seleção de até duas inspirações copiáveis e painéis navegáveis com teclado.
+- O código de componentes está concentrado em `css/portfolio-concepts-50.css` e `js/portfolio-concepts-50.js` para manutenção e segurança. Compartilhar componentes **não** significa compartilhar marcas, narrativas ou afirmar cases inexistentes.
+- Nenhum dos 21 novos conceitos cria cadastros, contratações, orçamentos reais, processos de checkout ou consultas médicas/jurídicas. Todas as interações são locais e se limitam a material informativo.
+- A galeria passa a destacar seis experiências de referência antes dos 50 cartões, com transparência de que são projetos conceituais.
+- A suíte de testes amplia validações estruturais, responsividade 360/390/768/1366, interações, carregamento de fotografias e capturas, preservando regressão do Studio. Os resultados da CI e uma auditoria de desempenho/acessibilidade devem ser revisados antes da aprovação oficial.
+- Esta mudança se limita à `feature/usbrin-portfolio-20261110`; PR #5 permanece como rascunho, sem merge ou publicação na produção.
+- **Etapa posterior combinada:** reavaliar os primeiros projetos e modernizar as demonstrações que não acompanhem o padrão fotográfico e comercial mais recente. Não inferir que a auditoria detalhada dos legados já foi concluída.

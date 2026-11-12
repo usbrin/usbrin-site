@@ -24,7 +24,7 @@ const server=http.createServer((req,res)=>{
   page.on('pageerror',e=>errors.push(e.message));
   page.on('response',resp=>{if(resp.url().startsWith('http://127.0.0.1:'+port)&&resp.status()>=400)errors.push(resp.status()+' '+resp.url());});
   const base='http://127.0.0.1:'+port+'/';
-  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html','demo-pilar.html','demo-nimbo.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-volta-tech.html','demo-casa-patta.html','demo-lume-moda.html','demo-base-norte.html','demo-aurea-joias.html','demo-essencia-cosmeticos.html','demo-vista-hotel.html','demo-motor-forma.html','demo-vereda-planejados.html','demo-sorriso-claro.html','demo-cafe-orvalho.html','demo-helena-luz.html','demo-forno-82.html','demo-salao-orla.html','demo-eixo-consultoria.html','demo-doce-mira.html','demo-opala-cloud.html'];
+  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html','demo-pilar.html','demo-nimbo.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-volta-tech.html','demo-casa-patta.html','demo-lume-moda.html','demo-base-norte.html','demo-aurea-joias.html','demo-essencia-cosmeticos.html','demo-vista-hotel.html','demo-motor-forma.html','demo-vereda-planejados.html','demo-sorriso-claro.html','demo-cafe-orvalho.html','demo-helena-luz.html','demo-forno-82.html','demo-salao-orla.html','demo-eixo-consultoria.html','demo-doce-mira.html','demo-opala-cloud.html','demo-nara-derma.html','demo-pausa.html','demo-arena-movimento.html','demo-aflora-spa.html','demo-linho-interiores.html','demo-casa-smash.html','demo-aurora-eventos.html','demo-maia-advocacia.html','demo-brilho-casa.html','demo-luz-solar.html','demo-barbearia-quadro.html','demo-escola-trilhas.html','demo-oficio-tecnico.html','demo-aulas-prisma.html','demo-vertice-digital.html','demo-casa-rio.html','demo-rota-brasil.html','demo-selva-viva.html','demo-ponto-filmes.html','demo-grid-estudio.html','demo-harmonia-lab.html'];
   for(const width of [360,390,768,1366]){
     await page.setViewportSize({width,height:850});
     for(const filename of demos){
@@ -52,7 +52,7 @@ const server=http.createServer((req,res)=>{
   await page.locator('#portfolio-search').fill('Vitta');
   ok(await page.locator('.project:not([hidden])').count()===1,'Busca de projeto');
   await page.locator('#portfolio-search').fill('');
-  ok(await page.locator('.project:not([hidden])').count()===29,'Galeria mantém 29 projetos');
+  ok(await page.locator('.project:not([hidden])').count()===50,'Galeria mantém 50 projetos');
 
   // Forno 82: filtro, cálculo didático, seleção local e limpeza.
   await page.goto(base+'demo-forno-82.html');
@@ -160,6 +160,26 @@ const server=http.createServer((req,res)=>{
   await page.keyboard.press('Escape');
   ok(await page.locator('.mobile-toggle').getAttribute('aria-expanded')==='false','Opala fecha menu via Escape');
   await page.setViewportSize({width:1366,height:900});
+
+  // Coleção de 50: filtros, tabs e seleção em três experiências diferentes.
+  await page.goto(base+'demo-linho-interiores.html');
+  await page.locator('button[data-filter="Residencial"]').click();
+  ok(await page.locator('.concept-card:not([hidden])').count()===1,'Linho filtra a galeria');
+  await page.locator('button[data-focus="0"]').click();
+  ok((await page.locator('#focus-title').innerText()).includes('Viver'),'Linho atualiza detalhe da referência');
+  await page.goto(base+'demo-maia-advocacia.html');
+  await page.locator('button[data-tab="1"]').click();
+  ok((await page.locator('#detail-title').innerText()).includes('Contratos'),'Maia alterna área de atuação');
+  await page.goto(base+'demo-casa-smash.html');
+  await page.locator('button[data-select="0"]').click();
+  await page.locator('button[data-select="1"]').click();
+  ok(await page.locator('.selection-row').count()===2,'Casa Smash seleciona duas referências');
+  await page.locator('button[data-select="2"]').click();
+  ok((await page.locator('#interaction-status').innerText()).includes('no máximo'),'Casa Smash limita seleção');
+  await page.locator('#clear-selection').click();
+  ok(await page.locator('.selection-row').count()===0,'Casa Smash limpa seleção');
+  await page.goto(base+'portfolio.html');
+  ok(await page.locator('.featured-card').count()===6,'Portfólio destaca seis experiências curatoriais');
 
   await page.goto(base+'demo-restaurante.html');
   await page.locator('[data-menu-filter="sobremesas"]').click();
@@ -537,7 +557,7 @@ const server=http.createServer((req,res)=>{
   // Portfolio 2.0: o interesse por cada projeto vira um briefing contextual copiável.
   await page.goto(base+'portfolio.html');
   const firstBrief=page.locator('[data-project-brief]').first();
-  ok(await page.locator('[data-project-brief]').count()===29,'Vinte e nove CTAs de briefing contextual');
+  ok(await page.locator('[data-project-brief]').count()===50,'Cinquenta CTAs de briefing contextual');
   await firstBrief.click();
   ok(await page.locator('#project-brief-dialog').isVisible(),'Briefing abre ao escolher referência');
   ok((await page.locator('#brief-project-name').innerText()).includes('Brasa & Mesa'),'Nome correto da referência comercial');
@@ -706,6 +726,20 @@ const server=http.createServer((req,res)=>{
     console.log('PORTFOLIO_NEW_PAIR_MEDIA',file,JSON.stringify({total:images.length,loaded:images.filter(x=>x.ok).length,failed:images.filter(x=>!x.ok)}));
     ok(images.length>=minimum,'Fotografias de ambientação em '+file);
     ok(images.every(x=>x.ok),'Fotografias decodificadas em '+file+': '+JSON.stringify(images.filter(x=>!x.ok)));
+  }
+
+  // Checar no navegador real as fotografias de todos os 21 novos conceitos.
+  for(const file of ["demo-nara-derma.html","demo-pausa.html","demo-arena-movimento.html","demo-aflora-spa.html","demo-linho-interiores.html","demo-casa-smash.html","demo-aurora-eventos.html","demo-maia-advocacia.html","demo-brilho-casa.html","demo-luz-solar.html","demo-barbearia-quadro.html","demo-escola-trilhas.html","demo-oficio-tecnico.html","demo-aulas-prisma.html","demo-vertice-digital.html","demo-casa-rio.html","demo-rota-brasil.html","demo-selva-viva.html","demo-ponto-filmes.html","demo-grid-estudio.html","demo-harmonia-lab.html"]){
+    await page.goto(base+file,{waitUntil:'domcontentloaded'});
+    const images=await page.evaluate(async()=>{
+      const elements=[...document.images].filter(img=>(img.currentSrc||img.src).startsWith('https://images.unsplash.com/photo-'));
+      elements.forEach(img=>img.loading='eager');
+      await Promise.race([Promise.allSettled(elements.map(img=>img.decode())),new Promise(done=>setTimeout(done,12000))]);
+      return elements.map(img=>({ok:img.naturalWidth>0,url:(img.currentSrc||img.src).split('?')[0]}));
+    });
+    console.log('PORTFOLIO_50_MEDIA',file,JSON.stringify({loaded:images.filter(x=>x.ok).length,total:images.length,failed:images.filter(x=>!x.ok)}));
+    ok(images.length>=5,'Fotografias de referência suficientes: '+file);
+    ok(images.every(x=>x.ok),'Imagens decodificadas: '+file+' '+JSON.stringify(images.filter(x=>!x.ok)));
   }
 
   const dir=path.join(root,'tests','artifacts');fs.mkdirSync(dir,{recursive:true});
