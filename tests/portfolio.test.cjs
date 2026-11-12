@@ -102,13 +102,14 @@ test('Capa da galeria atualizada corresponde às artes autorais locais',()=>{
   }
 });
 
-test('A meta de cinquenta é apenas plano: inventário numerado e sem links fantasmas', () => {
+test('Coleção de cinquenta: inventário numerado e links existentes', () => {
   const doc = read('docs/USBRIN-PORTFOLIO-PLANO.md');
   const ids = [...doc.matchAll(/^\| (\d+) \|/gm)].map(x=>Number(x[1]));
   assert.equal(ids.length, 50);
   assert.deepEqual(ids, Array.from({length:50},(_,i)=>i+1));
-  assert.match(doc, /planejado/);
-  assert.match(portfolio, /projetos são publicados gradualmente/);
+  assert.match(doc, /50\/50 páginas HTML autorais/);
+  assert.match(portfolio, /50 projetos disponíveis/);
+  assert.match(portfolio, /A coleção reúne 50 projetos conceituais/);
 });
 
 test('Studio, parceiros e estrutura comercial permanecem na entrega', () => {
