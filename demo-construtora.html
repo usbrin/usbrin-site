@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Alto Norte Engenharia — Projeto demonstrativo da USBRIN</title>
+<title>Alto Norte Engenharia — Projeto autoral da USBRIN</title>
 <meta name="robots" content="noindex, follow">
-<link rel="icon" href="data:,">
+<meta name="description" content="Alto Norte Engenharia: portfólio autoral de obras conceituais, filtros por setor e detalhes interativos, desenvolvido pela USBRIN."><link rel="icon" type="image/png" href="assets/favicon-small.png">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
 
@@ -114,23 +114,41 @@ section[id], #aviso-demonstracao{scroll-margin-top:110px;}
 .hero{display:block;}
 .demo-hero-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:50px;align-items:center;}
 @media(max-width:860px){.demo-hero-grid{grid-template-columns:minmax(0,1fr);gap:32px;}}
+
+/* Redesign industrial editorial */
+:root{--bg:#10161b;--bg-2:#161e25;--card:#1d2830;--accent:#e7b66f;--text-secondary:#b1bfca;--border:rgba(235,240,241,.15)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:4px}.hero{background:radial-gradient(ellipse at 80% 4%,rgba(225,151,63,.13),transparent 55%)}.hero .demo-hero-grid{min-height:580px}.hero h1{font-size:clamp(52px,6vw,84px);max-width:12ch;letter-spacing:-.048em;line-height:1.03}.hero h1 em{color:var(--accent);font-style:normal}.hero p{line-height:1.85}.hero-art{display:block;aspect-ratio:1.2;border-radius:3px;box-shadow:20px 22px 0 -11px #3b4550;overflow:hidden}.hero-art img{height:100%;width:100%;object-fit:cover}.art-caption{position:absolute;bottom:20px;left:19px;padding:9px 12px;background:rgba(16,22,27,.9);color:#f4d3a1;letter-spacing:.13em;font-size:10px}.section-head h2{font-size:clamp(33px,3.8vw,50px)}.stats-strip{background:#1b242c}.stats-strip .stat{text-align:left;padding:25px 29px}.stats-strip .num{font-size:38px}.stats-strip .label{font-size:13px}.work-card{border-radius:3px;transition:transform .25s,border-color .25s}.work-card:hover{transform:translateY(-5px);border-color:rgba(231,182,111,.5)}.work-img{border:0;width:100%;padding:0;aspect-ratio:1.45;cursor:zoom-in;display:block;overflow:hidden;background:#3b4b55}.work-img img{height:100%;width:100%;object-fit:cover;transition:transform .5s}.work-img:hover img{transform:scale(1.045)}.work-body{padding:23px 22px}.work-body h3{font-size:20px;margin:12px 0 8px}.work-view{background:transparent;color:var(--accent);padding:14px 0 0;border:0;border-bottom:1px solid var(--accent);font-size:12px;font-weight:700}.work-filters{display:flex;gap:9px;flex-wrap:wrap;margin:-4px 0 15px}.work-filters button{border:1px solid #56626c;background:transparent;padding:10px 16px;border-radius:3px;color:#d2dbe1;font-size:12px;font-weight:700}.work-filters button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#131a20}.filter-count{font-size:12px;color:var(--text-secondary);margin-bottom:22px}.project-row{grid-template-columns:80px 1fr auto}.contact-panel{border-radius:3px;background:linear-gradient(130deg,#27353d,#1d282f);padding:65px 40px}
+.menu-toggle{display:none;background:transparent;border:1px solid var(--border);color:white;border-radius:3px;padding:9px 13px;font-size:12px;font-weight:700}
+.work-dialog{border:1px solid #927044;background:#151f26;color:#f0f2f4;border-radius:5px;width:min(750px,calc(100% - 25px));max-height:91vh;padding:0;box-shadow:0 40px 90px #000a}.work-dialog::backdrop{background:rgba(4,8,10,.78)}.work-dialog-inner{padding:26px 30px 34px}.work-dialog img{width:100%;max-height:47vh;object-fit:cover}.work-dialog h2{font-size:clamp(30px,4vw,46px);margin:18px 0 10px}.work-dialog p{font-size:14px;color:var(--text-secondary)}.work-dialog .disclosure{font-size:12px}.dialog-close{display:block;margin:0 0 19px auto;border:1px solid #69808b;background:transparent;color:#fff;padding:8px 15px}
+@media(max-width:800px){header .container{height:auto;min-height:76px;flex-wrap:wrap;gap:12px;padding-block:12px}.menu-toggle{display:inline-flex;margin-left:auto;order:2}header nav{display:none;width:100%;order:3;flex-direction:column;gap:0;padding:9px 0}header nav.open{display:flex}header nav a{display:block;padding:12px 4px;border-top:1px solid var(--border)}header .container>.btn{order:1;margin-left:auto}.hero .demo-hero-grid{min-height:0}.hero h1{font-size:clamp(44px,10vw,75px)}}
+@media(max-width:600px){.container{padding-inline:18px}.stats-strip .container{grid-template-columns:repeat(3,minmax(0,1fr))}.stats-strip .stat{padding:20px 8px}.stats-strip .num{font-size:27px}.stats-strip .label{font-size:10px}.hero-art{aspect-ratio:1.35}.work-dialog-inner{padding:17px}}
+
+/* USBRIN — atualização fotográfica e editorial das demonstrações iniciais */
+.hero-art{position:relative;isolation:isolate;box-shadow:0 22px 65px rgba(0,0,0,.16)}
+.hero-art>img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;filter:saturate(.86) contrast(1.03)}
+.hero-art::after{content:"";position:absolute;inset:65% 0 0;z-index:0;pointer-events:none;background:linear-gradient(transparent,rgba(4,9,12,.42))}
+.hero-art>.art-caption,.hero-art>.hero-stamp{z-index:1}
+.dish-img img,.work-img img,.prop-img img,.gallery img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;transition:transform .3s}
+.dish-card:hover img,.work-card:hover img,.prop-card:hover img{transform:scale(1.035)}
+.dish-img,.work-img,.prop-img{overflow:hidden}
+@media(max-width:720px){.hero-art{min-height:240px}.hero-art>img{min-height:240px}}
+
 </style>
 </head>
-<body>
+<body data-demo="construtora">
 
-<div class="case-bar" id="aviso-demonstracao">Projeto demonstrativo criado pela USBRIN — empresa, dados e ofertas fictícios; não há reservas, agendamentos ou vendas reais. <a href="index.html">← Voltar para a USBRIN</a> &nbsp;·&nbsp; <a href="studio.html?demo=construtora">Configurar um site assim ↗</a></div>
-
+<div class="case-bar" id="aviso-demonstracao">Projeto autoral · Conceito USBRIN — marca, informações e ofertas ilustrativas; sem reservas, agendamentos ou vendas reais. <a href="portfolio.html">← Voltar ao USBRIN Portfolio</a> &nbsp;·&nbsp; <a href="studio.html?demo=construtora">Configurar um site assim ↗</a></div>
+<p class="editorial-asset-disclaimer" style="font-size:12px;line-height:1.6;opacity:.8;max-width:1140px;margin:14px auto;padding:0 24px">Imagens fotográficas meramente editoriais, usadas como referências visuais. Não são registros de clientes, profissionais, obras, imóveis ou produtos vinculados à marca conceitual.</p>
 <header>
   <div class="container">
     <div class="logo"><span class="mark">AN</span>Alto Norte Engenharia</div>
-    <nav>
-      <a href="#obras">Obras</a>
+    <button class="menu-toggle" type="button" aria-controls="site-nav" aria-expanded="false">Menu</button><nav id="site-nav" aria-label="Navegação principal"><a href="#obras">Obras</a>
       <a href="#projetos">Projetos</a>
       <a href="#sobre">Sobre</a>
       <a href="#diferenciais">Diferenciais</a>
       <a href="#contato">Contato</a>
     </nav>
-    <a href="#contato" class="btn">Solicitar visita técnica</a>
+    <a href="#contato" class="btn">Explorar atendimento</a>
   </div>
 </header>
 
@@ -138,24 +156,22 @@ section[id], #aviso-demonstracao{scroll-margin-top:110px;}
   <div class="container demo-hero-grid">
     <div>
       <span class="eyebrow">Engenharia e construção</span>
-      <h1>Estrutura, precisão e entrega no prazo.</h1>
+      <h1>Engenharia para o que <em>vem depois.</em></h1>
       <p>A Alto Norte Engenharia planeja e executa obras residenciais, comerciais e industriais com rigor técnico do início ao fim do projeto.</p>
       <div class="hero-actions">
         <a href="#obras" class="btn">Ver obras</a>
         <a href="#contato" class="btn btn-outline">Falar com um engenheiro</a>
       </div>
     </div>
-    <div class="hero-art">
-      <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 85V45l20-12 20 12v40"/><path d="M55 85V30l15-8 15 8v55"/><path d="M10 85h80"/></svg>
-    </div>
+    <div class="hero-art"><img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" width="900" height="640" alt="Fotografia editorial de referência — Estudo arquitetônico  de torre com fachada de vidro (não representa um serviço ou produto real)"><span class="art-caption">REFERÊNCIA ARQUITETÔNICA · CONCEITO</span></div>
   </div>
 </section>
 
 <div class="stats-strip">
   <div class="container">
-    <div class="stat"><div class="num">120+</div><div class="label">Projetos executados</div></div>
-    <div class="stat"><div class="num">18</div><div class="label">Anos de atuação</div></div>
-    <div class="stat"><div class="num">3</div><div class="label">Estados atendidos</div></div>
+    <div class="stat"><div class="num">01</div><div class="label">Planejamento e escopo</div></div>
+    <div class="stat"><div class="num">02</div><div class="label">Execução e controle</div></div>
+    <div class="stat"><div class="num">03</div><div class="label">Inspeção e entrega</div></div>
   </div>
 </div>
 
@@ -163,21 +179,18 @@ section[id], #aviso-demonstracao{scroll-margin-top:110px;}
   <div class="container">
     <div class="section-head">
       <span class="eyebrow">Obras</span>
-      <h2>Projetos em execução e concluídos.</h2>
+      <h2>Estudos de obras e possibilidades.</h2>
     </div>
-    <div class="works-grid">
-      <div class="work-card">
-        <div class="work-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 21h18M6 21V9l6-4 6 4v12M10 21v-6h4v6"/></svg></div>
-        <div class="work-body"><span class="tag">Residencial</span><h3>Edifício Vértice</h3><p>Torre residencial de 18 andares em fase de acabamento.</p></div>
-      </div>
-      <div class="work-card">
-        <div class="work-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="7" width="18" height="13" rx="1"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
-        <div class="work-body"><span class="tag">Comercial</span><h3>Centro Empresarial Norte</h3><p>Complexo comercial com 4 blocos e estacionamento integrado.</p></div>
-      </div>
-      <div class="work-card">
-        <div class="work-img"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 21V9l9-6 9 6v12H3Z"/><path d="M9 21v-7h6v7"/></svg></div>
-        <div class="work-body"><span class="tag">Industrial</span><h3>Galpão Logístico Sul</h3><p>Estrutura de 8.000 m² para operação logística.</p></div>
-      </div>
+    <div class="work-filters" role="group" aria-label="Filtrar estudos por setor"><button type="button" data-work-filter="todos" aria-pressed="true">Todos</button><button type="button" data-work-filter="residencial" aria-pressed="false">Residenciais</button><button type="button" data-work-filter="comercial" aria-pressed="false">Comerciais</button><button type="button" data-work-filter="industrial" aria-pressed="false">Industriais</button></div><p id="work-count" class="filter-count" role="status" aria-live="polite">3 estudos disponíveis</p><div class="works-grid">
+      <article class="work-card" data-work-category="residencial">
+        <button type="button" class="work-img" data-work-open="vertice" aria-label="Explorar estudo vertice"><img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" width="900" height="640" alt="Fotografia editorial de referência — torre residencial (não representa um serviço ou produto real)" loading="lazy"></button>
+        <div class="work-body"><span class="tag">Residencial</span><h3>Edifício Vértice</h3><p>Estudo de torre residencial com 18 pavimentos e fachada modular.</p><button type="button" class="work-view" data-work-open="vertice">Explorar estudo ↗</button></div></article>
+      <article class="work-card" data-work-category="comercial">
+        <button type="button" class="work-img" data-work-open="centro" aria-label="Explorar estudo centro"><img src="https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" width="900" height="640" alt="Fotografia editorial de referência — centro empresarial (não representa um serviço ou produto real)" loading="lazy"></button>
+        <div class="work-body"><span class="tag">Comercial</span><h3>Centro Empresarial Norte</h3><p>Conceito de complexo corporativo com quatro blocos e estacionamento.</p><button type="button" class="work-view" data-work-open="centro">Explorar estudo ↗</button></div></article>
+      <article class="work-card" data-work-category="industrial">
+        <button type="button" class="work-img" data-work-open="galpao" aria-label="Explorar estudo galpao"><img src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&amp;fit=crop&amp;w=1150&amp;h=860&amp;q=79" width="900" height="640" alt="Fotografia editorial de referência — galpão logístico (não representa um serviço ou produto real)" loading="lazy"></button>
+        <div class="work-body"><span class="tag">Industrial</span><h3>Galpão Logístico Sul</h3><p>Estudo de centro logístico com área ilustrativa de 8.000 m².</p><button type="button" class="work-view" data-work-open="galpao">Explorar estudo ↗</button></div></article>
     </div>
   </div>
 </section>
@@ -186,23 +199,23 @@ section[id], #aviso-demonstracao{scroll-margin-top:110px;}
   <div class="container">
     <div class="section-head">
       <span class="eyebrow">Projetos</span>
-      <h2>Do papel à obra concluída.</h2>
+      <h2>Da ideia à representação.</h2>
     </div>
     <div class="projects-list">
       <div class="project-row">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
-        <div><h4>Residencial Alameda das Flores</h4><p>Condomínio horizontal com 42 unidades.</p></div>
-        <span class="status">Em execução</span>
+        <div><h4>Residencial Alameda das Flores</h4><p>Estudo de condomínio horizontal com 42 unidades ilustrativas.</p></div>
+        <span class="status">Em estudo</span>
       </div>
       <div class="project-row">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 21h18M6 21V9l6-4 6 4v12"/></svg></div>
-        <div><h4>Reforma do Hospital Regional</h4><p>Ampliação da ala de atendimento.</p></div>
-        <span class="status">Concluída</span>
+        <div><h4>Estudo de centro de saúde</h4><p>Conceito de ampliação de espaços de atendimento.</p></div>
+        <span class="status">Conceito</span>
       </div>
       <div class="project-row">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h16v16H4z"/><path d="M4 12h16"/></svg></div>
         <div><h4>Ponte de acesso ao Vale Verde</h4><p>Estrutura de concreto armado com 120 m de extensão.</p></div>
-        <span class="status">Concluída</span>
+        <span class="status">Conceito</span>
       </div>
     </div>
   </div>
@@ -229,11 +242,11 @@ section[id], #aviso-demonstracao{scroll-margin-top:110px;}
   <div class="container">
     <div class="contact-panel">
       <span class="eyebrow" style="justify-content:center;">Contato</span>
-      <h2>Vamos falar sobre o seu projeto?</h2>
-      <p>Conte-nos sobre a obra ou a reforma de que você precisa. Retornaremos com orientações sobre os próximos passos.</p>
+      <h2>Uma proposta começa com boas informações.</h2>
+      <p>Este conceito ilustra como uma construtora pode apresentar seu processo e facilitar a solicitação de uma proposta comercial.</p>
       <div class="contact-actions">
-        <a href="#aviso-demonstracao" class="btn">Solicitar orçamento</a>
-        <a href="#aviso-demonstracao" class="btn btn-outline">(69) 9 8777-4321</a>
+        <a href="studio.html?demo=construtora" class="btn">Criar meu site de engenharia</a>
+        <a href="portfolio.html" class="btn btn-outline">Conhecer outros projetos</a>
       </div>
     </div>
   </div>
@@ -241,12 +254,12 @@ section[id], #aviso-demonstracao{scroll-margin-top:110px;}
 
 <div class="produced-by">
   <div class="container">
-    <p>Este site é um projeto demonstrativo desenvolvido pela USBRIN para mostrar como sua empresa pode se apresentar na internet.</p>
+    <p>Este é um projeto autoral desenvolvido pela USBRIN para inspirar diferentes possibilidades de apresentação para empresas.</p>
     <a href="index.html?demo=construtora#contato" class="btn">Quero um site assim para o meu negócio</a>
   </div>
 </div>
 
-<footer>Alto Norte Engenharia — projeto demonstrativo da USBRIN.</footer>
+<footer>Alto Norte Engenharia — projeto autoral da USBRIN.</footer>
 
-</body>
+<dialog id="work-dialog" class="work-dialog" aria-labelledby="work-title"><div class="work-dialog-inner"><button type="button" data-close-dialog="work-dialog" class="dialog-close">Fechar ×</button><span class="eyebrow">Estudo conceitual</span><img id="work-dialog-img" width="900" height="640" alt="Fotografia editorial de referência — arquitetônica do estudo selecionado (não representa um serviço ou produto real)"><h2 id="work-title">Estudo de obra</h2><p id="work-detail"></p><p class="disclosure">Todos os estudos e dados são ilustrativos, não representam obras executadas por uma empresa real.</p><a href="studio.html?demo=construtora" class="btn">Criar um site semelhante ↗</a></div></dialog><script src="js/demo-portfolio.js" defer></script></body>
 </html>
