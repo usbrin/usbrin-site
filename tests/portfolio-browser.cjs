@@ -652,7 +652,7 @@ const server=http.createServer((req,res)=>{
   for(const [file,minimum] of [['demo-salao-orla.html',4],['demo-eixo-consultoria.html',3]]){
     await page.goto(base+file);
     const images=await page.evaluate(async()=>{
-      const list=[...document.images].filter(img=>/^https:\\/\\/images\\.unsplash\\.com\\/photo-/.test(img.currentSrc||img.src));
+      const list=[...document.images].filter(img=>(img.currentSrc||img.src).startsWith('https://images.unsplash.com/photo-'));
       list.forEach(img=>img.loading='eager');
       await Promise.race([Promise.allSettled(list.map(img=>img.decode())),new Promise(resolve=>setTimeout(resolve,14000))]);
       return list.map(img=>({ok:img.naturalWidth>0,url:(img.currentSrc||img.src).split('?')[0]}));
