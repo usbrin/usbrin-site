@@ -24,7 +24,7 @@ const server=http.createServer((req,res)=>{
   page.on('pageerror',e=>errors.push(e.message));
   page.on('response',resp=>{if(resp.url().startsWith('http://127.0.0.1:'+port)&&resp.status()>=400)errors.push(resp.status()+' '+resp.url());});
   const base='http://127.0.0.1:'+port+'/';
-  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html','demo-pilar.html','demo-nimbo.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-volta-tech.html','demo-casa-patta.html','demo-lume-moda.html','demo-base-norte.html','demo-aurea-joias.html','demo-essencia-cosmeticos.html','demo-vista-hotel.html','demo-motor-forma.html','demo-vereda-planejados.html','demo-sorriso-claro.html','demo-cafe-orvalho.html','demo-helena-luz.html','demo-forno-82.html'];
+  const demos=['portfolio.html','demo-restaurante.html','demo-construtora.html','demo-clinica.html','demo-imobiliaria.html','demo-atelier.html','demo-fluxo.html','demo-flor-raiz.html','demo-ponte-idiomas.html','demo-pilar.html','demo-nimbo.html','demo-norte-contabil.html','demo-nexo-automacao.html','demo-volta-tech.html','demo-casa-patta.html','demo-lume-moda.html','demo-base-norte.html','demo-aurea-joias.html','demo-essencia-cosmeticos.html','demo-vista-hotel.html','demo-motor-forma.html','demo-vereda-planejados.html','demo-sorriso-claro.html','demo-cafe-orvalho.html','demo-helena-luz.html','demo-forno-82.html','demo-salao-orla.html','demo-eixo-consultoria.html'];
   for(const width of [360,390,768,1366]){
     await page.setViewportSize({width,height:850});
     for(const filename of demos){
@@ -52,7 +52,7 @@ const server=http.createServer((req,res)=>{
   await page.locator('#portfolio-search').fill('Vitta');
   ok(await page.locator('.project:not([hidden])').count()===1,'Busca de projeto');
   await page.locator('#portfolio-search').fill('');
-  ok(await page.locator('.project:not([hidden])').count()===25,'Galeria mantém 25 projetos');
+  ok(await page.locator('.project:not([hidden])').count()===27,'Galeria mantém 27 projetos');
 
   // Forno 82: filtro, cálculo didático, seleção local e limpeza.
   await page.goto(base+'demo-forno-82.html');
@@ -74,6 +74,46 @@ const server=http.createServer((req,res)=>{
   ok(await page.locator('#order-copy').isEnabled(),'Forno 82 permite cópia voluntária');
   await page.locator('#order-clear').click();
   ok((await page.locator('#order-total').innerText()).includes('0,00'),'Forno 82 limpa carrinho ilustrativo');
+
+  // Novo lote: Salão Orla e Eixo Consultoria — ações locais, nunca agendamentos ou diagnósticos.
+  await page.goto(base+'demo-salao-orla.html');
+  await page.locator('button[data-filter="cor"]').click();
+  ok(await page.locator('.service-card:not([hidden])').count()===2,'Salão Orla filtra serviços de cor');
+  await page.locator('button[data-filter="todos"]').click();
+  for(const id of ['corte','luzes','spa'])await page.locator('button[data-select="'+id+'"]').click();
+  ok((await page.locator('#orla-count').innerText()).includes('3 / 3'),'Orla seleciona três serviços');
+  ok((await page.locator('#orla-duration').innerText()).includes('285 min'),'Orla calcula duração ilustrativa');
+  await page.locator('button[data-select="escova"]').click();
+  ok((await page.locator('#orla-status').innerText()).includes('até três'),'Orla bloqueia quarto serviço');
+  ok(await page.locator('#orla-copy').isEnabled(),'Orla habilita cópia após escolha');
+  await page.locator('#orla-clear').click();
+  ok((await page.locator('#orla-duration').innerText()).includes('0 min'),'Orla limpa seleção');
+  await page.setViewportSize({width:390,height:844});
+  await page.locator('.nav-toggle').click();
+  ok(await page.locator('.nav-toggle').getAttribute('aria-expanded')==='true','Orla abre menu móvel');
+  await page.keyboard.press('Escape');
+  ok(await page.locator('.nav-toggle').getAttribute('aria-expanded')==='false','Orla fecha menu via teclado');
+  await page.setViewportSize({width:1366,height:900});
+
+  await page.goto(base+'demo-eixo-consultoria.html');
+  await page.locator('#eixo-stage').selectOption('expansao');
+  await page.locator('input[name="challenge"][value="margem"]').check();
+  await page.locator('input[name="challenge"][value="caixa"]').check();
+  await page.locator('input[name="challenge"][value="processos"]').check();
+  ok(await page.locator('input[name="challenge"]:checked').count()===2,'Eixo respeita limite de dois desafios');
+  ok((await page.locator('#eixo-status').innerText()).includes('no máximo dois'),'Eixo explica limite');
+  await page.locator('#eixo-form button[type="submit"]').click();
+  ok(await page.locator('#map-steps li').count()===3,'Eixo gera mapa de três passos');
+  ok((await page.locator('#map-subtitle').innerText()).includes('Expansão'),'Eixo reflete contexto selecionado');
+  ok(await page.locator('#eixo-copy').isEnabled(),'Eixo habilita cópia voluntária');
+  await page.locator('#eixo-reset').click();
+  ok(await page.locator('#eixo-copy').isDisabled(),'Eixo reinicia mapa');
+  await page.setViewportSize({width:390,height:844});
+  await page.locator('.nav-toggle').click();
+  ok(await page.locator('.nav-toggle').getAttribute('aria-expanded')==='true','Eixo abre menu móvel');
+  await page.keyboard.press('Escape');
+  ok(await page.locator('.nav-toggle').getAttribute('aria-expanded')==='false','Eixo fecha menu via teclado');
+  await page.setViewportSize({width:1366,height:900});
 
   await page.goto(base+'demo-restaurante.html');
   await page.locator('[data-menu-filter="sobremesas"]').click();
@@ -451,7 +491,7 @@ const server=http.createServer((req,res)=>{
   // Portfolio 2.0: o interesse por cada projeto vira um briefing contextual copiável.
   await page.goto(base+'portfolio.html');
   const firstBrief=page.locator('[data-project-brief]').first();
-  ok(await page.locator('[data-project-brief]').count()===25,'Vinte e cinco CTAs de briefing contextual');
+  ok(await page.locator('[data-project-brief]').count()===27,'Vinte e sete CTAs de briefing contextual');
   await firstBrief.click();
   ok(await page.locator('#project-brief-dialog').isVisible(),'Briefing abre ao escolher referência');
   ok((await page.locator('#brief-project-name').innerText()).includes('Brasa & Mesa'),'Nome correto da referência comercial');
@@ -609,6 +649,19 @@ const server=http.createServer((req,res)=>{
     ok(images.length>=minImages,'Galeria de fotos de referência presente em '+file);
     ok(images.every(x=>x.ok),'Fotos externas decodificadas em '+file+': '+JSON.stringify(images.filter(x=>!x.ok)));
   }
+  for(const [file,minimum] of [['demo-salao-orla.html',4],['demo-eixo-consultoria.html',3]]){
+    await page.goto(base+file);
+    const images=await page.evaluate(async()=>{
+      const list=[...document.images].filter(img=>/^https:\\/\\/images\\.unsplash\\.com\\/photo-/.test(img.currentSrc||img.src));
+      list.forEach(img=>img.loading='eager');
+      await Promise.race([Promise.allSettled(list.map(img=>img.decode())),new Promise(resolve=>setTimeout(resolve,14000))]);
+      return list.map(img=>({ok:img.naturalWidth>0,url:(img.currentSrc||img.src).split('?')[0]}));
+    });
+    console.log('PORTFOLIO_NEW_PAIR_MEDIA',file,JSON.stringify({total:images.length,loaded:images.filter(x=>x.ok).length,failed:images.filter(x=>!x.ok)}));
+    ok(images.length>=minimum,'Fotografias de ambientação em '+file);
+    ok(images.every(x=>x.ok),'Fotografias decodificadas em '+file+': '+JSON.stringify(images.filter(x=>!x.ok)));
+  }
+
   const dir=path.join(root,'tests','artifacts');fs.mkdirSync(dir,{recursive:true});
   for(const width of [390,1366]){
     await page.setViewportSize({width,height:width===390?844:900});
