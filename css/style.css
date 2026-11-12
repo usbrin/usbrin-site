@@ -266,7 +266,13 @@ h1,h2,h3,h4{
   perspective:1200px;
 }
 .hero-copy h1{
-  font-size:clamp(34px, 4.6vw, 54px);
+  font-family:var(--font-body);
+  font-size:clamp(36px, 4.5vw, 54px);
+  font-weight:600;
+  line-height:1.08;
+  letter-spacing:-0.045em;
+  max-width:17ch;
+  text-wrap:balance;
   margin-bottom:22px;
 }
 .hero-copy p{
