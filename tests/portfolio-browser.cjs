@@ -56,11 +56,11 @@ const server=http.createServer((req,res)=>{
 
   // Forno 82: filtro, cálculo didático, seleção local e limpeza.
   await page.goto(base+'demo-forno-82.html');
-  await page.locator('[data-kind="vegetarianas"]').click();
+  await page.locator('button[data-kind="vegetarianas"]').click();
   ok(await page.locator('.pizza:not([hidden])').count()===2,'Forno 82 filtra vegetarianas');
   await page.locator('#pizza-search').fill('jardim');
   ok(await page.locator('.pizza:not([hidden])').count()===1,'Forno 82 combina busca e categoria');
-  await page.locator('[data-kind="todos"]').click();
+  await page.locator('button[data-kind="todos"]').click();
   await page.locator('#pizza-search').fill('');
   await page.locator('[data-pick="brasata"]').click();
   ok(await page.locator('#pizza-flavor').inputValue()==='brasata','Forno 82 seleciona sabor do cardápio');
