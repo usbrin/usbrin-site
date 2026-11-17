@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
    button.disabled=!token||submitting||completed;
  };
  try{
-   const response=await fetch('api/public-config',{cache:'no-store'});
+   const response=await fetch('/api/public-config',{cache:'no-store'});
    if(!response.ok)throw Error();
    const config=await response.json();
    if(!config.applicationTypes?.includes(area)||!config.turnstileSiteKey){
@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
    result.className='status';
    result.textContent='Registrando sua candidatura…';
    try{
-     const response=await fetch('api/applications',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+     const response=await fetch('/api/applications',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
      const data=await response.json();
      if(!response.ok){
        result.className='status bad';
