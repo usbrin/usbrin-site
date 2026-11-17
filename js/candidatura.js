@@ -4,24 +4,19 @@ document.addEventListener('DOMContentLoaded',async()=>{
  const form=el('candidate-form'),availability=el('availability'),result=el('result'),button=el('submit');
  const challengeStatus=el('challenge-status'),area=new URLSearchParams(location.search).get('area');
  const representative=area==='representante';
- if(!representative&&area!=='desenvolvedor'){
-   availability.textContent='Escolha uma modalidade acima antes de se candidatar.';
+ if(!representative){
+   availability.textContent='Nesta etapa, as candidaturas estão abertas somente para representantes comerciais.';
+   form.classList.add('hidden');
    return;
  }
 
- el(representative?'link-rep':'link-dev').setAttribute('aria-current','true');
- el('heading').textContent=representative?'Candidatura para representante comercial':'Candidatura para desenvolvedor parceiro';
- el('intro').textContent=representative
-   ?'Conte como você abordaria empresas e apresentaria os serviços da USBRIN. Experiências informais também contam.'
-   :'Apresente sua experiência técnica, tecnologias utilizadas e projetos de sites.';
- if(representative){
-   el('experience-label').textContent='Experiência com vendas *';
-   el('experience').placeholder='Conte o que já fez em vendas, atendimento ou prospecção. Se estiver começando, descreva sua experiência até aqui.';
-   el('motivation-label').textContent='Como você pretende conquistar clientes? *';
-   el('motivation').placeholder='Dê um exemplo de empresa que procuraria e como iniciaria a conversa.';
- }else{
-   document.querySelectorAll('.developer-only').forEach(field=>field.classList.remove('hidden'));
- }
+ el('link-rep').setAttribute('aria-current','true');
+ el('heading').textContent='Candidatura para representante comercial';
+ el('intro').textContent='Conte como você abordaria empresas e apresentaria os serviços da USBRIN. Experiências informais também contam.';
+ el('experience-label').textContent='Experiência com vendas *';
+ el('experience').placeholder='Conte o que já fez em vendas, atendimento ou prospecção. Se estiver começando, descreva sua experiência até aqui.';
+ el('motivation-label').textContent='Como você pretende conquistar clientes? *';
+ el('motivation').placeholder='Dê um exemplo de empresa que procuraria e como iniciaria a conversa.';
  for(const state of 'AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split(' ')){
    el('state').add(new Option(state,state));
  }
@@ -71,7 +66,6 @@ document.addEventListener('DOMContentLoaded',async()=>{
    const fields=Object.fromEntries(new FormData(form));
    const {name,email,phone,city,state,experience,motivation,website}=fields;
    const payload={type:area,name,email,phone,city,state,experience,motivation,website,privacy:fields.privacy==='on',turnstileToken:token};
-   if(!representative)Object.assign(payload,{availability:fields.availability,portfolio:fields.portfolio});
    submitting=true;
    button.disabled=true;
    button.textContent='Enviando…';
