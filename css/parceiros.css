@@ -321,3 +321,54 @@
 .rep-command .cmd-section-top>div{flex:1 1 auto;min-width:0}
 .rep-command .cmd-count{flex:0 1 auto;max-width:43%;white-space:normal;overflow-wrap:anywhere;text-align:center;line-height:1.35}
 @media(max-width:490px){.rep-command .cmd-section-top{gap:8px}.rep-command .cmd-count{font-size:10px;padding:6px 8px;max-width:108px}}
+
+.portal[hidden]{display:none}
+
+#access-invitation{margin-top:20px}
+#access-invitation textarea,#access-candidates select{max-width:100%;padding:10px;border:1px solid #554d60;border-radius:8px;background:#100f16;color:var(--text)}
+#access-invitation textarea{width:100%;resize:vertical;margin-bottom:10px}
+#access-candidates td:last-child{min-width:225px}
+#access-candidates .field-label{margin-bottom:8px}
+#access-page{align-self:center}
+#partner-list td:last-child .btn{margin:0 6px 6px 0}
+
+/* Public partner identity and application */
+.logo { display:inline-flex; align-items:center; min-height:44px; }
+.logo img { display:block; width:clamp(112px,15vw,136px); height:auto; }
+.partner-brand { gap:10px; }
+.partner-brand span { color:var(--purple); font:600 clamp(15px,2.2vw,19px)/1 'Space Grotesk',sans-serif; letter-spacing:0; }
+.sidebar .logo { display:flex; width:fit-content; margin-bottom:12px; }
+.candidate-options { margin:22px 0 24px; }
+.candidate-options [aria-current] { border-color:var(--purple); color:var(--purple); }
+#candidate-form .field :focus-visible,#admin-performance :focus-visible,#goal-form :focus-visible {
+  outline:2px solid var(--purple); outline-offset:3px;
+}
+#candidate-form .candidate-consent { display:flex; gap:10px; align-items:flex-start; }
+.candidate-consent input { flex:none; width:18px; height:18px; margin:2px 0 0; }
+#candidate-form textarea { min-height:96px; }
+#candidate-form .field:first-child { grid-column:1/-1; }
+#candidate-form .hint { margin:0; }
+#candidate-form #submit { align-self:flex-start; }
+#candidate-form #submit:not(:disabled) { background:#ad91ef; color:#151022; }
+#result a { display:inline-block; margin-top:6px; text-decoration:underline; }
+@media(max-width:620px){
+  .head>.container { align-items:flex-start; flex-direction:column; padding-block:8px 12px; }
+  .head { position:static; }
+  .candidate-options { gap:8px; }
+  .formwrap { margin-top:36px; }
+}
+
+/* Administrative snapshot and period controls */
+#admin-snapshot .metrics,#admin-performance .metrics { margin:14px 0; }
+#admin-current-metrics { grid-template-columns:repeat(3,minmax(0,1fr)); }
+#admin-snapshot .metric,#admin-performance .metric { background:#1b1824; min-width:0; }
+#admin-snapshot .metric strong,#admin-performance .metric strong { overflow-wrap:anywhere; }
+#overview-period-form,#goal-form { align-items:flex-end; }
+#overview-period-form label,#goal-form label { flex:0 1 auto; min-width:0; }
+#overview-period-form label input,#goal-form label input,#goal-form label select { max-width:100%; }
+#overview-period-status { font-size:13px; }
+#admin-goals table { min-width:440px; }
+@media(max-width:620px){
+  #admin-current-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  #goal-form > * { width:100%; }
+}

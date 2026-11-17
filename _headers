@@ -30,3 +30,13 @@
 /proposta.html
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-store, private
+
+/portal
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store, private
+
+/usbrin-id
+  X-Robots-Tag: noindex, nofollow
+
+/public/usbrin-id
+  X-Robots-Tag: noindex, nofollow

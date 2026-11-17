@@ -1,19 +1,28 @@
 import assert from 'node:assert/strict';
-import {chromium} from 'playwright';
+import {chromium,firefox} from 'playwright';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {mkdir} from 'node:fs/promises';
 
 // UI smoke: isolated local build. All API responses below are in-memory mocks.
 // Never use live credentials, partner e-mails or production data in browser tests.
-const browser=await chromium.launch({headless:true});
+const useFirefox=process.env.USBRIN_BROWSER==='firefox';
+const browser=await (useFirefox?firefox:chromium).launch({headless:true,executablePath:useFirefox?undefined:process.env.CHROMIUM_PATH});
 const outDir=resolve('ui-smoke-artifacts');
 await mkdir(outDir,{recursive:true});
 const fixture={
   admin: {
     me:{ok:true,user:{name:'HOMOLOGAÇÃO Admin',role:'admin'}},
-    'admin/overview':{ok:true,applications:[],users:[],projects:[],opportunities:[],receivedCents:0,commissionsPendingCents:0,studioInquiries:[],tasks:{}},
+    'admin/overview':{ok:true,users:[{role:'representante',total:2},{role:'desenvolvedor',total:1}],opportunities:[{stage:'proposal',total:3}],
+      monthly:{period:'2026-11',count:2,contractedCents:188000,sitesCents:119000,servicesCents:25000,commissionsPaidCents:17850},
+      commissions:{estimatedCents:10350,approvedCents:0},performance:[{id:'qa-rep',name:'Representante QA',status:'active',goal_cents:200000,received_cents:119000}],
+      tasks:{candidates:2,awaitingActivation:1,commissionReviews:1}},
+    'admin/applications':{ok:true,applications:[]},
     'admin/users':{ok:true,users:[]},
+    'admin/access':{ok:true,users:[{id:'qa-partner',name:'Parceiro QA',email:'partner@usbrin.test',role:'representante',status:'active',contract_ready:1}],
+      candidates:[{id:'qa-candidate',name:'Candidato QA',email:'candidate@usbrin.test',type:'representante',protocol:'UQA-00001'}],
+      history:[{action:'user.activate',details:'representante',actor_name:'Admin QA',target_name:'Parceiro QA',created_at:'2026-11-08 18:24:56'}],hasNext:false},
+    'admin/access/invitation':{ok:true,invitation:{email:'partner@usbrin.test',message:'Acesse https://usbrin-preview.pages.dev/portal com seu e-mail.'}},
     'admin/opportunities':{ok:true,opportunities:[{id:'op-briefing-demo-001',company:'Cliente Homologação UX',contact:'Contato Exemplo',stage:'new',product:'Business',estimated_cents:119000}]},
     'admin/sales':{ok:true,sales:[{id:'sale-handoff-demo-001',company:'Cliente Homologação UX',gross_cents:179000,received_cents:179000,approved_proposal_id:'proposal-approved-demo-001',approved_proposal_code:'QTESTDEMO001',approved_scope:'BRIEFING APROVADO: cinco páginas, blog gerenciável e contato por WhatsApp.'}]},
     'admin/projects':{ok:true,projects:[]},
@@ -91,8 +100,15 @@ async function pageFor(role,width,url){
      let result=null;
      if(path.includes('api/public-config'))result={ok:true,applicationsOpen:false,studioInquiriesOpen:false,turnstileSiteKey:null};
      else if(path.includes('/api/private/')){
+       if(role==='expired')return Response.json({ok:false,code:'session_required'},{status:401});
        const endpoint=path.split('/api/private/')[1].split('?')[0];
-       if(endpoint==='crm/proposal-draft'&&options.method==='POST'){
+       if(endpoint==='admin/overview'){
+         const month=new URL(path,location.href).searchParams.get('month');
+         const overview=fixture[role][endpoint];
+         result=month?{...overview,monthly:{...overview.monthly,period:month}}:overview;
+       }else if(endpoint==='admin/access/invitation'&&options.method==='POST'){
+         window.__accessInvitation=JSON.parse(options.body);result=fixture[role]?.[endpoint];
+       }else if(endpoint==='crm/proposal-draft'&&options.method==='POST'){
          window.__guideSubmitted=JSON.parse(options.body);
          result={ok:true,code:'QTESTGUIDED001',status:'draft'};
        }else if(endpoint==='crm/activity'&&options.method==='POST'){
@@ -127,19 +143,147 @@ async function assertFits(page,label){
 }
 
 try{
+ const routing=await browser.newContext();
+ try{
+   const page=await routing.newPage();
+   const origin='https://usbrin-id-fixture.test';
+   let session={status:401,body:{ok:false}};
+   const fixtures={
+     '/public/usbrin-id':'dist/public/usbrin-id.html',
+     '/public/css/usbrin-id.css':'dist/public/css/usbrin-id.css',
+     '/public/js/usbrin-id.js':'dist/public/js/usbrin-id.js'
+   };
+   await routing.route(origin+'/**',async route=>{
+     const url=new URL(route.request().url());
+     if(url.pathname==='/api/private/me'){
+       assert.equal(route.request().headers()['x-requested-with'],'XMLHttpRequest');
+       await route.fulfill({status:session.status,json:session.body});
+     }else if(url.pathname==='/portal'){
+       await route.fulfill({status:200,body:'Protected portal destination'});
+     }else if(fixtures[url.pathname]){
+       await route.fulfill({path:resolve(fixtures[url.pathname])});
+     }else await route.abort();
+   });
+   for(const [code,copy] of [['account_not_approved','ainda não está autorizado'],['account_suspended','Esta conta está suspensa']]){
+     session={status:403,body:{ok:false,code}};
+     await page.goto(origin+'/public/usbrin-id');
+     await page.getByRole('status').filter({hasText:copy}).waitFor();
+     assert.equal(new URL(page.url()).pathname,'/public/usbrin-id');
+   }
+   for(const role of ['admin','representante','desenvolvedor']){
+     session={status:200,body:{ok:true,user:{role}}};
+     await page.goto(origin+'/public/usbrin-id');
+     await page.waitForURL(origin+'/portal');
+   }
+   session={status:401,body:{ok:false}};
+   await page.goto(origin+'/public/usbrin-id');
+   const button=page.getByRole('link',{name:'Entrar com meu e-mail'});
+   await button.focus();
+   await page.keyboard.press('Enter');
+   await page.waitForURL(origin+'/portal');
+   console.log('PASS public entry, keyboard handoff, denied states and active session routing');
+ }finally{await routing.close();}
+ for(const width of [375,768,1440]){
+   const recruitment=await browser.newContext({viewport:{width,height:900}});
+   try{
+     const page=await recruitment.newPage();
+     let submissions=0;
+     await page.route('https://challenges.cloudflare.com/turnstile/v0/api.js?*',route=>route.fulfill({contentType:'text/javascript',body:`
+       window.turnstile={render(selector,options){
+         const marker=document.createElement('p');
+         marker.textContent='Verificação de segurança · simulação QA';
+         marker.style.color='#b69cf5';
+         document.querySelector(selector).append(marker);
+         window.__qaChallenge=options.callback;options.callback('browser-fixture-token');return 'qa';
+       },reset(){window.__qaChallenge('browser-fixture-token');}};
+     `}));
+     const qaOrigin='https://recruitment-fixture.test';
+     await page.route(qaOrigin+'/**',async route=>{
+       const path=new URL(route.request().url()).pathname;
+       if(path==='/public/api/public-config')return route.fulfill({json:{applicationsOpen:true,applicationTypes:['representante'],representativePreview:true,turnstileSiteKey:'fixture-site-key'}});
+       if(path==='/public/api/applications'){
+         const body=route.request().postDataJSON();
+         assert.equal(body.type,'representante');
+         assert.equal(body.state,'RO');
+         assert.equal(body.privacy,true);
+         assert.equal(body.portfolio,undefined);
+         submissions++;
+         await new Promise(resolve=>setTimeout(resolve,100));
+         return submissions===1?route.fulfill({status:409,json:{error:'Já existe uma candidatura ativa.'}})
+           :route.fulfill({status:201,json:{protocol:'U123456789ABCD'}});
+       }
+       const safe=/^\/public\/(?:[\w-]+\.html|(?:assets|css|js)\/[\w.-]+)$/.test(path);
+       return safe?route.fulfill({path:resolve('dist'+path)}):route.abort();
+     });
+     await page.goto(qaOrigin+'/public/parceiros.html');
+     await page.getByText('Parceiros',{exact:true}).first().waitFor();
+     await assertFits(page,'USBRIN Parceiros '+width);
+     await page.screenshot({path:resolve(outDir,'usbrin-parceiros-'+width+'.png')});
+     await page.getByRole('link',{name:'Candidatura de representante'}).click();
+     await page.getByRole('button',{name:'Enviar candidatura'}).waitFor();
+     await page.waitForFunction(()=>!document.querySelector('#submit')?.disabled);
+     await assertFits(page,'Candidatura '+width);
+     await page.screenshot({path:resolve(outDir,'usbrin-candidatura-'+width+'.png'),fullPage:true});
+     const submit=page.getByRole('button',{name:'Enviar candidatura'});
+     await submit.focus();
+     await page.keyboard.press('Enter');
+     assert.equal(submissions,0);
+     assert.equal(await page.locator('#name').evaluate(element=>element===document.activeElement),true);
+     await page.locator('#name').fill('Pessoa QA');
+     await page.keyboard.press('Tab');
+     assert.equal(await page.locator('#email').evaluate(element=>element===document.activeElement),true);
+     await page.locator('#email').fill('representante.qa@example.com');
+     await page.locator('#phone').fill('(69) 99999-9999');
+     await page.locator('#city').fill('Porto Velho');
+     await page.locator('#state').selectOption('RO');
+     await page.locator('#experience').fill('Já trabalhei com atendimento e prospecção local.');
+     await page.locator('#motivation').fill('Pretendo conversar com comércios da região e mostrar uma demonstração.');
+     await page.getByRole('checkbox').check();
+     await submit.click();
+     await page.getByText('Registrando sua candidatura…').waitFor();
+     await page.getByText('Já existe uma candidatura ativa.').waitFor();
+     assert.equal(await page.locator('#email').inputValue(),'representante.qa@example.com');
+     await submit.focus();
+     await page.keyboard.press('Enter');
+     await page.getByText(/Candidatura recebida/).waitFor();
+     await page.locator('#result').getByRole('link',{name:'Acompanhar candidatura'}).waitFor();
+     assert.equal(await page.locator('#result').evaluate(element=>element===document.activeElement),true);
+     console.log('PASS Parceiros e candidatura com teclado, validação, envio e resposta em '+width+'px');
+   }finally{await recruitment.close();}
+ }
  for(const width of [375,768,1440]){
    for(const role of ['admin','representante','desenvolvedor']){
      const {context,page,errors}=await pageFor(role,width,portalUrl);
      try{
        await page.waitForFunction(()=>document.querySelector('#portal-status')?.textContent?.includes('Dados atualizados'),{timeout:15000});
        const identity=await page.locator('#identity').textContent();
-       assert.ok(identity?.includes(role),'Wrong account role: '+identity);
+       const roleLabel={admin:'Administração',representante:'Representante comercial',desenvolvedor:'Desenvolvedor parceiro'};
+       assert.ok(identity?.endsWith(roleLabel[role]),'Wrong account role: '+identity);
        const visible=await page.locator('#portal-nav button:not(.hidden)').evaluateAll(items=>items.map(x=>x.dataset.view));
        const expected=role==='admin'?['overview','leads','guide','applications','studio','partners','projects','commissions','billing','bank']:role==='representante'?['overview','leads','guide','commissions']:['overview','projects','commissions'];
        assert.deepEqual(visible,expected,role+' navigation mismatch');
        if(role==='admin'){
+         await assertFits(page,'Dashboard administrativo '+width);
+         await page.getByText('59,5%',{exact:true}).waitFor();
+         await page.screenshot({path:resolve(outDir,'usbrin-admin-'+width+'.png'),fullPage:true});
+         await page.locator('#overview-month').fill('2026-10');
+         const filter=page.getByRole('button',{name:'Aplicar período'});
+         await filter.focus();
+         await page.keyboard.press('Enter');
+         await page.getByText(/^Período 10\/2026/).waitFor();
+         await page.getByRole('button',{name:'Ver candidaturas',exact:true}).click();
+         assert.equal(await page.locator('#app-status-filter').inputValue(),'pending');
          await page.locator('#portal-nav [data-view="partners"]').click();
-         await page.locator('#partner-list').getByText('Nenhum registro disponível.',{exact:true}).waitFor({timeout:15000});
+         await page.getByRole('heading',{name:'Gestão de Acessos',exact:true}).waitFor();
+         await page.locator('#partner-list').getByText('Parceiro QA',{exact:true}).waitFor();
+         await page.locator('#access-candidates').getByText('UQA-00001',{exact:true}).waitFor();
+         assert.deepEqual(await page.locator('#access-candidates select option').evaluateAll(rows=>rows.map(x=>x.value)),['representante','desenvolvedor']);
+         await page.locator('#access-history').getByText('Conta ativada',{exact:true}).waitFor();
+         await page.getByRole('button',{name:'Preparar convite',exact:true}).click();
+         await page.locator('#access-invitation').waitFor({state:'visible'});
+         assert.match(await page.locator('#access-invite-text').inputValue(),/https:\/\/usbrin-preview\.pages\.dev\/portal/);
+         assert.deepEqual(await page.evaluate(()=>window.__accessInvitation),{userId:'qa-partner'});
+         await assertFits(page,'Gestão de Acessos '+width);
        }else if(role==='representante'){
          await page.locator('#rep-command').waitFor({state:'visible'});
          assert.equal(await page.locator('#cmd-priority-title').textContent(),'Cliente Homologação UX');
@@ -257,7 +401,7 @@ try{
          assert.ok((await page.locator('#finance-fiscal-list').innerText()).includes('NFS-QA-2026-01'));
          assert.equal(await page.locator('#finance-fiscal-source option').count(),2);
          await page.locator('#finance-fiscal-kind').selectOption('expense');
-         assert.ok((await page.locator('#finance-fiscal-source').innerText()).includes('Software Exemplo'));
+         assert.ok((await page.locator('#finance-fiscal-source option').allTextContents()).some(text=>text.includes('Software Exemplo')));
          await assertFits(page,'admin finance ledger '+width);
          await page.locator('#portal-nav [data-view="bank"]').click();
          await page.locator('#view-bank').waitFor({state:'visible'});
@@ -289,17 +433,47 @@ try{
      await assertFits(printed.page,'approved-proposal '+width);
      assert.deepEqual(printed.errors,[],'Proposal page errors '+width);
      await printed.page.screenshot({path:resolve(outDir,'approved-proposal-'+width+'.png'),fullPage:true});
-     if(width===1440){
+     if(width===1440&&!useFirefox){
        const pdf=await printed.page.pdf({path:resolve(outDir,'approved-proposal-print.pdf'),format:'A4',printBackground:true});
        assert.ok(pdf.length>12000,'Browser must generate a nonempty PDF');
        assert.equal(pdf.subarray(0,4).toString(),'%PDF');
      }
      console.log('PASS approved proposal / PDF',width);
    }finally{await printed.context.close();}
+   const identity=await pageFor('expired',width,recruitmentUrl);
+   try{
+     await identity.page.getByRole('link',{name:'Conheça as oportunidades'}).click();
+     assert.ok(identity.page.url().endsWith('#oportunidades'));
+     await identity.page.getByRole('link',{name:'Já sou parceiro'}).click();
+     await identity.page.getByRole('heading',{name:'Bem-vindo de volta.'}).waitFor();
+     await identity.page.getByRole('link',{name:'Programa de parceiros',exact:true}).focus();
+     await identity.page.keyboard.press('Tab');
+     assert.equal(await identity.page.evaluate(()=>document.activeElement.id),'id-entry');
+     await identity.page.keyboard.press('Tab');
+     assert.equal(await identity.page.evaluate(()=>document.activeElement.tagName),'SUMMARY');
+     await identity.page.keyboard.press('Enter');
+     await identity.page.getByText('Use o endereço aprovado',{exact:false}).waitFor();
+     await identity.page.keyboard.press('Enter');
+     assert.ok(identity.page.url().includes('/public/usbrin-id.html'));
+     assert.equal(await identity.page.getByRole('link',{name:'Entrar com meu e-mail'}).getAttribute('href'),'/portal');
+     await assertFits(identity.page,'USBRIN ID '+width);
+     await identity.page.screenshot({path:resolve(outDir,'usbrin-id-'+width+'.png'),fullPage:true});
+     await identity.page.goto(portalUrl);
+     await identity.page.getByText('Sua sessão precisa ser verificada.',{exact:false}).waitFor();
+     assert.equal(await identity.page.locator('#portal-content').isVisible(),false);
+     assert.equal(await identity.page.evaluate(()=>document.activeElement.id),'session-title');
+     assert.equal(await identity.page.getByRole('link',{name:'Sair do Cloudflare Access'}).getAttribute('href'),'/cdn-cgi/access/logout');
+     assert.equal(await identity.page.getByRole('link',{name:'Tentar novamente'}).getAttribute('href'),'/portal');
+     assert.deepEqual(identity.errors,[]);
+     console.log('PASS USBRIN ID and expired session',width);
+   }finally{await identity.context.close();}
    for(const [name,url] of [['recruitment',recruitmentUrl],['candidate-closed',applyUrl]]){
      const {context,page,errors}=await pageFor('admin',width,url);
      try{
-       if(name==='candidate-closed')await page.waitForFunction(()=>document.querySelector('#availability')?.textContent?.includes('ainda não estão abertas'),{timeout:15000});
+       if(name==='candidate-closed'){
+         await page.getByText('As candidaturas desta modalidade estão fechadas no momento.').waitFor();
+         assert.equal(await page.locator('#candidate-form').isVisible(),false);
+       }
        await assertFits(page,name+' '+width);
        assert.deepEqual(errors,[],'Page errors '+name+' '+width);
        await page.screenshot({path:resolve(outDir,name+'-'+width+'.png'),fullPage:true});

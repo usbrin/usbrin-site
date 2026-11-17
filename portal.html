@@ -1,9 +1,64 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><title>Portal de Parceiros — USBRIN</title><link rel="icon" href="assets/favicon-small.png"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;600;700;800&display=swap" rel="stylesheet"><link href="css/parceiros.css" rel="stylesheet"></head><body><div class="portal">
-<aside class="sidebar"><a class="logo" href="index.html"><img src="assets/usbrin-logo-sem-fundo.svg" alt="USBRIN"></a><p class="muted" style="font-size:12px;margin:0 14px 15px">PORTAL DE PARCEIROS</p><nav id="portal-nav" aria-label="Navegação do portal"><button class="active" type="button" data-view="overview">Visão geral</button><button type="button" data-view="leads" class="hidden">Oportunidades</button><button type="button" data-view="guide" class="hidden">Guia comercial</button><button type="button" data-view="applications" class="hidden">Candidaturas</button><button type="button" data-view="studio" class="hidden">Solicitações Studio</button><button type="button" data-view="partners" class="hidden">Parceiros</button><button type="button" data-view="projects" class="hidden">Projetos</button><button type="button" data-view="commissions" class="hidden">Comissões</button><button type="button" data-view="billing" class="hidden">Financeiro</button><button type="button" data-view="bank" class="hidden">Conciliação</button></nav><p class="muted" style="font-size:12px;margin:25px 14px"><a href="parceiros.html" style="color:var(--purple)">Voltar ao site</a></p></aside>
-<main class="mainarea"><p class="kicker">USBRIN / ÁREA RESTRITA</p><h1 id="panel-title">Visão geral</h1><p id="identity" class="muted">Verificando sessão e permissões...</p><div role="alert" id="portal-status" class="status">O acesso exige uma conta de parceiro ou administrador aprovada e autenticação segura.</div>
-<section id="view-overview" class="view"><div id="rep-command" class="rep-command" hidden aria-label="USBRIN Command — painel comercial do representante"></div><div class="metrics" id="metrics"></div>
-<div class="panel hidden" id="action-center"><div class="section-heading"><div><span class="kicker">OPERAÇÃO</span><h2>Central de prioridades</h2><p class="muted">O que precisa da sua atenção agora, com base nos dados registrados.</p></div></div><div class="task-grid" id="action-list"></div></div>
-<div class="panel hidden" id="goal-panel"><h2>Definir meta comercial</h2><p class="muted">Metas mensais são administradas pela USBRIN e exibidas no painel individual do representante.</p><form id="goal-form" class="mini-form"><select id="goal-partner" name="partnerId" required><option value="">Selecione um representante</option></select><input name="period" type="month" required><input name="amount" type="number" min="0" step=".01" placeholder="Meta em R$" required><button type="submit" class="btn primary">Salvar meta</button></form></div><div class="panel"><h2>Resumo de atividade</h2><p class="muted" id="overview-description">Assim que o acesso estiver habilitado, seus indicadores aparecerão aqui com dados reais.</p></div></section>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><title>Portal de Parceiros — USBRIN</title><link rel="icon" href="assets/favicon-small.png"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;600;700;800&display=swap" rel="stylesheet"><link href="css/parceiros.css" rel="stylesheet"><link href="css/usbrin-id.css" rel="stylesheet"></head><body>
+<main class="id-session" id="session-gate" aria-labelledby="session-title">
+  <div class="id-panel">
+    <span class="id-label">USBRIN ID</span>
+    <h1 id="session-title" tabindex="-1">Portal de parceiros</h1>
+    <p class="id-status" id="session-message" role="status"><span class="id-spinner" aria-hidden="true"></span>Verificando seu acesso…</p>
+    <div id="session-actions" hidden>
+      <a class="id-button" id="session-retry" href="/portal">Tentar novamente</a>
+      <form action="/api/session/start" method="post" id="session-confirm" hidden>
+        <button type="submit" class="btn id-button">Confirmar com meu autenticador</button>
+      </form>
+      <div class="id-help id-session-links">
+        <a href="/public/usbrin-id">Voltar à entrada</a>
+        <a href="/cdn-cgi/access/logout">Sair do Cloudflare Access</a>
+        <a href="status-candidatura.html">Acompanhar candidatura</a>
+        <a href="mailto:usbrin.contato@gmail.com">Falar com a USBRIN</a>
+      </div>
+    </div>
+    <noscript><p>Ative o JavaScript para usar o portal.</p></noscript>
+  </div>
+</main>
+<div class="portal" id="portal-content" hidden>
+<aside class="sidebar"><a class="logo" href="index.html"><img src="assets/usbrin-logo-sem-fundo.svg" alt="USBRIN"></a><p class="muted" style="font-size:12px;margin:0 14px 15px">PORTAL DE PARCEIROS</p><nav id="portal-nav" aria-label="Navegação do portal"><button class="active" type="button" data-view="overview">Visão geral</button><button type="button" data-view="leads" class="hidden">Oportunidades</button><button type="button" data-view="guide" class="hidden">Guia comercial</button><button type="button" data-view="applications" class="hidden">Candidaturas</button><button type="button" data-view="studio" class="hidden">Solicitações Studio</button><button type="button" data-view="partners" class="hidden">Gestão de Acessos</button><button type="button" data-view="projects" class="hidden">Projetos</button><button type="button" data-view="commissions" class="hidden">Comissões</button><button type="button" data-view="billing" class="hidden">Financeiro</button><button type="button" data-view="bank" class="hidden">Conciliação</button></nav><p class="muted" style="font-size:12px;margin:25px 14px"><a href="parceiros.html" style="color:var(--purple)">Voltar ao site</a> · <a href="/cdn-cgi/access/logout" id="access-logout" style="color:var(--purple)">Sair</a></p><form action="/api/session/logout" method="post" id="work-logout" hidden><button type="submit" class="btn">Sair da USBRIN ID</button></form></aside>
+<main class="mainarea"><p class="kicker">USBRIN / ÁREA RESTRITA</p><h1 id="panel-title" tabindex="-1">Visão geral</h1><p id="identity" class="muted">Verificando sessão e permissões...</p><div role="alert" id="portal-status" class="status">O acesso exige uma conta de parceiro ou administrador aprovada e autenticação segura.</div>
+<section id="view-overview" class="view">
+  <div id="rep-command" class="rep-command" hidden aria-label="USBRIN Command — painel comercial do representante"></div>
+  <div class="panel hidden" id="admin-snapshot">
+    <div class="section-heading"><div><span class="kicker">OPERAÇÃO</span><h2>Situação atual</h2></div></div>
+    <div class="metrics" id="admin-current-metrics"></div>
+  </div>
+  <div class="metrics" id="metrics"></div>
+  <div class="panel hidden" id="action-center">
+    <div class="section-heading"><div><span class="kicker">PRÓXIMAS DECISÕES</span><h2>Central de prioridades</h2><p class="muted">Abra a área responsável para analisar cada pendência.</p></div></div>
+    <div class="task-grid" id="action-list"></div>
+  </div>
+  <div class="panel hidden" id="admin-performance">
+    <div class="section-heading"><div><span class="kicker">DESEMPENHO COMERCIAL</span><h2>Vendas, recebimentos e metas</h2></div></div>
+    <form class="toolbar" id="overview-period-form">
+      <label>Mês de referência <input name="month" id="overview-month" type="month" placeholder="AAAA-MM" pattern="[0-9]{4}-(0[1-9]|1[0-2])" required></label>
+      <button class="btn" type="submit">Aplicar período</button>
+    </form>
+    <p id="overview-period-status" class="muted" role="status"></p>
+    <div id="overview-period-data">
+      <div class="metrics" id="admin-monthly-metrics"></div>
+      <p class="hint">Recebimentos brutos registrados, antes de devoluções. A conciliação bancária está no Financeiro. O período segue o horário de Porto Velho.</p>
+      <h3>Metas por representante</h3>
+      <p class="hint">O progresso da meta usa apenas os recebimentos de criação de sites no mês.</p>
+      <div id="admin-goals"></div>
+    </div>
+  </div>
+  <div class="panel hidden" id="goal-panel">
+    <h2>Definir meta comercial</h2>
+    <form id="goal-form" class="toolbar">
+      <label>Representante <select id="goal-partner" name="partnerId" required><option value="">Selecione um representante</option></select></label>
+      <label>Mês da meta <input name="period" type="month" placeholder="AAAA-MM" pattern="[0-9]{4}-(0[1-9]|1[0-2])" required></label>
+      <label>Meta (R$) <input name="amount" type="number" min="0" step=".01" required></label>
+      <button type="submit" class="btn primary">Salvar meta</button>
+    </form>
+  </div>
+  <div class="panel"><h2>Resumo de atividade</h2><p class="muted" id="overview-description">Assim que o acesso estiver habilitado, seus indicadores aparecerão aqui com dados reais.</p></div>
+</section>
 <section id="view-guide" class="view hidden">
 <div class="panel">
   <div class="section-heading"><div><span class="kicker">CONSULTA RÁPIDA</span><h2>O que a USBRIN oferece</h2><p class="muted">Explique o plano certo com clareza. Os valores abaixo são preços iniciais; o orçamento final depende do escopo aprovado.</p></div></div>
@@ -102,8 +157,40 @@
 <select name="product"><option value="Landing">Landing</option><option value="Business">Business</option><option value="Catálogo">Catálogo</option><option value="Outro">Outro</option></select><input name="estimated" type="number" min="0" step=".01" placeholder="Valor estimado (R$)">
 <textarea name="note" placeholder="Observações iniciais"></textarea><input name="nextAction" maxlength="160" placeholder="Próxima ação (ex.: enviar demonstração)"><label class="field-label">Data do próximo contato <input name="nextActionAt" type="date"></label><button class="btn primary" type="submit">Adicionar oportunidade</button></form></div><div class="panel"><h2>Oportunidades registradas</h2><p class="muted">Acompanhe os retornos, registre conversas e identifique clientes sem próximo contato. Propostas não são consideradas vendas recebidas.</p><div id="crm-summary" class="crm-summary"></div><div class="toolbar"><label>Pesquisar <input id="lead-search" type="search" placeholder="Empresa, responsável, segmento"></label><label>Etapa <select id="lead-filter-stage"><option value="">Todas</option><option value="new">Novo contato</option><option value="contact">Em contato</option><option value="interested">Interessado</option><option value="qualified">Qualificado</option><option value="proposal">Proposta</option><option value="negotiation">Negociação</option><option value="contracted">Contratado</option><option value="paid">Recebido</option><option value="lost">Perdido</option></select></label><label>Prazo <select id="lead-filter-due"><option value="">Todos</option><option value="due">Vencidos ou hoje</option><option value="no-date">Sem retorno agendado</option></select></label></div><div id="lead-list"></div></div></section>
 <section id="view-studio" class="view hidden"><div class="panel"><div class="section-heading"><div><span class="kicker">CAPTAÇÃO</span><h2>Solicitações recebidas pelo Studio</h2><p class="muted">Um briefing é uma oportunidade de conversa, não um contrato ou pagamento confirmado.</p></div></div><div class="toolbar"><label>Filtrar situação <select id="studio-status-filter"><option value="">Todas</option><option value="new">Nova</option><option value="review">Em análise</option><option value="qualified">Qualificada</option><option value="proposal">Proposta</option><option value="closed">Concluída</option><option value="archived">Arquivada</option></select></label><label>Pesquisar <input type="search" id="studio-search" placeholder="Nome, empresa ou protocolo" autocomplete="off"></label></div><div id="studio-list"></div></div></section>
-<section id="view-applications" class="view hidden"><div class="panel"><h2>Candidaturas</h2><p class="muted">As aprovações exigem análise e formalização prévia, sem acesso automático. Alterar a etapa aqui não envia mensagens automaticamente ao candidato.</p><div class="toolbar"><label>Modalidade <select id="app-type-filter"><option value="">Todas</option><option value="representante">Representantes</option><option value="desenvolvedor">Desenvolvedores</option></select></label><label>Etapa <select id="app-status-filter"><option value="">Todas</option><option value="received">Recebida</option><option value="review">Em análise</option><option value="requested">Informações solicitadas</option><option value="interview">Entrevista</option><option value="preapproved">Pré-aprovada</option><option value="documentation">Documentação</option><option value="approved">Aprovada</option><option value="rejected">Não selecionada</option></select></label><label>Pesquisar <input id="app-search" type="search" placeholder="Nome, e-mail, protocolo" autocomplete="off"></label></div><div id="application-list"></div></div></section>
-<section id="view-partners" class="view hidden"><div class="panel"><div class="section-heading"><div><span class="kicker">GESTÃO DE ACESSO</span><h2>Parceiros cadastrados</h2><p class="muted">Suspenda ou reative o acesso de parceiros com justificativa. A suspensão bloqueia as APIs imediatamente, mesmo que a sessão Cloudflare Access ainda esteja válida.</p></div></div><p class="muted">A reativação exige contrato já verificado. Para permitir o login de novos parceiros, também será necessário autorizar a identidade correspondente na política Cloudflare Access. Não há convite automático nesta versão.</p><div id="partner-list"></div></div></section>
+<section id="view-applications" class="view hidden"><div class="panel"><h2>Candidaturas</h2><p class="muted">As aprovações exigem análise e formalização prévia, sem acesso automático. Alterar a etapa aqui não envia mensagens automaticamente ao candidato.</p><div class="toolbar"><label>Modalidade <select id="app-type-filter"><option value="">Todas</option><option value="representante">Representantes</option><option value="desenvolvedor">Desenvolvedores</option></select></label><label>Etapa <select id="app-status-filter"><option value="">Todas</option><option value="pending">Em aberto</option><option value="received">Recebida</option><option value="review">Em análise</option><option value="requested">Informações solicitadas</option><option value="interview">Entrevista</option><option value="preapproved">Pré-aprovada</option><option value="documentation">Documentação</option><option value="approved">Aprovada</option><option value="rejected">Não selecionada</option></select></label><label>Pesquisar <input id="app-search" type="search" placeholder="Nome, e-mail, protocolo" autocomplete="off"></label></div><div id="application-list"></div></div></section>
+<section id="view-partners" class="view hidden">
+  <div class="panel">
+    <span class="kicker">ADMINISTRAÇÃO</span>
+    <h2>Usuários e permissões</h2>
+    <p class="muted">Consulte as contas do portal. A suspensão bloqueia as APIs em novas requisições, mesmo com uma sessão do Cloudflare Access em vigor.</p>
+    <form id="access-search-form" class="toolbar">
+      <label>Buscar por nome ou e-mail <input type="search" id="access-search" maxlength="120" autocomplete="off"></label>
+      <button class="btn" type="submit">Buscar</button>
+    </form>
+    <div id="partner-list"></div>
+    <div id="access-invitation" class="hidden">
+      <h3>Convite preparado</h3>
+      <p class="muted">Autorize o endereço no Cloudflare Access antes de enviar a mensagem. A preparação fica registrada no histórico.</p>
+      <label class="field-label">Mensagem do convite <textarea id="access-invite-text" rows="4" readonly></textarea></label>
+      <button type="button" class="btn" id="access-copy">Copiar mensagem</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Candidaturas aprovadas</h2>
+    <p class="muted">Confirme o contrato e atribua um perfil para ativar a conta.</p>
+    <button type="button" class="btn" id="access-open-applications">Analisar candidaturas</button>
+    <div id="access-candidates"></div>
+  </div>
+  <div class="panel">
+    <h2>Histórico de acessos</h2>
+    <div id="access-history"></div>
+    <div class="toolbar" aria-label="Páginas da Gestão de Acessos">
+      <button type="button" class="btn" id="access-prev" disabled>Anterior</button>
+      <span id="access-page" aria-live="polite">Página 1</span>
+      <button type="button" class="btn" id="access-next" disabled>Próxima</button>
+    </div>
+  </div>
+</section>
 <section id="view-projects" class="view hidden"><div class="panel" id="project-create"><h2>Novo projeto</h2><p class="muted">Você pode vincular o projeto a uma venda já recebida ou criar um projeto avulso. Confirme o escopo e a margem antes de atribuir.</p><form id="project-form" class="mini-form"><input name="title" required minlength="3" placeholder="Título do projeto"><select id="project-sale" name="saleId"><option value="">Projeto avulso — sem venda vinculada</option></select><input type="hidden" id="project-proposal-id" name="proposalId" value=""><p id="project-brief-status" class="muted" role="status" aria-live="polite">Ao selecionar uma venda recebida com proposta aprovada, o escopo será importado para o projeto e ficará disponível ao desenvolvedor atribuído.</p><select id="project-developer" name="developerId" required><option value="">Selecione um desenvolvedor aprovado</option></select><input name="compensation" type="number" min="0" step=".01" required placeholder="Remuneração (R$)"><input name="dueAt" type="date"><textarea name="description" required minlength="15" placeholder="Escopo e critérios de aceite"></textarea><button class="btn primary" type="submit">Criar projeto</button></form></div><div class="panel"><h2>Projetos</h2><div id="project-list"></div></div></section>
 <section id="developer-payments-admin" class="panel hidden"><h2>Remuneração de desenvolvedores</h2><p class="muted">Registre obrigações somente de projetos aprovados, e marque como pago somente após conciliação financeira.</p><form id="developer-payment-form" class="mini-form"><select id="developer-payment-project" name="projectId" required><option value="">Selecione um projeto aprovado</option></select><input name="amount" type="number" min="0.01" step=".01" placeholder="Valor (BRL)" required><button class="btn primary" type="submit">Registrar valor previsto</button></form><div id="developer-payment-list"></div></section>
 <section id="view-billing" class="view hidden">

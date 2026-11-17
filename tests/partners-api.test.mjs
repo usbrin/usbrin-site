@@ -8,13 +8,16 @@ import {onRequestPost as studioInquiry} from "../functions/api/studio-inquiry.js
 import {onRequestGet as publicConfig} from "../functions/api/public-config.js";
 import {onRequestPost as statusLookup} from "../functions/api/application-status.js";
 import {authenticatedUser} from "../functions/_lib/auth.js";
+import {onRequest as startSession} from "../functions/api/session/start.js";
+import {onRequest as verifySession} from "../functions/api/session/verify.js";
+import {onRequest as logoutSession} from "../functions/api/session/logout.js";
 import {readBody,checkOrigin} from "../functions/_lib/security.js";
 import {parseBankCSV,bankCents,bankDate} from "../functions/_lib/bank-csv.js";
 
 class TestD1{
  constructor(){
    this.sqlite=new DatabaseSync(":memory:");
-   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql","migrations/0004_studio_inquiries.sql","migrations/0005_studio_assignments.sql","migrations/0006_sale_project_links.sql","migrations/0007_atomic_receipts.sql","migrations/0008_crm_followups.sql","migrations/0009_proposal_drafts.sql","migrations/0010_project_proposal_handoff.sql","migrations/0011_optional_services.sql","migrations/0012_recurring_billing_controls.sql","migrations/0013_bank_evidence_and_refunds.sql","migrations/0014_expense_obligations.sql","migrations/0015_fiscal_evidence.sql"]){
+   for(const migration of ["migrations/0001_partners.sql","migrations/0002_financial_integrity.sql","migrations/0003_partner_contracts.sql","migrations/0004_studio_inquiries.sql","migrations/0005_studio_assignments.sql","migrations/0006_sale_project_links.sql","migrations/0007_atomic_receipts.sql","migrations/0008_crm_followups.sql","migrations/0009_proposal_drafts.sql","migrations/0010_project_proposal_handoff.sql","migrations/0011_optional_services.sql","migrations/0012_recurring_billing_controls.sql","migrations/0013_bank_evidence_and_refunds.sql","migrations/0014_expense_obligations.sql","migrations/0015_fiscal_evidence.sql","migrations/0016_portal_sessions.sql"]){
      this.sqlite.exec(readFileSync(new URL("../"+migration,import.meta.url),"utf8"));
    }
  }
@@ -64,7 +67,7 @@ globalThis.fetch=async (url,options={})=>{
 async function signed(email,options={}){
  const now=Math.floor(Date.now()/1000);
  const header=b64(JSON.stringify({alg:"RS256",typ:"JWT",kid:jwk.kid}));
- const payload=b64(JSON.stringify({iss:domain,aud:options.aud||audience,email,iat:now,exp:options.exp??now+3600}));
+ const payload=b64(JSON.stringify({iss:domain,aud:[audience],type:"app",sub:"fixture-identity",email,iat:now,nbf:now,exp:now+3600,...options}));
  const signing=header+"."+payload;
  const sig=await crypto.subtle.sign("RSASSA-PKCS1-v1_5",privateKey,encoder.encode(signing));
  return signing+"."+b64(Buffer.from(sig));
@@ -78,7 +81,7 @@ const users=[
  ["d2","dev2@usbrin.test","Desenvolvedor 2","desenvolvedor"]
 ];
 for(const u of users)db.sqlite.prepare("INSERT INTO users(id,email,name,role,status) VALUES (?,?,?,?,'active')").run(...u);
-const env={DB:db,ACCESS_TEAM_DOMAIN:domain,ACCESS_AUD:audience,APPLICATIONS_ENABLED:"false"};
+const env={USBRIN_ID_DB:db,ACCESS_TEAM_DOMAIN:domain,USBRIN_ID_ACCESS_AUD:audience,ACCESS_APP_HOST:"usbrin-preview.pages.dev",ACCESS_MFA_AUD:audience,APPLICATIONS_ENABLED:"false"};
 async function call(email,route,data){
  const req=new Request("https://usbrin-preview.pages.dev/api/private/"+route,{method:data===undefined?"GET":"POST",headers:{"Cf-Access-Jwt-Assertion":await signed(email),...(data===undefined?{}:{"content-type":"application/json","origin":"https://usbrin-preview.pages.dev"})},...(data===undefined?{}:{body:JSON.stringify(data)})});
  const res=await privateAPI({request:req,env});
@@ -107,6 +110,109 @@ test("candidate forms require verified Turnstile, consent, and reject duplicate 
  assert.equal((await apply({request:request(body),env:enabled})).status,409);
  const stored=db.sqlite.prepare("SELECT email,type,status FROM applications WHERE protocol=?").get(content.protocol);
  assert.equal(stored.email,body.email);assert.equal(stored.type,"representante");assert.equal(stored.status,"received");
+});
+
+test("representative preview is host-scoped, accepts QA-only data and never creates accounts",async()=>{
+ const origin="https://usbrin-preview.pages.dev";
+ const enabled={...env,REPRESENTATIVE_APPLICATIONS_PREVIEW:env.ACCESS_APP_HOST,TURNSTILE_SITE_KEY:"site-key-test",TURNSTILE_SECRET:"secret-test"};
+ const body={type:"representante",name:"Pessoa Exemplo",email:"representante.qa@example.com",phone:"+55 (69) 99999-9999",city:"Porto Velho",state:"RO",experience:"Ainda não tenho experiência profissional em vendas.",motivation:"Pretendo prospectar empresas locais e apresentar uma demonstração.",privacy:true,turnstileToken:"mock-application-token"};
+ const submit=(payload,host=origin)=>apply({env:enabled,request:new Request(host+"/public/api/applications",{
+   method:"POST",headers:{"content-type":"application/json",origin:host},body:JSON.stringify(payload)
+ })});
+ const config=async host=>(await publicConfig({env:enabled,request:new Request(host+"/public/api/public-config")}).json());
+ assert.deepEqual((await config(origin)).applicationTypes,["representante"]);
+ assert.equal((await config("https://usbrin-site.pages.dev")).applicationsOpen,false);
+ assert.equal((await submit(body,"https://usbrin-site.pages.dev")).status,503);
+ assert.equal((await submit({...body,type:"desenvolvedor"})).status,503);
+ for(const changes of [{email:"pessoa@outro.test"},{state:"XX"},{phone:"1198765432abc"},{city:"   "},{experience:"Breve"},{name:"a".repeat(121)},{website:"spam"}]){
+   assert.equal((await submit({...body,...changes})).status,400);
+ }
+ const response=await submit(body);
+ assert.equal(response.status,201);
+ const {protocol}=await response.json();
+ const listed=(await call(users[0][1],"admin/applications?type=representante&status=pending")).data.applications.find(x=>x.protocol===protocol);
+ const closed=(await call(users[0][1],"admin/applications?status=approved")).data.applications;
+ assert.equal(closed.some(x=>x.protocol===protocol),false);
+ assert.equal(listed.phone,"+5569999999999");
+ assert.equal(listed.motivation,body.motivation);
+ assert.equal(db.sqlite.prepare("SELECT details FROM audit_events WHERE action='application.privacy' AND entity_id=?").get(listed.id).details,"privacidade-parceiros/v1");
+ assert.equal(db.sqlite.prepare("SELECT COUNT(*) n FROM users WHERE application_id=? OR email=?").get(listed.id,body.email).n,0);
+ assert.equal((await submit({...body,email:body.email.toUpperCase()})).status,409);
+ const lookup=await statusLookup({env:enabled,request:new Request(origin+"/public/api/application-status",{
+   method:"POST",headers:{"content-type":"application/json",origin},body:JSON.stringify({protocol,email:body.email,turnstileToken:"mock-status-token"})
+ })});
+ assert.equal(lookup.status,200);
+ assert.equal((await lookup.json()).status,"received");
+});
+
+test("admin overview separates sales, recorded receipts and goals by Porto Velho month",async()=>{
+ const leadId="overview-lead",saleId="overview-sale";
+ db.sqlite.prepare("INSERT INTO opportunities (id,partner_id,company,contact,stage) VALUES (?,'r1','Empresa QA','Contato QA','contracted')").run(leadId);
+ db.sqlite.prepare("INSERT INTO sales (id,opportunity_id,gross_cents,created_at) VALUES (?,?,100000,'2026-04-01 04:00:00')").run(saleId,leadId);
+ const receipt=db.sqlite.prepare("INSERT INTO sale_receipts (id,sale_id,amount_cents,reference,received_at,actor_id) VALUES (?,?,?,?,?,'a1')");
+ receipt.run("overview-march",saleId,15000,"overview-march","2026-04-01 03:59:59");
+ receipt.run("overview-april",saleId,25000,"overview-april","2026-04-01 04:00:00");
+ const admin=users[0][1];
+ assert.equal((await call(admin,"admin/goal",{partnerId:"r1",period:"2026-04",goalCents:50000})).status,200);
+ assert.equal((await call(admin,"admin/overview?month=2026-13")).status,400);
+ for(const index of [1,3])assert.equal((await call(users[index][1],"admin/overview?month=2026-04")).status,404);
+ const april=await call(admin,"admin/overview?month=2026-04");
+ assert.equal(april.status,200);
+ assert.equal(april.data.monthly.count,1);
+ assert.equal(april.data.monthly.contractedCents,100000);
+ assert.equal(april.data.monthly.sitesCents,25000);
+ const row=april.data.performance.find(x=>x.id==="r1");
+ assert.equal(row.goal_cents,50000);
+ assert.equal(row.received_cents,25000);
+ const march=await call(admin,"admin/overview?month=2026-03");
+ assert.equal(march.data.monthly.count,0);
+ assert.equal(march.data.monthly.sitesCents,15000);
+ assert.equal(march.data.performance.find(x=>x.id==="r1").goal_cents,null);
+});
+
+test("admin dashboard reconciles cash, commissions and bank credits with synthetic ledger entries",async()=>{
+ const month="2025-07",admin=users[0][1],rep=users[1][1];
+ const sale=db.sqlite.prepare("INSERT INTO sales(id,opportunity_id,gross_cents,created_at) VALUES (?,?,?,'2025-07-03 12:00:00')");
+ const lead=db.sqlite.prepare("INSERT INTO opportunities(id,partner_id,company,contact,stage) VALUES (?,'r1',?,'Contato fictício','contracted')");
+ const receipt=db.sqlite.prepare("INSERT INTO sale_receipts(id,sale_id,amount_cents,reference,received_at,actor_id) VALUES (?,?,?,?,'2025-07-03 12:30:00','a1')");
+ const commission=db.sqlite.prepare("INSERT INTO commissions(id,sale_id,partner_id,basis_cents,rate_bps,amount_cents,status,paid_at) VALUES (?,?,'r1',?,1500,?,?,?)");
+ const before=(await call(admin,"admin/overview?month="+month)).data.commissions;
+ for(const [id,amount,state] of [["fin-paid",119000,"paid"],["fin-approved",69000,"approved"],["fin-estimated",50000,"estimated"]]){
+   lead.run(id,id);sale.run(id,id,amount);receipt.run(id,id,amount,id);
+   commission.run(id,id,amount,amount*15/100,state,state==="paid"?"2025-07-05 12:00:00":null);
+ }
+ lead.run("fin-unpaid","Venda sem recebimento");sale.run("fin-unpaid","fin-unpaid",30000);
+ const agreement=await call(admin,"admin/billing/agreement",{saleId:"fin-paid",kind:"support",cadence:"monthly",amountCents:25000,startOn:"2025-07-01",
+   contractReference:"QA-RECONCILIATION-2025",termsSummary:"Acordo de suporte fictício usado na conciliação do dashboard.",confirmedSigned:true});
+ assert.equal(agreement.status,201);
+ const charge=await call(admin,"admin/billing/charge",{agreementId:agreement.data.id,period:month,dueOn:"2025-07-05",confirmedManual:true});
+ assert.equal(charge.status,201);
+ db.sqlite.prepare("INSERT INTO service_receipts(id,charge_id,amount_cents,reference,actor_id,received_at) VALUES ('fin-support',?,10000,'fin-support','a1','2025-07-05 13:00:00')").run(charge.data.id);
+ const statement=await call(admin,"admin/bank/import",{accountAlias:"QA-DASHBOARD",filename:"qa-dashboard.csv",confirmedSource:true,
+   csv:"data;valor;descricao;identificador\n2025-07-03;1190,00;Crédito de site;fin-paid\n2025-07-05;100,00;Crédito de suporte;fin-support\n2025-07-06;-120,00;Devolução;fin-refund"});
+ assert.equal(statement.status,201);
+ const entry=id=>db.sqlite.prepare("SELECT id FROM bank_entries WHERE external_id=?").get(id.toUpperCase()).id;
+ for(const [kind,id] of [["sale","fin-paid"],["service","fin-support"]]){
+   assert.equal((await call(admin,"admin/bank/match",{entryId:entry(id),receiptKind:kind,receiptId:id,confirmedComparison:true})).status,200);
+ }
+ const refund=await call(admin,"admin/bank/refund-request",{receiptKind:"sale",receiptId:"fin-paid",amountCents:12000,reason:"Devolução fictícia para separar receita bruta e caixa líquido",confirmedCase:true});
+ assert.equal(refund.status,201);
+ assert.equal((await call(admin,"admin/bank/refund-review",{id:refund.data.id,decision:"approved",confirmedReview:true})).status,200);
+ assert.equal((await call(admin,"admin/bank/refund-settle",{id:refund.data.id,bankEntryId:entry("fin-refund"),confirmedBankDebit:true})).status,200);
+ assert.equal((await call(admin,"admin/goal",{partnerId:"r1",period:month,goalCents:300000})).status,200);
+ const overview=await call(admin,"admin/overview?month="+month);
+ assert.equal(overview.status,200);
+ assert.deepEqual(overview.data.monthly,{period:month,count:4,contractedCents:268000,sitesCents:238000,servicesCents:10000,commissionsPaidCents:17850});
+ assert.equal(overview.data.commissions.estimatedCents-before.estimatedCents,7500);
+ assert.equal(overview.data.commissions.approvedCents-before.approvedCents,10350);
+ const target=overview.data.performance.find(row=>row.id==="r1");
+ assert.equal(target.received_cents,238000);assert.equal(target.goal_cents,300000);
+ const control=await call(admin,"admin/control/overview?month="+month);
+ assert.equal(control.status,200);
+ assert.equal(control.data.monthly.bankMatchedInCents,129000);
+ assert.equal(control.data.monthly.bankMatchedRefundOutCents,12000);
+ assert.equal(control.data.monthly.netClassifiedCents,117000);
+ assert.equal((await call(rep,"admin/overview?month="+month)).status,404);
 });
 
 test("Studio remains opt-in and CRM conversion is unique, authorized and traceable",async()=>{
@@ -632,18 +738,54 @@ test("representative Command is scoped to own CRM, enforces 15 percent, and prev
  assert.equal((await call(rep,"admin/commission",{saleId:sale.data.saleId,rateBps:1500})).status,404);
 });
 
-test("JWT requires a valid Cloudflare signature, correct audience and active user",async()=>{
- const missing=new Request("https://usbrin-preview.pages.dev/api/private/me");
- const response=await privateAPI({request:missing,env});
- assert.equal(response.status,403);
- const good=await signed(users[0][1]);const pieces=good.split(".");pieces[2]=(pieces[2][0]==="A"?"B":"A")+pieces[2].slice(1);const bad=pieces.join(".");
- for(const token of [bad,await signed(users[0][1],{aud:"wrong-audience"}),await signed(users[0][1],{exp:1})]){
-   await assert.rejects(()=>authenticatedUser(new Request("https://usbrin-preview.pages.dev",{headers:{"Cf-Access-Jwt-Assertion":token}}),env));
+test("USBRIN ID distinguishes invalid sessions, account status and provider failure",async()=>{
+ const url="https://usbrin-preview.pages.dev/api/private/me";
+ const request=(token,host=url)=>new Request(host,{headers:token?{"Cf-Access-Jwt-Assertion":token}:{}});
+ const response=await privateAPI({request:request(),env});
+ assert.equal(response.status,401);
+ assert.equal((await response.json()).code,"session_required");
+ assert.equal(response.headers.get("cache-control"),"no-store, private");
+ const admin=users[0][1],good=await signed(admin);
+ const pieces=good.split(".");
+ pieces[2]=(pieces[2][0]==="A"?"B":"A")+pieces[2].slice(1);
+ const bad=pieces.join(".");
+ for(const token of [bad,"a.b.c",await signed(admin,{aud:["wrong-audience"]}),await signed(admin,{exp:1}),
+   await signed(admin,{type:"org"}),await signed(admin,{sub:""}),await signed(admin,{exp:"9999999999"}),
+   await signed(admin,{nbf:Math.floor(Date.now()/1000)+600})]){
+   const denied=await privateAPI({request:request(token),env});
+   assert.equal(denied.status,401);
  }
- const user=await authenticatedUser(new Request("https://usbrin-preview.pages.dev",{headers:{"Cf-Access-Jwt-Assertion":good}}),env);
+ const user=await authenticatedUser(request(good),env);
  assert.equal(user.role,"admin");
- const unknown=await signed("not-approved@usbrin.test");
- await assert.rejects(()=>authenticatedUser(new Request("https://usbrin-preview.pages.dev",{headers:{"Cf-Access-Jwt-Assertion":unknown}}),env));
+ const unknown=await call("not-approved@usbrin.test","me");
+ assert.equal(unknown.status,403);
+ assert.equal(unknown.data.code,"account_not_approved");
+ const pending="pending@usbrin.test";
+ db.sqlite.prepare("INSERT INTO users(id,email,name,role,status) VALUES ('pending',?, 'Pendente','representante','pending')").run(pending);
+ assert.equal((await call(pending,"me")).data.code,"account_not_approved");
+ const otherDomain="https://unavailable-fixture.cloudflareaccess.com";
+ const missingKeys=await signed(admin,{iss:otherDomain});
+ const outage=await privateAPI({request:request(missingKeys),env:{...env,ACCESS_TEAM_DOMAIN:otherDomain}});
+ assert.equal(outage.status,503);
+ assert.equal((await outage.json()).code,"identity_unavailable");
+ const alias=await privateAPI({request:request(good,"https://different-preview.pages.dev/api/private/me"),env});
+ assert.equal(alias.status,503);
+});
+
+test("administrative access requires a JWT issued for the configured MFA application",async()=>{
+ const url="https://usbrin-preview.pages.dev/api/private/";
+ const request=async(mail,route)=>new Request(url+route,{headers:{"Cf-Access-Jwt-Assertion":await signed(mail)}});
+ for(const ACCESS_MFA_AUD of [undefined,"different-mfa-audience"]){
+   const misconfigured={...env,ACCESS_MFA_AUD};
+   for(const route of ["me","admin/overview","admin/billing/overview"]){
+     const denied=await privateAPI({request:await request(users[0][1],route),env:misconfigured});
+     assert.equal(denied.status,403);
+     assert.equal((await denied.json()).code,"mfa_required");
+   }
+   const partner=await privateAPI({request:await request(users[1][1],"me"),env:misconfigured});
+   assert.equal(partner.status,200);
+ }
+ assert.equal((await call(users[0][1],"admin/overview")).status,200);
 });
 
 test("representatives cannot view administration and cannot change each other's opportunities",async()=>{
@@ -745,6 +887,12 @@ test("partner activation requires an approved application and a traceable signed
  assert.equal(verified.status,"active");
  const again=await call(users[0][1],"admin/activate",{applicationId:id,contractVerified:true,contractReference:"TEST-DUPLICATE"});
  assert.equal(again.status,409);
+ const logs=db.sqlite.prepare("SELECT ae.details FROM audit_events ae JOIN users u ON ae.entity_id=u.id WHERE ae.action='user.activate' AND u.application_id=?").all(id);
+ assert.deepEqual(logs.map(x=>x.details),["representante"]);
+ const developerApplication="application-reviewed-2";
+ const developer=await call(users[0][1],"admin/activate",{applicationId:developerApplication,contractVerified:true,contractReference:"TEST-DEVELOPER-CONTRACT"});
+ assert.equal(developer.status,200);
+ assert.equal((await call("developer-candidate@usbrin.test","me")).data.user.role,"desenvolvedor");
 });
 
 test("developer payments cannot exceed the approved contract or be marked paid without reference",async()=>{
@@ -791,7 +939,9 @@ test("admin can immediately revoke a partner session; only signed-contract partn
  assert.equal((await call(admin,"admin/partner-access",{userId:"r2",status:"suspended",reason:"curto"})).status,400);
  const revoked=await call(admin,"admin/partner-access",{userId:"r2",status:"suspended",reason:"Revisão da colaboração e acesso preventivo"});
  assert.equal(revoked.status,200);
- assert.equal((await call(rep,"representante/dashboard")).status,403);
+ const denied=await call(rep,"representante/dashboard");
+ assert.equal(denied.status,403);
+ assert.equal(denied.data.code,"account_suspended");
  assert.equal((await call(rep,"representante/lead",{company:"Empresa X",contact:"Contato Y"})).status,403);
  assert.equal((await call(users[1][1],"representante/dashboard")).status,200);
  assert.equal((await call(dev,"desenvolvedor/dashboard")).status,200);
@@ -813,4 +963,110 @@ test("admin can immediately revoke a partner session; only signed-contract partn
  assert.equal(history.length,2);
  assert.ok(history.some(x=>x.details.includes("active -> suspended")));
  assert.ok(history.some(x=>x.details.includes("suspended -> active")));
+});
+
+test("Gestão de Acessos audits role assignment and a prepared invitation without exposing it to partners",async()=>{
+ const [admin,representative,,developer]=users.map(u=>u[1]);
+ const route="admin/access";
+ const applicantId="qa-access-management",mail="partner-access-qa@usbrin.test";
+ db.sqlite.prepare("INSERT INTO applications(id,protocol,type,name,email,phone,city,state,experience,motivation,status,created_at,updated_at) VALUES (?,?,'representante','Parceiro Gestão QA',?,'69999999999','Porto Velho','RO','Experiência profissional','Interesse em colaborar','documentation',datetime('now'),datetime('now'))").run(applicantId,"UACCESSQA00001",mail);
+ for(const identity of [representative,developer]){
+   assert.equal((await call(identity,route)).status,404);
+   assert.equal((await call(identity,route+"/invitation",{userId:"a1"})).status,404);
+   assert.equal((await call(identity,"admin/activate",{applicationId:applicantId,role:"admin"})).status,404);
+ }
+ const access=()=>call(admin,route+"?q="+encodeURIComponent(mail));
+ assert.equal((await access()).data.candidates.length,0);
+ assert.equal((await call(admin,"admin/review",{id:applicantId,status:"approved",note:"QA aprovada"})).status,200);
+ assert.equal((await access()).data.candidates[0].id,applicantId);
+ const details={applicationId:applicantId,contractVerified:true,contractReference:"CONTRATO-QA-2026"};
+ assert.equal((await call(admin,"admin/activate",{...details,role:"admin"})).status,400);
+ assert.equal((await call(admin,"admin/activate",{...details,role:"desenvolvedor"})).status,200);
+ const after=await access();
+ assert.equal(after.data.candidates.length,0);
+ assert.equal(after.data.users[0].role,"desenvolvedor");
+ const id=after.data.users[0].id;
+ assert.equal((await call(mail,"me")).data.user.role,"desenvolvedor");
+ assert.equal((await call(admin,route+"/invitation",{userId:"a1"})).status,404);
+ assert.equal((await call(admin,route+"/invitation",{userId:"r1"})).status,409);
+ const invitation=await call(admin,route+"/invitation",{userId:id,redirectUrl:"https://outside.example"});
+ assert.equal(invitation.status,200);
+ assert.equal(invitation.data.invitation.email,mail);
+ assert.match(invitation.data.invitation.message,/https:\/\/usbrin-preview\.pages\.dev\/portal/);
+ assert.doesNotMatch(invitation.data.invitation.message,/outside\.example/);
+ const token=await signed(mail);
+ const check=()=>privateAPI({request:new Request("https://usbrin-preview.pages.dev/api/private/desenvolvedor/dashboard",
+   {headers:{"Cf-Access-Jwt-Assertion":token}}),env});
+ assert.equal((await check()).status,200);
+ assert.equal((await call(admin,"admin/partner-access",{userId:id,status:"suspended",reason:"Suspensão QA em homologação"})).status,200);
+ const suspended=await check();
+ assert.equal(suspended.status,403);
+ assert.equal((await suspended.json()).code,"account_suspended");
+ assert.equal((await call(admin,route+"/invitation",{userId:id})).status,409);
+ const final=await access();
+ assert.deepEqual(final.data.history.map(x=>x.action),["partner.access","user.invite_prepared","user.activate","application.review"]);
+ assert.ok(final.data.history.every(x=>x.actor_name==="Administrador"&&x.target_name==="Parceiro Gestão QA"));
+ assert.equal((await call(admin,route+"?page=0")).status,400);
+ assert.equal((await call(admin,route+"?q=%25")).data.users.length,0);
+});
+
+test("experimental work sessions require distinct fresh proof, expire after 30 idle minutes and revoke on logout",async()=>{
+ const origin="https://usbrin-preview.pages.dev",step="step-up-qa",mail=users[1][1];
+ const cfg={...env,USBRIN_SESSION_EXPERIMENT:"true",USBRIN_ID_STEP_UP_AUD:step};
+ const clock=Date.now;
+ let at=Math.floor(clock()/1000);
+ Date.now=()=>at*1000;
+ const invoke=(fn,path,{token,cookies="",method="GET",from=origin}={})=>fn({
+   request:new Request(origin+path,{method,headers:{cookie:cookies,origin:from,...(token?{"Cf-Access-Jwt-Assertion":token}:{})}}),env:cfg
+ });
+ const getCookie=(response,name)=>response.headers.getSetCookie().find(x=>x.startsWith(name+"="))?.split(";")[0];
+ const start=token=>invoke(startSession,"/api/session/start",{token,method:"POST"});
+ const complete=(token,cookies)=>invoke(verifySession,"/api/session/verify",{token,cookies});
+ const hit=(token,cookies="",route="me")=>invoke(privateAPI,"/api/private/"+route,{token,cookies});
+ try{
+   const identity=await signed(mail);
+   const noWorkSession=await hit(identity);
+   assert.equal(noWorkSession.status,401);
+   assert.equal((await noWorkSession.json()).code,"usbrin_session_required");
+   assert.equal((await invoke(startSession,"/api/session/start",{token:identity,method:"POST",from:"https://foreign.test"})).status,403);
+   const staleProof=await signed(mail,{aud:[step]});
+   const started=await start(identity);
+   const challenge=getCookie(started,"__Host-usbrin-challenge");
+   assert.ok(challenge);
+   assert.equal(started.headers.get("location"),"/api/session/verify");
+   assert.ok(started.headers.getSetCookie().some(x=>x.includes("Path=/api/session/verify")&&x.includes("Max-Age=0")));
+   assert.equal((await complete(identity,challenge)).headers.get("location"),"/portal?confirmacao=pendente");
+   assert.equal((await complete(staleProof,challenge)).headers.get("location"),"/portal?confirmacao=pendente");
+   const challenge2=getCookie(await start(identity),"__Host-usbrin-challenge");
+   at++;
+   const proof=await signed(mail,{aud:[step]});
+   assert.equal((await complete(await signed(users[3][1],{aud:[step]}),challenge2)).headers.get("location"),"/portal?confirmacao=pendente");
+   const issued=await complete(proof,challenge2);
+   const cookie=getCookie(issued,"__Host-usbrin-session");
+   assert.ok(cookie);
+   assert.match(issued.headers.getSetCookie().find(x=>x.startsWith("__Host-usbrin-session=")),/Secure; HttpOnly; SameSite=Lax$/);
+   assert.equal((await complete(proof,challenge2)).headers.get("location"),"/portal?confirmacao=pendente");
+   assert.equal((await hit(identity,cookie)).status,200);
+   assert.equal((await hit(await signed(users[3][1]),cookie)).status,401);
+   assert.equal((await hit(await signed(mail,{sub:"different-access-identity"}),cookie)).status,401);
+   at+=29*60;
+   assert.equal((await hit(identity,cookie,"representante/dashboard")).status,200);
+   at+=29*60;
+   assert.equal((await hit(identity,cookie)).status,200);
+   at+=60;
+   assert.equal((await hit(identity,cookie)).status,401);
+   const renewedAccessIdentity=await signed(mail);
+   assert.equal((await hit(renewedAccessIdentity,cookie)).status,401);
+   const challenge3=getCookie(await start(renewedAccessIdentity),"__Host-usbrin-challenge");
+   at++;
+   const issuedAgain=await complete(await signed(mail,{aud:[step]}),challenge3);
+   const cookie2=getCookie(issuedAgain,"__Host-usbrin-session");
+   assert.ok(cookie2);
+   assert.equal((await invoke(logoutSession,"/api/session/logout",{method:"POST",cookies:cookie2,from:"https://foreign.test"})).status,403);
+   assert.equal((await hit(renewedAccessIdentity,cookie2)).status,200);
+   const logout=await invoke(logoutSession,"/api/session/logout",{method:"POST",cookies:cookie2});
+   assert.equal(logout.headers.get("location"),"/public/usbrin-id");
+   assert.match(logout.headers.getSetCookie().find(x=>x.startsWith("__Host-usbrin-session=")),/Max-Age=0/);
+   assert.equal((await hit(renewedAccessIdentity,cookie2)).status,401);
+ }finally{Date.now=clock;}
 });

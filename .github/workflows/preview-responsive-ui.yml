@@ -3,11 +3,13 @@ on:
   push:
     branches:
       - feature/usbrin-partners-platform
+      - feature/usbrin-id
     paths:
       - tests/responsive-ui.smoke.mjs
       - .github/workflows/preview-responsive-ui.yml
       - css/parceiros.css
       - portal.html
+      - usbrin-id.html
       - js/portal.js
   workflow_dispatch:
 permissions:

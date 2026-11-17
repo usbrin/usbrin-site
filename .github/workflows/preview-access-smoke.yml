@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feature/usbrin-partners-platform
+      - feature/usbrin-id
   workflow_dispatch:
 permissions:
   contents: read
@@ -14,11 +15,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          BASE='https://feature-usbrin-partners-plat.usbrin-site.pages.dev'
+          BASE='https://feature-usbrin-id.usbrin-site.pages.dev'
           public_ok=0
           for retry in 1 2 3 4 5 6; do
             status=$(curl -sSL --max-time 25 -o /tmp/recruitment.html -w '%{http_code}' "$BASE/public/parceiros.html" || echo '000')
-            if [ "$status" = '200' ] && grep -q 'REDE DE PARCEIROS' /tmp/recruitment.html; then
+            if [ "$status" = '200' ] && grep -q 'TRABALHE COM A USBRIN' /tmp/recruitment.html; then
               public_ok=1
               break
             fi
@@ -34,7 +35,8 @@ jobs:
           status=$(curl -sS --max-time 25 -o /tmp/public-config -w '%{http_code}' "$BASE/public/api/public-config")
           echo "Public config => $status"
           test "$status" = '200'
-          grep -q '"applicationsOpen":false' /tmp/public-config
+          grep -q '"applicationsOpen":true' /tmp/public-config
+          grep -q '"applicationTypes":["representante"]' /tmp/public-config
           grep -q '"studioInquiriesOpen":false' /tmp/public-config
           form_status=$(curl -sS --max-time 25 -o /tmp/candidate-response -w '%{http_code}' -X POST \
             -H "Origin: $BASE" -H 'Content-Type: application/json' \

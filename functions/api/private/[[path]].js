@@ -1,9 +1,13 @@
 import {respond,error,readBody,checkOrigin,str,email} from "../../_lib/security.js";
-import {authenticatedUser} from "../../_lib/auth.js";
+import {authenticatedIdentity,AuthError} from "../../_lib/auth.js";
+import {portalSessionEnabled,requirePortalSession} from "../../_lib/portal-session.js";
 import {handleBilling} from "../../_lib/billing.js";
 import {handleBank} from "../../_lib/bank-reconcile.js";
 import {handleFinanceControl} from "../../_lib/finance-control.js";
 const statuses=new Set(["received","review","requested","interview","preapproved","documentation","approved","rejected","withdrawn"]);
+const pendingApplicationStatuses=new Set(["received","review","requested","interview","preapproved","documentation"]);
+const validMonth=value=>/^\d{4}-(0[1-9]|1[0-2])$/.test(value)&&value.slice(0,4)!=="0000"&&value.slice(0,4)!=="9999";
+const partnerRoles=new Set(["representante","desenvolvedor"]);
 const repStages=new Set(["new","contact","interested","qualified","proposal","negotiation","lost"]);
 const projectStages=new Set(["proposed","accepted","in_progress","review","changes","approved","done","cancelled"]);
 const query=(db,sql,...args)=>db.prepare(sql).bind(...args);
@@ -28,13 +32,21 @@ export async function onRequest(context){
   if(!["GET","POST"].includes(method))return error("Método não permitido.",405);
   if(method==="POST"&&!checkOrigin(request))return error("Origem não autorizada.",403);
   let user;
-  try{user=await authenticatedUser(request,env);}catch{return error("Acesso restrito. Faça login e confirme que sua conta está ativa.",403);}
-  const db=env.DB;
+  try{
+    const identity=await authenticatedIdentity(request,env);
+    await requirePortalSession(request,env,identity,route!=="me");
+    user=identity.user;
+  }catch(e){
+    if(e instanceof AuthError)return respond({ok:false,error:e.message,code:e.code},e.status);
+    return error("Não foi possível verificar o acesso.",503);
+  }
+  const db=env.USBRIN_ID_DB;
   try{
     if(route.startsWith("admin/billing/"))return handleBilling({request,db,user,route});
     if(route.startsWith("admin/bank/"))return handleBank({request,db,user,route});
     if(route.startsWith("admin/control/"))return handleFinanceControl({request,db,user,route});
-    if(route==="me"&&method==="GET")return respond({ok:true,user});
+    if(route==="me"&&method==="GET")return respond({ok:true,user,workSession:portalSessionEnabled(env)});
+    if(route==="session/activity"&&method==="POST"&&portalSessionEnabled(env))return respond({ok:true});
     if(route==="crm/history"&&method==="GET"&&allowed(user,"admin","representante")){
       const id=str(new URL(request.url).searchParams.get("id"),60);
       if(!id)return error("Informe a oportunidade.",400);
@@ -136,36 +148,64 @@ export async function onRequest(context){
     }
 
     if(route==="admin/overview"&&method==="GET"&&allowed(user,"admin")){
-      const [applicants,reps,devs,opportunities,received,commissions,inquiries,overdue,receivables,staleLeads]=await db.batch([
+      const period=new URL(request.url).searchParams.get("month") ??
+        new Date(Date.now()-4*60*60*1000).toISOString().slice(0,7);
+      if(!validMonth(period))return error("Informe um mês válido.");
+      // Entries are UTC. The monthly window starts at midnight in Porto Velho.
+      const start=period+"-01 04:00:00";
+      const next="datetime(?,'+1 month')";
+      const [applicants,people,projects,opportunities,received,commissions,inquiries,tasks,sales,cash,performance]=await db.batch([
         db.prepare("SELECT status,COUNT(*) total FROM applications GROUP BY status"),
         db.prepare("SELECT role,COUNT(*) total FROM users WHERE status='active' GROUP BY role"),
         db.prepare("SELECT stage,COUNT(*) total FROM projects GROUP BY stage"),
         db.prepare("SELECT stage,COUNT(*) total FROM opportunities GROUP BY stage"),
         db.prepare("SELECT COALESCE(SUM(received_cents),0) total FROM sales WHERE status IN ('paid','partially_paid')"),
-        db.prepare("SELECT COALESCE(SUM(amount_cents),0) total FROM commissions WHERE status IN ('due','approved')"),
+        query(db,`SELECT status,COUNT(*) total,SUM(amount_cents) amount,
+          SUM(CASE WHEN status='paid' AND paid_at>=? AND paid_at<${next} THEN amount_cents ELSE 0 END) paid_in_month
+          FROM commissions WHERE status<>'reversed' GROUP BY status`,start,start),
         db.prepare("SELECT status,COUNT(*) total FROM studio_inquiries GROUP BY status"),
-        db.prepare("SELECT COUNT(*) total FROM projects WHERE due_at IS NOT NULL AND date(due_at)<date('now') AND stage NOT IN ('done','cancelled')"),
-        db.prepare("SELECT COUNT(*) total,COALESCE(SUM(gross_cents-received_cents),0) amount FROM sales WHERE status IN ('pending','partially_paid')"),
-        db.prepare("SELECT COUNT(*) total FROM opportunities WHERE updated_at<datetime('now','-7 days') AND stage NOT IN ('paid','cancelled','lost')")
+        db.prepare(`SELECT
+          (SELECT COUNT(*) FROM projects WHERE due_at IS NOT NULL AND date(due_at)<date('now','-4 hours') AND stage NOT IN ('done','cancelled')) overdueProjects,
+          (SELECT COUNT(*) FROM sales WHERE status IN ('pending','partially_paid')) salesAwaitingPayment,
+          (SELECT COALESCE(SUM(gross_cents-received_cents),0) FROM sales WHERE status IN ('pending','partially_paid')) accountsReceivableCents,
+          (SELECT COUNT(*) FROM opportunities WHERE updated_at<datetime('now','-7 days') AND stage NOT IN ('paid','cancelled','lost','contracted')) dormantOpportunities,
+          (SELECT COUNT(*) FROM opportunities WHERE next_action_at IS NOT NULL AND date(next_action_at)<=date('now','-4 hours') AND stage NOT IN ('paid','lost','cancelled','contracted')) dueFollowups,
+          (SELECT COUNT(*) FROM service_charges WHERE status<>'paid' AND due_on<date('now','-4 hours')) servicesOverdue,
+          (SELECT COUNT(*) FROM service_charges WHERE status<>'paid' AND due_on=date('now','-4 hours')) servicesDueToday,
+          (SELECT COUNT(*) FROM applications a WHERE a.status='approved' AND NOT EXISTS(SELECT 1 FROM users u WHERE u.application_id=a.id)) awaitingActivation,
+          (SELECT COUNT(*) FROM bank_refunds WHERE status='requested') refundReviews`),
+        query(db,`SELECT COUNT(*) count,COALESCE(SUM(gross_cents),0) contractedCents
+          FROM sales WHERE status<>'reversed' AND created_at>=? AND created_at<${next}`,start,start),
+        query(db,`SELECT
+          (SELECT COALESCE(SUM(r.amount_cents),0) FROM sale_receipts r JOIN sales s ON s.id=r.sale_id
+            WHERE s.status<>'reversed' AND r.received_at>=? AND r.received_at<${next}) sitesCents,
+          (SELECT COALESCE(SUM(amount_cents),0) FROM service_receipts WHERE received_at>=? AND received_at<${next}) servicesCents`,
+          start,start,start,start),
+        query(db,`SELECT u.id,u.name,u.status,g.goal_cents,COALESCE(r.received_cents,0) received_cents
+          FROM users u LEFT JOIN goals g ON g.partner_id=u.id AND g.period=?
+          LEFT JOIN (SELECT o.partner_id,SUM(r.amount_cents) received_cents FROM sale_receipts r
+            JOIN sales s ON s.id=r.sale_id JOIN opportunities o ON o.id=s.opportunity_id
+            WHERE s.status<>'reversed' AND r.received_at>=? AND r.received_at<${next} GROUP BY o.partner_id) r ON r.partner_id=u.id
+          WHERE u.role='representante' AND (u.status='active' OR g.id IS NOT NULL OR r.partner_id IS NOT NULL)
+          ORDER BY u.name COLLATE NOCASE,u.id`,period,start,start)
       ]);
       const total=(list,status)=>list.find(x=>x.status===status)?.total||0;
+      const commission=status=>commissions.results.find(x=>x.status===status);
+      const approvedCents=(commission("approved")?.amount||0)+(commission("due")?.amount||0);
       return respond({
-        ok:true,applications:applicants.results,users:reps.results,projects:devs.results,
+        ok:true,applications:applicants.results,users:people.results,projects:projects.results,
         opportunities:opportunities.results,receivedCents:received.results[0].total,
-        commissionsPendingCents:commissions.results[0].total,
-        studioInquiries:inquiries.results,
+        commissionsPendingCents:approvedCents,studioInquiries:inquiries.results,
+        monthly:{period,...sales.results[0],...cash.results[0],commissionsPaidCents:commission("paid")?.paid_in_month||0},
+        commissions:{estimatedCents:commission("estimated")?.amount||0,approvedCents},
+        performance:performance.results,
         tasks:{
-          candidates:applicants.results.filter(x=>['received','review','requested','interview','preapproved','documentation'].includes(x.status)).reduce((n,x)=>n+x.total,0),
+          ...tasks.results[0],
+          candidates:applicants.results.filter(x=>pendingApplicationStatuses.has(x.status)).reduce((n,x)=>n+x.total,0),
           newCandidates:total(applicants.results,'received'),
           studioNew:total(inquiries.results,'new'),
           studioOpen:inquiries.results.filter(x=>['new','review','qualified','proposal'].includes(x.status)).reduce((n,x)=>n+x.total,0),
-          overdueProjects:overdue.results[0].total,
-          salesAwaitingPayment:receivables.results[0].total,
-          accountsReceivableCents:receivables.results[0].amount,
-          dormantOpportunities:staleLeads.results[0].total,
-          dueFollowups:(await db.prepare("SELECT COUNT(*) total FROM opportunities WHERE next_action_at IS NOT NULL AND date(next_action_at)<=date('now') AND stage NOT IN ('paid','lost','cancelled')").first()).total,
-          servicesOverdue:(await db.prepare("SELECT COUNT(*) total FROM service_charges WHERE status<>'paid' AND due_on<date('now','-4 hours')").first()).total,
-          servicesDueToday:(await db.prepare("SELECT COUNT(*) total FROM service_charges WHERE status<>'paid' AND due_on=date('now','-4 hours')").first()).total
+          commissionReviews:commission("estimated")?.total||0
         }
       });
     }
@@ -214,7 +254,16 @@ export async function onRequest(context){
       return respond({ok:true,opportunityId:oppId});
     }
     if(route==="admin/applications"&&method==="GET"&&allowed(user,"admin")){
-      const records=await db.prepare("SELECT * FROM applications ORDER BY created_at DESC LIMIT 250").all();return respond({ok:true,applications:records.results});
+      const filters=new URL(request.url).searchParams,type=filters.get("type")||"",status=filters.get("status")||"";
+      if((type&&!partnerRoles.has(type))||(status&&status!=="pending"&&!statuses.has(status)))
+        return error("Filtro de candidaturas inválido.");
+      const stage=status==="pending"?[...pendingApplicationStatuses]:status?[status]:[];
+      const conditions=[],values=[];
+      if(type){conditions.push("type=?");values.push(type);}
+      if(stage.length){conditions.push("status IN ("+stage.map(()=>"?").join(",")+")");values.push(...stage);}
+      const where=conditions.length?" WHERE "+conditions.join(" AND "):"";
+      const records=await query(db,"SELECT * FROM applications"+where+" ORDER BY created_at DESC,id DESC LIMIT 250",...values).all();
+      return respond({ok:true,applications:records.results});
     }
     if(route==="admin/review"&&method==="POST"&&allowed(user,"admin")){
       const b=await readBody(request),status=str(b.status,30),id=str(b.id,50),note=str(b.note,1200);
@@ -230,9 +279,14 @@ export async function onRequest(context){
         approved:[],rejected:[],withdrawn:[]
       };
       if(!(transitions[original.status]||[]).includes(status))return error("Etapa de seleção inválida. Siga o processo de avaliação e formalização.",409);
-      const updated=await query(db,"UPDATE applications SET status=?,reviewer_note=?,updated_at=datetime('now') WHERE id=? AND status=?",status,note,id,original.status).run();
+      const [,updated]=await db.batch([
+        query(db,`INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at)
+          SELECT ?,?,'application.review','application',id,?,datetime('now') FROM applications WHERE id=? AND status=?`,
+          fresh(),user.id,original.status+" -> "+status,id,original.status),
+        query(db,"UPDATE applications SET status=?,reviewer_note=?,updated_at=datetime('now') WHERE id=? AND status=?",status,note,id,original.status)
+      ]);
       if(updated.meta?.changes!==1)return error("Candidatura já foi alterada. Atualize a lista.",409);
-      await audit(db,user,"application.review","application",id,original.status+" -> "+status);return respond({ok:true});
+      return respond({ok:true});
     }
     if(route==="admin/application-note"&&method==="POST"&&allowed(user,"admin")){
       const b=await readBody(request),id=str(b.id,60),note=str(b.note,1200);
@@ -248,11 +302,18 @@ export async function onRequest(context){
       if(b.contractVerified!==true||contractReference.length<5)return error("Confirme a assinatura e informe a referência documental do contrato.");
       const a=await query(db,"SELECT id,name,email,type,status FROM applications WHERE id=?",id).first();
       if(!a||a.status!=="approved")return error("A candidatura ainda não está aprovada.");
-      const role=a.type;
-      const existing=await query(db,"SELECT id FROM users WHERE email=?",a.email).first();
-      if(existing)return error("Esta identidade já possui conta; revisão administrativa necessária.",409);
-      await query(db,"INSERT INTO users(id,email,name,role,status,application_id,contract_reference,contract_verified_at,created_at) VALUES (?,?,?,?, 'active',?,?,datetime('now'),datetime('now'))",fresh(),a.email,a.name,role,a.id,contractReference).run();
-      await audit(db,user,"user.activate","application",id,role+" contract="+contractReference);return respond({ok:true});
+      const role=b.role===undefined?a.type:b.role;
+      if(!partnerRoles.has(role))return error("Escolha um perfil de parceiro autorizado.",400);
+      const userId=fresh();
+      const [result]=await db.batch([
+        query(db,`INSERT INTO users(id,email,name,role,status,application_id,contract_reference,contract_verified_at,created_at)
+          SELECT ?,email,name,?,'active',id,?,datetime('now'),datetime('now')
+          FROM applications WHERE id=? AND status='approved' ON CONFLICT(email) DO NOTHING`,userId,role,contractReference,id),
+        query(db,`INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at)
+          SELECT ?,?,'user.activate','user',id,role,datetime('now') FROM users WHERE id=?`,fresh(),user.id,userId)
+      ]);
+      if(result.meta?.changes!==1)return error("A candidatura mudou ou esta identidade já possui conta. Revise o cadastro.",409);
+      return respond({ok:true});
     }
     if(route==="admin/finance"&&method==="GET"&&allowed(user,"admin")){
       const [commissions,sales,receivableSales]=await db.batch([
@@ -266,6 +327,50 @@ export async function onRequest(context){
       const rows=await db.prepare("SELECT id,name,email,role,status, CASE WHEN contract_verified_at IS NOT NULL AND length(contract_reference)>=5 THEN 1 ELSE 0 END contract_ready FROM users ORDER BY created_at DESC LIMIT 250").all();
       return respond({ok:true,users:rows.results});
     }
+    if(route==="admin/access"&&method==="GET"&&allowed(user,"admin")){
+      const params=new URL(request.url).searchParams;
+      const search=str(params.get("q"),120).toLowerCase();
+      const page=Number(params.get("page")||1);
+      if(!Number.isSafeInteger(page)||page<1||page>1000)return error("Página inválida.",400);
+      const offset=(page-1)*50;
+      const [users,candidates,history]=await db.batch([
+        query(db,`SELECT id,name,email,role,status,
+          CASE WHEN contract_verified_at IS NOT NULL AND length(contract_reference)>=5 THEN 1 ELSE 0 END contract_ready
+          FROM users WHERE instr(lower(name),?)>0 OR instr(lower(email),?)>0
+          ORDER BY created_at DESC,id DESC LIMIT 51 OFFSET ?`,search,search,offset),
+        query(db,`SELECT a.id,a.protocol,a.name,a.email,a.type FROM applications a
+          WHERE a.status='approved' AND NOT EXISTS (SELECT 1 FROM users u WHERE u.email=a.email COLLATE NOCASE)
+          AND (instr(lower(a.name),?)>0 OR instr(lower(a.email),?)>0 OR instr(lower(a.protocol),?)>0)
+          ORDER BY a.updated_at DESC,a.id DESC LIMIT 51 OFFSET ?`,search,search,search,offset),
+        query(db,`SELECT ev.action,ev.details,ev.created_at,actor.name AS actor_name,
+            COALESCE(target.name,a.name) AS target_name
+          FROM audit_events ev
+          LEFT JOIN users actor ON actor.id=ev.actor_id
+          LEFT JOIN users target ON ev.entity='user' AND target.id=ev.entity_id
+          LEFT JOIN applications a ON ev.entity='application' AND a.id=ev.entity_id
+          WHERE ev.action IN ('application.review','user.activate','partner.access','user.invite_prepared')
+          AND (?='' OR instr(lower(COALESCE(target.name,a.name,'')),?)>0
+            OR instr(lower(COALESCE(target.email,a.email,'')),?)>0)
+          ORDER BY ev.created_at DESC,ev.rowid DESC LIMIT 51 OFFSET ?`,search,search,search,offset)
+      ]);
+      return respond({ok:true,users:users.results.slice(0,50),candidates:candidates.results.slice(0,50),
+        history:history.results.slice(0,50),hasNext:[users,candidates,history].some(x=>x.results.length>50)});
+    }
+    if(route==="admin/access/invitation"&&method==="POST"&&allowed(user,"admin")){
+      const b=await readBody(request),id=str(b.userId,60);
+      if(!id)return error("Selecione um parceiro.",400);
+      const partner=await query(db,"SELECT name,email,role FROM users WHERE id=?",id).first();
+      if(!partner||!partnerRoles.has(partner.role))return error("Parceiro não encontrado.",404);
+      const event=await query(db,`INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at)
+        SELECT ?,?,'user.invite_prepared','user',id,role,datetime('now')
+        FROM users WHERE id=? AND role IN ('representante','desenvolvedor') AND status='active'
+          AND contract_verified_at IS NOT NULL AND length(contract_reference)>=5`,fresh(),user.id,id).run();
+      if(event.meta?.changes!==1)return error("O convite exige conta ativa e contrato verificado.",409);
+      const url=new URL("/portal",request.url).href;
+      const role=partner.role==="representante"?"representante comercial":"parceiro de desenvolvimento";
+      const message=`Olá, ${partner.name}. Seu perfil de ${role} foi aprovado na USBRIN. Acesse ${url} com ${partner.email} depois que confirmarmos a liberação no Cloudflare Access. Na tela da Cloudflare, siga a verificação por e-mail e use seu aplicativo autenticador se solicitado.`;
+      return respond({ok:true,invitation:{email:partner.email,message}});
+    }
     if(route==="admin/partner-access"&&method==="POST"&&allowed(user,"admin")){
       const b=await readBody(request),id=str(b.userId,60),next=str(b.status,15),reason=str(b.reason,500);
       if(!id||!["active","suspended"].includes(next)||reason.length<8)return error("Informe o parceiro, a ação e uma justificativa de pelo menos 8 caracteres.",400);
@@ -274,14 +379,26 @@ export async function onRequest(context){
       if(partner.status===next||!["active","suspended"].includes(partner.status))return error("Mudança de acesso não permitida no estado atual.",409);
       if(next==="active"&&(!partner.contract_verified_at||String(partner.contract_reference||"").length<5))
         return error("Reativação exige um contrato previamente assinado e verificado.",409);
-      const result=await query(db,"UPDATE users SET status=? WHERE id=? AND status=? AND role IN ('representante','desenvolvedor')",next,id,partner.status).run();
-      if(result.meta?.changes!==1)return error("O acesso foi alterado por outra operação; atualize a lista.",409);
-      await audit(db,user,"partner.access","user",id,partner.status+" -> "+next+" | motivo: "+reason);
+      const results=await db.batch([
+        query(db,`INSERT INTO audit_events(id,actor_id,action,entity,entity_id,details,created_at)
+          SELECT ?,?,'partner.access','user',id,?,datetime('now')
+          FROM users WHERE id=? AND status=? AND role IN ('representante','desenvolvedor')`,
+          fresh(),user.id,partner.status+" -> "+next+" | motivo: "+reason,id,partner.status),
+        ...(next==="suspended"&&portalSessionEnabled(env)?[
+          query(db,`UPDATE portal_sessions SET ended_at=CAST(strftime('%s','now') AS INTEGER)
+            WHERE user_id=? AND ended_at IS NULL AND EXISTS (SELECT 1 FROM users WHERE id=? AND status=?)`,
+            id,id,partner.status),
+          query(db,`DELETE FROM portal_session_challenges WHERE user_id=?
+            AND EXISTS (SELECT 1 FROM users WHERE id=? AND status=?)`,id,id,partner.status)
+        ]:[]),
+        query(db,"UPDATE users SET status=? WHERE id=? AND status=? AND role IN ('representante','desenvolvedor')",next,id,partner.status)
+      ]);
+      if(results.at(-1)?.meta?.changes!==1)return error("O acesso foi alterado por outra operação; atualize a lista.",409);
       return respond({ok:true,id,status:next});
     }
     if(route==="admin/goal"&&method==="POST"&&allowed(user,"admin")){
-      const b=await readBody(request),id=str(b.partnerId,60),period=str(b.period,7),value=b.goalCents;
-      if(!/^\\d{4}-\\d{2}$/.test(period)||!positive(value))return error("Meta inválida.");
+      const b=await readBody(request),id=str(b.partnerId,60),period=str(b.period,16),value=b.goalCents;
+      if(!validMonth(period)||!positive(value))return error("Meta inválida.");
       const rep=await query(db,"SELECT id FROM users WHERE id=? AND role='representante' AND status='active'",id).first();
       if(!rep)return error("Representante não encontrado.");
       await query(db,"INSERT INTO goals(id,partner_id,period,goal_cents) VALUES (?,?,?,?) ON CONFLICT(partner_id,period) DO UPDATE SET goal_cents=excluded.goal_cents",fresh(),id,period,value).run();
