@@ -121,9 +121,13 @@ test("representative preview is host-scoped, accepts QA-only data and never crea
  })});
  const config=async host=>(await publicConfig({env:enabled,request:new Request(host+"/public/api/public-config")}).json());
  assert.deepEqual((await config(origin)).applicationTypes,["representante"]);
+  const general={...enabled,APPLICATIONS_ENABLED:"true"};
+  const generalConfig=await publicConfig({env:general,request:new Request(origin+"/public/api/public-config")});
+  assert.deepEqual((await generalConfig.json()).applicationTypes,["representante"]);
+  assert.equal((await apply({env:general,request:new Request(origin+"/public/api/applications",{method:"POST",headers:{"content-type":"application/json",origin},body:JSON.stringify({...body,type:"desenvolvedor"})})})).status,400);
  assert.equal((await config("https://usbrin-site.pages.dev")).applicationsOpen,false);
  assert.equal((await submit(body,"https://usbrin-site.pages.dev")).status,503);
- assert.equal((await submit({...body,type:"desenvolvedor"})).status,503);
+ assert.equal((await submit({...body,type:"desenvolvedor"})).status,400);
  for(const changes of [{email:"pessoa@outro.test"},{state:"XX"},{phone:"1198765432abc"},{city:"   "},{experience:"Breve"},{name:"a".repeat(121)},{website:"spam"}]){
    assert.equal((await submit({...body,...changes})).status,400);
  }
