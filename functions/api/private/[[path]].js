@@ -303,7 +303,9 @@ export async function onRequest(context){
       const a=await query(db,"SELECT id,name,email,type,status FROM applications WHERE id=?",id).first();
       if(!a||a.status!=="approved")return error("A candidatura ainda não está aprovada.");
       const role=b.role===undefined?a.type:b.role;
-      if(!partnerRoles.has(role))return error("Escolha um perfil de parceiro autorizado.",400);
+      // This recruitment release is exclusively for commercial representatives.
+      if(a.type!=="representante"||role!=="representante")
+        return error("Esta etapa da USBRIN aceita somente representantes comerciais.",403);
       const userId=fresh();
       const [result]=await db.batch([
         query(db,`INSERT INTO users(id,email,name,role,status,application_id,contract_reference,contract_verified_at,created_at)
