@@ -4,10 +4,12 @@ on:
     branches:
       - feature/usbrin-partners-platform
       - feature/usbrin-id
+      - ops/representantes-only
   pull_request:
     branches:
       - feature/usbrin-studio-mvp
       - feature/usbrin-partners-platform
+      - feature/usbrin-id
 permissions:
   contents: read
 jobs:
