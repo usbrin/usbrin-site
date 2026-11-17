@@ -1,0 +1,41 @@
+name: Deploy USBRIN ID QA
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout validated QA source
+        uses: actions/checkout@v4
+        with:
+          ref: ops/usbrin-id-qa-deploy
+
+      - name: Prepare Pages output
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p qa-deploy
+          cp -a _headers assets css functions js qa-deploy/
+          find . -maxdepth 1 -type f \( -name '*.html' -o -name 'sitemap.xml' \) -exec cp {} qa-deploy/ \;
+          test -d qa-deploy/functions
+          test -f qa-deploy/portal.html
+          echo "QA output prepared."
+
+      - name: Deploy only to USBRIN ID QA Pages project
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Publish QA deployment
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: "25eaef72c8dbc252be724778072cb0e4"
+        run: |
+          npx --yes wrangler@4.163.0 pages deploy ./qa-deploy \
+            --project-name=usbrin-id-oidc-qa \
+            --branch=qa-oidc
