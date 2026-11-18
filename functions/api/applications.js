@@ -1,7 +1,7 @@
 import {respond,error,readBody,checkOrigin,verifiedTurnstile,email,str} from "../_lib/security.js";
 import {applicationAvailability,isExampleCandidate} from "../_lib/application-availability.js";
 
-const types=new Set(["representante","desenvolvedor"]);
+const types=new Set(["representante"]);
 const states=new Set("AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO".split(" "));
 const fields={name:120,email:180,phone:40,city:100,state:2,experience:2600,motivation:1800,portfolio:350,availability:100};
 

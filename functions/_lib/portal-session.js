@@ -96,7 +96,7 @@ export async function handlePortalSession({request,env},action){
     const [insert]=await db.batch([
       db.prepare(`INSERT INTO portal_sessions (digest,user_id,access_sub,challenge_digest,proof_digest,proof_expires_at,last_active_at)
         SELECT ?,user_id,access_sub,digest,?,?,? FROM portal_session_challenges
-        WHERE digest=? AND user_id=? AND access_sub=? AND expires_at>? AND created_at<?
+        WHERE digest=? AND user_id=? AND access_sub=? AND expires_at>? AND created_at<=?
         ON CONFLICT(proof_digest) DO NOTHING`)
         .bind(await digest(token),await digest(request.headers.get("Cf-Access-Jwt-Assertion")),claims.exp,now,
           key,user.id,claims.sub,now,claims.iat),

@@ -892,7 +892,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
        candidates.map(x=>[x.name,x.email,x.protocol]),(cell,i)=>{
          const candidate=candidates[i];
          const label=node('label','Perfil de '+candidate.name,'field-label'),select=node('select');
-         for(const role of ['representante','desenvolvedor']){
+         for(const role of ['representante']){
            select.append(new Option(accessRoles[role],role,role===candidate.type,role===candidate.type));
          }
          label.append(select);

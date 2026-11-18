@@ -59,6 +59,12 @@ globalThis.fetch=async (url,options={})=>{
    if(token==="mock-other-host-token"){
      return Response.json({success:true,hostname:"other.example.test",action:"usbrin_application"});
    }
+   if(token==="mock-qa-application-token"){
+     return Response.json({success:true,hostname:"ops-representantes-only.usbrin-site.pages.dev",action:"usbrin_application"});
+   }
+   if(token==="mock-qa-status-token"){
+     return Response.json({success:true,hostname:"ops-representantes-only.usbrin-site.pages.dev",action:"usbrin_status"});
+   }
    const action=token==="mock-application-token"?"usbrin_application":token==="mock-studio-token"?"usbrin_studio":"usbrin_status";
    return new Response(JSON.stringify({success:true,hostname:"usbrin-preview.pages.dev",action}),{status:200});
  }
@@ -113,17 +119,21 @@ test("candidate forms require verified Turnstile, consent, and reject duplicate 
 });
 
 test("representative preview is host-scoped, accepts QA-only data and never creates accounts",async()=>{
- const origin="https://usbrin-preview.pages.dev";
- const enabled={...env,REPRESENTATIVE_APPLICATIONS_PREVIEW:env.ACCESS_APP_HOST,TURNSTILE_SITE_KEY:"site-key-test",TURNSTILE_SECRET:"secret-test"};
- const body={type:"representante",name:"Pessoa Exemplo",email:"representante.qa@example.com",phone:"+55 (69) 99999-9999",city:"Porto Velho",state:"RO",experience:"Ainda não tenho experiência profissional em vendas.",motivation:"Pretendo prospectar empresas locais e apresentar uma demonstração.",privacy:true,turnstileToken:"mock-application-token"};
+ const origin="https://ops-representantes-only.usbrin-site.pages.dev";
+ const enabled={...env,TURNSTILE_SITE_KEY:"site-key-test",TURNSTILE_SECRET:"secret-test"};
+ const body={type:"representante",name:"Pessoa Exemplo",email:"representante.qa@example.com",phone:"+55 (69) 99999-9999",city:"Porto Velho",state:"RO",experience:"Ainda não tenho experiência profissional em vendas.",motivation:"Pretendo prospectar empresas locais e apresentar uma demonstração.",privacy:true,turnstileToken:"mock-qa-application-token"};
  const submit=(payload,host=origin)=>apply({env:enabled,request:new Request(host+"/public/api/applications",{
    method:"POST",headers:{"content-type":"application/json",origin:host},body:JSON.stringify(payload)
  })});
  const config=async host=>(await publicConfig({env:enabled,request:new Request(host+"/public/api/public-config")}).json());
  assert.deepEqual((await config(origin)).applicationTypes,["representante"]);
- assert.equal((await config("https://usbrin-site.pages.dev")).applicationsOpen,false);
+  const general={...enabled,APPLICATIONS_ENABLED:"true"};
+  const generalConfig=await publicConfig({env:general,request:new Request(origin+"/public/api/public-config")});
+  assert.deepEqual((await generalConfig.json()).applicationTypes,["representante"]);
+  assert.equal((await apply({env:general,request:new Request(origin+"/public/api/applications",{method:"POST",headers:{"content-type":"application/json",origin},body:JSON.stringify({...body,type:"desenvolvedor"})})})).status,400);
+ assert.equal((await config("https://another-qa.usbrin-site.pages.dev")).applicationsOpen,false);
  assert.equal((await submit(body,"https://usbrin-site.pages.dev")).status,503);
- assert.equal((await submit({...body,type:"desenvolvedor"})).status,503);
+ assert.equal((await submit({...body,type:"desenvolvedor"})).status,400);
  for(const changes of [{email:"pessoa@outro.test"},{state:"XX"},{phone:"1198765432abc"},{city:"   "},{experience:"Breve"},{name:"a".repeat(121)},{website:"spam"}]){
    assert.equal((await submit({...body,...changes})).status,400);
  }
@@ -139,7 +149,7 @@ test("representative preview is host-scoped, accepts QA-only data and never crea
  assert.equal(db.sqlite.prepare("SELECT COUNT(*) n FROM users WHERE application_id=? OR email=?").get(listed.id,body.email).n,0);
  assert.equal((await submit({...body,email:body.email.toUpperCase()})).status,409);
  const lookup=await statusLookup({env:enabled,request:new Request(origin+"/public/api/application-status",{
-   method:"POST",headers:{"content-type":"application/json",origin},body:JSON.stringify({protocol,email:body.email,turnstileToken:"mock-status-token"})
+   method:"POST",headers:{"content-type":"application/json",origin},body:JSON.stringify({protocol,email:body.email,turnstileToken:"mock-qa-status-token"})
  })});
  assert.equal(lookup.status,200);
  assert.equal((await lookup.json()).status,"received");
