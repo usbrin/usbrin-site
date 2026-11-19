@@ -1,0 +1,5 @@
+USBRIN integrated release candidate, QA-only. Prices unchanged; applicants closed.
+Target: usbrin-id-native-qa Pages project, existing isolated D1 and ZITADEL binding.
+Do not modify usbrin-site production, DNS, Cloudflare secrets or APPLICATIONS_ENABLED.
+Test suite must pass before deploy.
+Requested 2026-11-19.
