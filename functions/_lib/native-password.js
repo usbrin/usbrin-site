@@ -68,7 +68,7 @@ export async function requestPasswordLink(request,env,mail){
   const pepper=env.USBRIN_PASSWORD_PEPPER;
   await applyRequestLimits(db,
     await digest("password-request-ip\u0000"+ip+"\u0000"+pepper),
-    await digest("password-request-account\u0000"+ip+"\u0000"+normalized+"\u0000"+pepper),t);
+    await digest("password-request-account\u0000"+normalized+"\u0000"+pepper),t);
   if(!validEmail(normalized))return;
   const user=await db.prepare(
     "SELECT id,email FROM users WHERE email=? AND status='active' AND role IN ('admin','representante','desenvolvedor')"
