@@ -35,7 +35,9 @@ jobs:
             -X POST "$base/api/qa/provider-status" \
             -H 'origin: https://usbrin-id-native-qa.pages.dev')"
           echo "Removed QA diagnostic endpoint => HTTP $probe_status"
-          test "$probe_status" = "404"
+          # Pages can answer 405 to an unknown POST path via static-asset fallback.
+          # The former temporary diagnostic accepted POST and returned 200 JSON.
+          case "$probe_status" in 404|405) ;; *) exit 1 ;; esac
           config="$(curl -sS --max-time 20 "$base/api/native/config")"
           node -e "const o=JSON.parse(process.argv[1]);if(!o.ok||o.mode!=='zitadel'||o.passwordRecovery!==false)throw Error('ZITADEL QA mode not live');" "$config"
           echo "QA exposes only nonsensitive ZITADEL mode metadata"
