@@ -11,7 +11,7 @@ export async function onRequest({request,env}){
     const body=await readBody(request,2048);
     if(typeof body.email!=="string"||typeof body.password!=="string")
       return error("Informe e-mail e senha.",400);
-    const {cookie,user}=await (zitadelEnabled(env)?zitadelLogin(request,env,body.email,body.password):nativeLogin(request,env,body.email,body.password));
+    const {cookie,user}=await (zitadelEnabled(env)?zitadelLogin(request,env,body.email,body.password,body.totp):nativeLogin(request,env,body.email,body.password));
     const response=respond({ok:true,user});
     response.headers.append("Set-Cookie",cookie);
     return response;
