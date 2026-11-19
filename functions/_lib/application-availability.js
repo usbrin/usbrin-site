@@ -9,7 +9,11 @@ export function applicationAvailability(env, request) {
   // accidentally activating forms on preview deployment aliases or other sites.
   const representativePublic=Boolean(canSubmit && host && env.REPRESENTATIVE_APPLICATIONS_ENABLED==="true"
     && host===env.REPRESENTATIVE_APPLICATIONS_HOST);
-  return {general,representativePreview,representativePublic};
+  // Candidate tracking stays available after a campaign closes, but only
+  // with a separate explicit flag, approved host and functioning Turnstile.
+  const representativeStatus=Boolean(canSubmit && host && env.REPRESENTATIVE_STATUS_ENABLED==="true"
+    && host===env.REPRESENTATIVE_APPLICATIONS_HOST);
+  return {general,representativePreview,representativePublic,representativeStatus};
 }
 
 // Reserved example domain keeps a private preview out of real recruitment.
