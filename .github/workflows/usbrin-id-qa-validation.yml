@@ -68,3 +68,6 @@ jobs:
           test ! -e dist/public/js/portal.js
           test ! -e dist/public/api/private
           grep -q 'href="/portal"' dist/public/usbrin-id.html
+
+      - name: Verify existing QA denies anonymous access
+        run: node scripts/qa-access-smoke.cjs
