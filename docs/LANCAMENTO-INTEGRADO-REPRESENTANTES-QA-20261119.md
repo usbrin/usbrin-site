@@ -38,7 +38,8 @@ Valores são referências para escopos definidos e sujeitos à proposta definiti
 ## Proteções desenvolvidas nesta branch
 - `APPLICATIONS_ENABLED=false` continua sendo o estado seguro: nenhum formulário deve operar por simples publicação do código.
 - Uma nova abertura de representantes usa **exclusivamente** `REPRESENTATIVE_APPLICATIONS_ENABLED=true` e `REPRESENTATIVE_APPLICATIONS_HOST` igual ao hostname público exato. O servidor exige D1 + segredo Turnstile + site key. `APPLICATIONS_ENABLED` permanece **false** para não abrir também desenvolvedores.
-- `public-config`, inserção e consulta de protocolo respeitam essas condições; previne ativação em domínio ou preview incorreto.
+- `public-config` e inserção respeitam essas condições; previne ativação em domínio ou preview incorreto.
+- **Acompanhamento após o fechamento:** `REPRESENTATIVE_STATUS_ENABLED=true`, no mesmo hostname exato configurado em `REPRESENTATIVE_APPLICATIONS_HOST`, permite apenas consultar protocolos existentes mesmo com `REPRESENTATIVE_APPLICATIONS_ENABLED=false`. Continua exigindo D1, Turnstile e e-mail + protocolo e nunca abre novas candidaturas.
 - Turnstile é validado **no backend**, incluindo hostname e ação do desafio; há validação de campos, consentimento e prevenção de candidaturas ativas duplicadas.
 - Início do formulário não cria usuário, senha nem sessão; aprovação e ativação continuam sendo operações de acesso controlado.
 - Arquivos protegidos do portal não podem ser copiados para `/public/`.
@@ -57,6 +58,7 @@ Valores são referências para escopos definidos e sujeitos à proposta definiti
 - [ ] Criar usuário administrativo operacional **específico**, com TOTP real testado, processo de ativação, suspensão, recuperação e auditoria. A aprovação de candidatos não pode depender de credenciais da conta proprietária do ZITADEL.
 - [ ] Configurar Turnstile na página de inscrições definitiva; salvar `TURNSTILE_SITE_KEY` e `TURNSTILE_SECRET` somente na configuração adequada. Confirmar hostname, proteção antispam e fluxo de duplicatas.
 - [ ] Habilitar recuperação de senha somente após provar envio de e-mail no ZITADEL, política de remetente e fluxo de redefinição real.
+- [ ] Definir política de encerramento: desativar `REPRESENTATIVE_APPLICATIONS_ENABLED`, mas manter `REPRESENTATIVE_STATUS_ENABLED` para consulta das candidaturas recebidas durante a avaliação.
 - [ ] Revisar aviso LGPD, prazo de retenção de candidatos, política de exclusão, contatos e termos comerciais da campanha.
 - [ ] Testar jornada completa: inscrição → protocolo → status → avaliação → aprovação → vinculação da identidade → login → painel → logout/suspensão.
 - [ ] Definir monitoramento de erros, limitações de abuso, rotação do PAT (vence em **19/12/2026**) e rollback.
