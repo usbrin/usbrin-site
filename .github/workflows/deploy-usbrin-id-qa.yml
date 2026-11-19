@@ -32,6 +32,10 @@ jobs:
           node --check 'functions/api/private/[[path]].js'
           node --check js/usbrin-id.js
           node --check js/portal.js
+          node --check js/login.js
+          node --check functions/_lib/native-auth.js
+          node --check functions/api/native/login.js
+          node --check functions/api/native/logout.js
 
       - name: Run isolated backend and pricing regression tests
         shell: bash
