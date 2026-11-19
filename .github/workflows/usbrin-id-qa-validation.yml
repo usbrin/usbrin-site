@@ -39,7 +39,9 @@ jobs:
           for file in functions/_lib/auth.js functions/_lib/portal-session.js \
             functions/api/session/start.js functions/api/session/verify.js \
             functions/api/session/logout.js 'functions/api/private/[[path]].js' \
-            js/usbrin-id.js js/portal.js; do
+            js/usbrin-id.js js/portal.js js/login.js \
+            functions/_lib/native-auth.js functions/api/native/login.js \
+            functions/api/native/logout.js; do
             node --check "$file"
           done
 
