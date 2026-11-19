@@ -30,6 +30,13 @@
         <label for="user-password">Senha</label>
         <input id="user-password" name="password" type="password" required autocomplete="current-password"
           minlength="12" maxlength="128" placeholder="Sua senha">
+        <div id="admin-mfa" hidden>
+          <label for="admin-totp">Código do aplicativo autenticador</label>
+          <input id="admin-totp" name="totp" type="text" inputmode="numeric"
+            autocomplete="one-time-code" pattern="[0-9]{6,8}" maxlength="8"
+            placeholder="Código de 6 dígitos" aria-describedby="admin-totp-help">
+          <p class="field-help" id="admin-totp-help">Verificação de segurança exclusiva para administradores.</p>
+        </div>
         <button id="login-submit" type="submit">Entrar na USBRIN ID</button>
       </form>
       <p id="login-feedback" class="feedback" aria-live="polite" role="status"></p>
