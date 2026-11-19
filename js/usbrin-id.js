@@ -36,13 +36,21 @@ async function checkSession() {
       signal: controller.signal
     });
     if (controller.signal.aborted) return;
-    if (response.type === 'opaqueredirect' || response.status === 401) {
+    if (response.type === 'opaqueredirect') {
       announce('');
       return;
     }
     const result = response.headers.get('content-type')?.includes('application/json')
       ? await response.json() : null;
     if (controller.signal.aborted) return;
+    if (response.status === 401) {
+      if (result?.code === 'native_session_required') {
+        entry.href = '/login.html';
+        entry.querySelector('span').textContent = 'Entrar com e-mail e senha';
+      }
+      announce('');
+      return;
+    }
     if (response.ok && result?.ok && permittedRoles.has(result.user?.role)) {
       announce('Sessão encontrada. Abrindo seu painel…', 'loading');
       window.location.replace(entry.href);
