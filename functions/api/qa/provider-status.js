@@ -15,7 +15,7 @@ export async function onRequest({request,env}){
   try{
     const r=await fetch(env.ZITADEL_API_URL+"/v2/sessions/qa-does-not-exist-20261119",{
       method:"GET",
-      redirect:"error",
+      redirect:"manual",
       signal:AbortSignal.timeout(6000),
       headers:{authorization:"Bearer "+env.ZITADEL_LOGIN_CLIENT_TOKEN,accept:"application/json"}
     });
@@ -28,7 +28,7 @@ export async function onRequest({request,env}){
   let publicMetadata="unavailable";
   try {
     const p=await fetch(env.ZITADEL_API_URL+"/.well-known/openid-configuration",{
-      method:"GET",redirect:"error",signal:AbortSignal.timeout(6000)
+      method:"GET",redirect:"manual",signal:AbortSignal.timeout(6000)
     });
     publicMetadata="HTTP_"+p.status;
     await p.body?.cancel();
