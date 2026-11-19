@@ -52,10 +52,16 @@ async function api(env,path,method,body){
       ...(body===undefined?{}:{"content-type":"application/json"})
     },
     ...(body===undefined?{}:{body:JSON.stringify(body)}),
-    redirect:"error",
+    redirect:"manual",
     cache:"no-store",
     signal:AbortSignal.timeout(8000)
   });
+  // Workers does not implement redirect:"error". Reject all 3xx manually so
+  // the service-account bearer token is never forwarded to another origin.
+  if(response.status>=300&&response.status<400){
+    await response.body?.cancel();
+    throw unavailable();
+  }
   let result=null;
   if(response.ok&&method!=="DELETE"){
     try{result=await response.json();}catch{throw unavailable();}
