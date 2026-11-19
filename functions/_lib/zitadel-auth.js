@@ -67,14 +67,15 @@ async function destroyExternal(env,id){
   if(!isValidId(id))return;
   try{await api(env,"/v2/sessions/"+encodeURIComponent(id),"DELETE",{});}catch{}
 }
-function inspectedSession(record,localUser,t){
+function inspectedSession(record,localUser,t,maxFactorAge=ABSOLUTE_SECONDS+180){
   const s=record?.session,f=s?.factors;
   const id=f?.user?.id;
   if(!s||!isValidId(s.id)||!isValidId(id)||
-    !validFactor(f.user,t)||!validFactor(f.password,t)||
+    !(Number.isFinite(Date.parse(f?.user?.verifiedAt))&&t-Date.parse(f.user.verifiedAt)/1000>=-180&&t-Date.parse(f.user.verifiedAt)/1000<maxFactorAge)||
+    !(Number.isFinite(Date.parse(f?.password?.verifiedAt))&&t-Date.parse(f.password.verifiedAt)/1000>=-180&&t-Date.parse(f.password.verifiedAt)/1000<maxFactorAge)||
     !Number.isFinite(Date.parse(s.expirationDate))||Date.parse(s.expirationDate)/1000<=t||
     id!==localUser.zitadel_user_id)return false;
-  if(requiresMfa(localUser)&&!hasMfa(f,t))return false;
+  if(requiresMfa(localUser)&&!["totp","webAuthN","otpSms","otpEmail"].some(k=>Number.isFinite(Date.parse(f?.[k]?.verifiedAt))&&t-Date.parse(f[k].verifiedAt)/1000>=-180&&t-Date.parse(f[k].verifiedAt)/1000<maxFactorAge))return false;
   return true;
 }
 
@@ -133,7 +134,7 @@ export async function zitadelLogin(request,env,mail,password){
     if(!update.ok){await failed(env,keys,t);throw invalid();}
     const info=await api(env,"/v2/sessions/"+encodeURIComponent(sid),"GET");
     if(!info.ok)throw unavailable();
-    if(!inspectedSession(info.result,user,now())){
+    if(!inspectedSession(info.result,user,now(),180)){
       await failed(env,keys,t);
       if(requiresMfa(user))throw new AuthError("mfa_required","Este perfil exige uma verificação adicional.",403);
       throw invalid();
