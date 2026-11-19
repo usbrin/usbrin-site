@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
  const btn=(text,run)=>{const n=node('button',text,'btn');n.type='button';n.addEventListener('click',run);return n};
  const message=(text,isError=false)=>{status.textContent=text;status.className='status '+(isError?'bad':'good')};
  const portal=el('portal-content'),sessionGate=el('session-gate'),sessionMessage=el('session-message');
- const sessionErrors=new Set(['usbrin_session_required','session_required','account_not_approved','account_suspended','mfa_required','identity_unavailable']);
+ const sessionErrors=new Set(['usbrin_session_required','native_session_required','session_required','account_not_approved','account_suspended','mfa_required','identity_unavailable']);
  const showSessionGate=(text,code)=>{
    const needsConfirmation=code==='usbrin_session_required';
    const firstError=el('session-actions').hidden;
@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
    el('session-actions').hidden=false;
    el('session-confirm').hidden=!needsConfirmation;
    el('session-retry').hidden=needsConfirmation;
+   el('session-retry').href=code==='native_session_required'?'/login.html':'/portal';
    if(firstError)el('session-title').focus();
  };
  for(const [id,destination] of [['session-confirm','/api/session/verify'],['work-logout','/public/usbrin-id']]){
@@ -39,7 +40,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
          return;
        }
        if(!response.ok||!(await response.json()).ok)throw Error();
-       location.assign(destination);
+       location.assign(id==='work-logout'&&form.action.endsWith('/api/native/logout')?'/login.html':destination);
      }catch{
        const text=id==='work-logout'?'Não foi possível encerrar a sessão. Tente novamente.':'Não foi possível iniciar a verificação. Tente novamente.';
        if(id==='work-logout')message(text,true);
@@ -1260,7 +1261,11 @@ document.addEventListener('DOMContentLoaded',async()=>{
  try{
    const res=await request('me');
    user=res.user;
-   if(res.workSession){
+   if(res.authMode==='native'){
+     el('work-logout').action='/api/native/logout';
+     el('work-logout').hidden=false;
+     el('access-logout').hidden=true;
+   }else if(res.workSession){
      el('work-logout').hidden=false;
      el('access-logout').hidden=true;
      let lastActivity=Date.now();
