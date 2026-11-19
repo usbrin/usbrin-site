@@ -87,3 +87,34 @@ test('password recovery stays unavailable when provider email is not enabled',as
  assert.equal((await requestReset(context(env,'/api/native/password/request',{email:'qa-identity@usbrin.test'}))).status,404);
  assert.equal((await confirmReset(context(env,'/api/native/password/confirm',{userID:'zq1',code:'code-for-test',password:'NewTestPassword2026!'}))).status,404);
 });
+
+test('provider code verification changes password and revokes earlier USBRIN sessions',async()=>{
+ const db=new Database();approved(db);
+ const now=Math.floor(Date.now()/1000);
+ db.sqlite.prepare(`INSERT INTO zitadel_app_sessions
+ (digest,user_id,zitadel_user_id,zitadel_session_id,created_at,last_active_at,expires_at,checked_at)
+ VALUES (?,?,?,?,?,?,?,?)`).run('0'.repeat(64),'q1','zq1','session-one',now,now,now+3600,now);
+ const env=environment(db);
+ const original=globalThis.fetch;
+ const sent=[];
+ globalThis.fetch=async(url,options)=>{
+  sent.push({url:String(url),body:JSON.parse(options.body),redirect:options.redirect});
+  if(options.body.includes('good-reset-code'))return Response.json({details:{}});
+  return Response.json({message:'invalid'},{status:400});
+ };
+ try{
+  const bad=await confirmReset(context(env,'/api/native/password/confirm',{
+    userID:'zq1',code:'wrong-code',password:'NewTestPassword2026!'
+  }));
+  assert.equal(bad.status,400);
+  assert.equal(db.sqlite.prepare('SELECT ended_at FROM zitadel_app_sessions').get().ended_at,null);
+  const good=await confirmReset(context(env,'/api/native/password/confirm',{
+    userID:'zq1',code:'good-reset-code',password:'NewTestPassword2026!'
+  }));
+  assert.equal(good.status,200);
+  assert.ok(db.sqlite.prepare('SELECT ended_at FROM zitadel_app_sessions').get().ended_at>0);
+  assert.equal(sent[1].redirect,'manual');
+  assert.equal(sent[1].body.newPassword.changeRequired,false);
+  assert.equal(sent[1].body.verificationCode,'good-reset-code');
+ }finally{globalThis.fetch=original;}
+});
