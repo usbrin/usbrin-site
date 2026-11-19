@@ -67,7 +67,11 @@ function fakeProvider({verified=true,remoteID=userID,totp=false,expires=true,mis
     assert.equal(options.redirect,"manual","Provider credential must never follow redirects");
     history.push({url:String(url),method:options.method});
     const path=new URL(url).pathname;
-    if(options.method==="POST")return Response.json({sessionId:"999122200",sessionToken:"synthetic-token"});
+    if(options.method==="POST"){
+      deleted=false;
+      totpVerified=false;
+      return Response.json({sessionId:"999122200",sessionToken:"synthetic-token"});
+    }
     if(options.method==="PATCH"){
       const request=JSON.parse(options.body);
       if(request.checks.totp){
