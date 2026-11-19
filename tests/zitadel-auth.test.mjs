@@ -63,6 +63,7 @@ function fakeProvider({verified=true,remoteID=userID,totp=false,expires=true,mis
   globalThis.fetch=async(url,options)=>{
     assert.ok(String(url).startsWith(origin+"/v2/sessions"));
     assert.equal(options.headers.authorization,"Bearer "+pat);
+    assert.equal(options.redirect,"manual","Provider credential must never follow redirects");
     history.push({url:String(url),method:options.method});
     const path=new URL(url).pathname;
     if(options.method==="POST")return Response.json({sessionId:"999122200",sessionToken:"synthetic-token"});
@@ -211,4 +212,20 @@ test("UI hides native password recovery when ZITADEL handles credentials",async(
   assert.equal((getUiConfig(ctx(env(db,{USBRIN_AUTH_MODE:"native",USBRIN_PASSWORD_EMAIL_ENABLED:"false"}),"/api/native/config"))).status,200);
   const denied=await getUiConfig(ctx(e,"/api/native/config",{method:"POST"}));
   assert.equal(denied.status,405);
+});
+
+test("provider redirect is rejected without following the service credential to other origins",async()=>{
+  const db=new D1();provision(db);
+  const oldFetch=globalThis.fetch;
+  const seen=[];
+  globalThis.fetch=async(_url,options)=>{
+    seen.push(options.redirect);
+    return new Response(null,{status:302,headers:{location:"https://malicious.example/steal"}});
+  };
+  try{
+    const response=await loginReq(env(db));
+    assert.equal(response.status,503);
+    assert.deepEqual(seen,["manual"]);
+    assert.equal(db.sql.prepare("SELECT count(*) n FROM zitadel_app_sessions").get().n,0);
+  }finally{globalThis.fetch=oldFetch;}
 });
