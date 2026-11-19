@@ -3,3 +3,5 @@ Target: usbrin-id-native-qa Pages project, existing isolated D1 and ZITADEL bind
 Do not modify usbrin-site production, DNS, Cloudflare secrets or APPLICATIONS_ENABLED.
 Test suite must pass before deploy.
 Requested 2026-11-19.
+
+2026-11-19: QA redeploy with independent protected candidate status lookup after registration closes. Flags stay unset and signup disabled.
