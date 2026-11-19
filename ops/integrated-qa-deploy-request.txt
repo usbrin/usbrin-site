@@ -7,3 +7,5 @@ Requested 2026-11-19.
 2026-11-19: QA redeploy with independent protected candidate status lookup after registration closes. Flags stay unset and signup disabled.
 
 2026-11-19: stage full official portfolio of 50 demos and preserve private USBRIN ID; test complete catalog, website, Studio, login and campaign; no production deployment.
+
+2026-11-19: final QA deployment of official 50-demo portfolio including four upgraded demos, while preserving closed recruitment and ZITADEL permissions.
