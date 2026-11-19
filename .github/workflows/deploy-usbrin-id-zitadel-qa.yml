@@ -1,0 +1,82 @@
+name: Deploy USBRIN ID ZITADEL QA (isolated)
+
+on:
+  push:
+    branches:
+      - feature/usbrin-id-zitadel-custom-ui-20261119
+    paths:
+      - 'ops/zitadel-qa-deploy-request.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: usbrin-id-zitadel-qa-deploy
+  cancel-in-progress: false
+
+jobs:
+  qa-deploy:
+    if: github.repository == 'usbrin/usbrin-site' && github.ref == 'refs/heads/feature/usbrin-id-zitadel-custom-ui-20261119'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact QA commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in functions/_lib/zitadel-auth.js \
+            functions/_lib/native-auth.js functions/_lib/auth.js \
+            functions/_middleware.js \
+            functions/api/native/config.js functions/api/native/login.js \
+            functions/api/native/logout.js \
+            'functions/api/private/[[path]].js' \
+            js/login.js js/portal.js; do
+            node --check "$file"
+          done
+
+      - name: Run authorization and Studio regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test tests/zitadel-auth.test.mjs
+          node --test tests/native-auth.test.mjs
+          node --test tests/partners-api.test.mjs
+          node --test tests/studio-pricing.test.cjs
+
+      - name: Build allowlisted public and private Pages assets
+        run: npm run build
+
+      - name: Verify Pages isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f dist/login.html
+          test -f dist/portal.html
+          test -f dist/_routes.json
+          test -f functions/_middleware.js
+          test ! -e dist/functions
+          test ! -e dist/public/portal.html
+          test ! -e dist/public/js/portal.js
+          node -e "const fs=require('fs');let r=JSON.parse(fs.readFileSync('dist/_routes.json'));for(const p of ['/portal','/portal.html','/proposta.html','/js/portal.js','/api/*'])if(!r.include.includes(p))throw Error(p+' route absent')"
+
+      - name: Deploy exclusively to usbrin-id-native-qa
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: '25eaef72c8dbc252be724778072cb0e4'
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_API_TOKEN:-}"
+          npx --yes wrangler@4.163.0 pages deploy ./dist \
+            --project-name=usbrin-id-native-qa \
+            --branch=native-qa
