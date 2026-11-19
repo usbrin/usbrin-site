@@ -54,3 +54,36 @@ function approved(db){
  db.sqlite.prepare("INSERT INTO users(id,email,name,role,status) VALUES ('q1','qa-identity@usbrin.test','QA identity','representante','active')").run();
  db.sqlite.prepare("INSERT INTO zitadel_identity_links(zitadel_user_id,user_id,created_at) VALUES ('zq1','q1',1)").run();
 }
+
+test('only linked approved identities trigger provider reset email',async()=>{
+ const db=new Database();approved(db);
+ const env=environment(db);
+ const original=globalThis.fetch;
+ const calls=[];
+ globalThis.fetch=async(url,options)=>{
+  calls.push({url:String(url),body:JSON.parse(options.body),redirect:options.redirect});
+  return Response.json({details:{}});
+ };
+ try{
+  const first=await requestReset(context(env,'/api/native/password/request',{email:'qa-identity@usbrin.test'}));
+  assert.equal(first.status,202);
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].redirect,'manual');
+  assert.equal(calls[0].body.sendLink.notificationType,'NOTIFICATION_TYPE_Email');
+  assert.ok(calls[0].body.sendLink.urlTemplate.includes('#userID={{.UserID}}&code={{.Code}}'));
+  assert.equal(calls[0].body.returnCode,undefined);
+  const unknown=await requestReset(context(env,'/api/native/password/request',{email:'missing@usbrin.test'}));
+  assert.equal(unknown.status,202);
+  assert.equal(calls.length,1);
+  db.sqlite.prepare("UPDATE users SET status='suspended' WHERE id='q1'").run();
+  const denied=await requestReset(context(env,'/api/native/password/request',{email:'qa-identity@usbrin.test'}));
+  assert.equal(denied.status,202);
+  assert.equal(calls.length,1);
+ }finally{globalThis.fetch=original}
+});
+test('password recovery stays unavailable when provider email is not enabled',async()=>{
+ const db=new Database();approved(db);
+ const env=environment(db,{ZITADEL_PASSWORD_RESET_ENABLED:'false'});
+ assert.equal((await requestReset(context(env,'/api/native/password/request',{email:'qa-identity@usbrin.test'}))).status,404);
+ assert.equal((await confirmReset(context(env,'/api/native/password/confirm',{userID:'zq1',code:'code-for-test',password:'NewTestPassword2026!'}))).status,404);
+});
