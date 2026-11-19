@@ -2,3 +2,5 @@ One-time HTTPS smoke test after isolated QA ZITADEL mode activation.
 Check public login screen, private route guards, config mode, and a synthetic non-existent identity only.
 No real password, customer or applicant records used.
 2026-11-19.
+
+Rerun at 2026-11-19 with temporary read-only upstream status diagnostic. No account credentials.
