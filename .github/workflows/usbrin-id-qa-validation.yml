@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - ops/usbrin-id-qa-deploy
+      - fix/usbrin-id-qa-gates-20261118
     paths:
       - '.github/workflows/deploy-usbrin-id-qa.yml'
       - '.github/workflows/usbrin-id-qa-validation.yml'
