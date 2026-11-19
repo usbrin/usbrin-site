@@ -10,3 +10,5 @@ ZITADEL IAM_LOGIN_CLIENT is stored as a Cloudflare secret, never in GitHub.
 2026-11-19: temporary read-only QA-only provider-status diagnostic to troubleshoot upstream authentication. No real user data.
 
 2026-11-19: temporary QA-only public OIDC discovery reachability probe; no identities/tokens returned.
+
+2026-11-19: deploy Workers-compatible redirect:'manual' and reject HTTP 3xx before forwarding bearer token.
