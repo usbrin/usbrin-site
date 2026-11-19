@@ -5,12 +5,14 @@ import {DatabaseSync} from "node:sqlite";
 import {newPasswordSalt,hashPassword} from "../functions/_lib/native-auth.js";
 import {onRequest as login} from "../functions/api/native/login.js";
 import {onRequest as logout} from "../functions/api/native/logout.js";
+import {onRequest as requestPassword} from "../functions/api/native/password/request.js";
+import {onRequest as confirmPassword} from "../functions/api/native/password/confirm.js";
 import {onRequest as privateAPI} from "../functions/api/private/[[path]].js";
 
 class D1 {
   constructor(){
     this.sqlite=new DatabaseSync(":memory:");
-    for(const file of ["0001_partners.sql","0017_native_credentials.sql"]){
+    for(const file of ["0001_partners.sql","0017_native_credentials.sql","0018_native_password_links.sql"]){
       this.sqlite.exec(readFileSync(new URL("../migrations/"+file,import.meta.url),"utf8"));
     }
   }
@@ -142,4 +144,129 @@ test("native sessions expire after inactivity and password changes invalidate co
     db.sqlite.prepare("UPDATE native_credentials SET version=version+1 WHERE user_id='r2'").run();
     assert.equal((await privateAPI(context(env,"/api/private/me",{cookie:freshCookie}))).status,401);
   }finally{Date.now=clock;}
+});
+
+test("approved accounts establish a password only through a single-use emailed link",async()=>{
+  const db=new D1(),t=Math.floor(Date.now()/1000);
+  const env={USBRIN_ID_DB:db,USBRIN_AUTH_MODE:"native",NATIVE_AUTH_HOST:"usbrin-native-qa.pages.dev",
+    USBRIN_PASSWORD_PEPPER:pepper,USBRIN_PASSWORD_EMAIL_ENABLED:"true",
+    RESEND_API_KEY:"qa-only-synthetic-provider-token",
+    USBRIN_EMAIL_FROM:"USBRIN <acesso@usbrin.com.br>"};
+  db.sqlite.prepare("INSERT INTO users(id,email,name,role,status) VALUES (?,?,?,'representante','active')")
+    .run("r3",email,"Representante Aprovado");
+  const originalFetch=globalThis.fetch;
+  let mailed=[];
+  globalThis.fetch=async(uri,options)=>{
+    assert.equal(String(uri),"https://api.resend.com/emails");
+    mailed.push(JSON.parse(options.body));
+    return new Response(null,{status:202});
+  };
+  try{
+    const initialLogin=await login(context(env,"/api/native/login",{method:"POST",body:{email,password}}));
+    assert.equal(initialLogin.status,401);
+    const invalidOrigin=await requestPassword(context(env,"/api/native/password/request",{
+      method:"POST",origin:"https://outside.example",body:{email}
+    }));
+    assert.equal(invalidOrigin.status,403);
+    const requestResult=await requestPassword(context(env,"/api/native/password/request",{
+      method:"POST",body:{email}
+    }));
+    assert.equal(requestResult.status,202);
+    assert.equal(mailed.length,1);
+    assert.equal(mailed[0].to[0],email);
+    const link=mailed[0].text.match(/https:\/\/[^\s]+\/senha\.html#token=([a-f0-9]{64})/);
+    assert.ok(link);
+    const token=link[1];
+    const stored=db.sqlite.prepare("SELECT token_digest FROM native_password_links").get();
+    assert.notEqual(stored.token_digest,token);
+
+    const incorrect=await confirmPassword(context(env,"/api/native/password/confirm",{
+      method:"POST",body:{token:"00".repeat(32),password}
+    }));
+    assert.equal(incorrect.status,400);
+    assert.equal(db.sqlite.prepare("SELECT COUNT(*) total FROM native_credentials").get().total,0);
+
+    const submitted=await confirmPassword(context(env,"/api/native/password/confirm",{
+      method:"POST",body:{token,password}
+    }));
+    assert.equal(submitted.status,200);
+    assert.equal(db.sqlite.prepare("SELECT COUNT(*) total FROM native_credentials").get().total,1);
+    const used=await confirmPassword(context(env,"/api/native/password/confirm",{
+      method:"POST",body:{token,password:"another long password 456"}
+    }));
+    assert.equal(used.status,400);
+    const signedIn=await login(context(env,"/api/native/login",{method:"POST",body:{email,password}}));
+    assert.equal(signedIn.status,200);
+    const originalCookie=getCookie(signedIn);
+
+    const newRequest=await requestPassword(context(env,"/api/native/password/request",{
+      method:"POST",body:{email}
+    }));
+    assert.equal(newRequest.status,202);
+    const newToken=mailed[1].text.match(/#token=([a-f0-9]{64})/)[1];
+    assert.notEqual(newToken,token);
+    const changed=await confirmPassword(context(env,"/api/native/password/confirm",{
+      method:"POST",body:{token:newToken,password:"another long password 456"}
+    }));
+    assert.equal(changed.status,200);
+    assert.equal((await privateAPI(context(env,"/api/private/me",{cookie:originalCookie}))).status,401);
+    assert.equal((await login(context(env,"/api/native/login",{method:"POST",body:{email,password}}))).status,401);
+    assert.equal((await login(context(env,"/api/native/login",{
+      method:"POST",body:{email,password:"another long password 456"}
+    }))).status,200);
+
+    const unknown=await requestPassword(context(env,"/api/native/password/request",{
+      method:"POST",body:{email:"unknown@usbrin.test"}
+    }));
+    assert.equal(unknown.status,202);
+    assert.equal(mailed.length,2,"unknown accounts must not generate emails");
+  }finally{globalThis.fetch=originalFetch}
+});
+
+test("expired links and suspended accounts cannot reset a password",async()=>{
+  const db=new D1(),clock=Date.now;
+  let t=Math.floor(clock()/1000);
+  Date.now=()=>t*1000;
+  const env={USBRIN_ID_DB:db,USBRIN_AUTH_MODE:"native",NATIVE_AUTH_HOST:"usbrin-native-qa.pages.dev",
+    USBRIN_PASSWORD_PEPPER:pepper,USBRIN_PASSWORD_EMAIL_ENABLED:"true",
+    RESEND_API_KEY:"qa-only-synthetic-provider-token",
+    USBRIN_EMAIL_FROM:"USBRIN <acesso@usbrin.com.br>"};
+  db.sqlite.prepare("INSERT INTO users(id,email,name,role,status) VALUES (?,?,?,'representante','active')")
+    .run("r4",email,"Representante Aprovado");
+  const originalFetch=globalThis.fetch;
+  let link;
+  globalThis.fetch=async(_uri,options)=>{
+    link=JSON.parse(options.body).text.match(/#token=([a-f0-9]{64})/)[1];
+    return new Response(null,{status:202});
+  };
+  try{
+    await requestPassword(context(env,"/api/native/password/request",{method:"POST",body:{email}}));
+    t+=20*60+1;
+    assert.equal((await confirmPassword(context(env,"/api/native/password/confirm",{
+      method:"POST",body:{token:link,password}
+    }))).status,400);
+
+    await requestPassword(context(env,"/api/native/password/request",{method:"POST",body:{email}}));
+    db.sqlite.prepare("UPDATE users SET status='suspended' WHERE id='r4'").run();
+    assert.equal((await confirmPassword(context(env,"/api/native/password/confirm",{
+      method:"POST",body:{token:link,password}
+    }))).status,400);
+    assert.equal(db.sqlite.prepare("SELECT COUNT(*) total FROM native_credentials").get().total,0);
+  }finally{Date.now=clock;globalThis.fetch=originalFetch}
+});
+
+test("password request limits and mail configuration fail closed",async()=>{
+  const db=new D1(),env={USBRIN_ID_DB:db,USBRIN_AUTH_MODE:"native",
+    NATIVE_AUTH_HOST:"usbrin-native-qa.pages.dev",USBRIN_PASSWORD_PEPPER:pepper,
+    USBRIN_PASSWORD_EMAIL_ENABLED:"true",RESEND_API_KEY:"qa-only-synthetic-provider-token",
+    USBRIN_EMAIL_FROM:"USBRIN <acesso@usbrin.com.br>"};
+  assert.equal((await requestPassword(context({...env,RESEND_API_KEY:undefined},
+    "/api/native/password/request",{method:"POST",body:{email}}))).status,503);
+  for(let i=0;i<3;i++){
+    const response=await requestPassword(context(env,"/api/native/password/request",{method:"POST",body:{email}}));
+    assert.equal(response.status,202);
+  }
+  assert.equal((await requestPassword(context(env,"/api/native/password/request",{
+    method:"POST",body:{email}
+  }))).status,429);
 });
