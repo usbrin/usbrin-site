@@ -8,3 +8,5 @@ ZITADEL IAM_LOGIN_CLIENT is stored as a Cloudflare secret, never in GitHub.
 2026-11-19: one redeploy after activating ZITADEL_API_URL and USBRIN_AUTH_MODE=zitadel in isolated QA, all private routes remain protected.
 
 2026-11-19: temporary read-only QA-only provider-status diagnostic to troubleshoot upstream authentication. No real user data.
+
+2026-11-19: temporary QA-only public OIDC discovery reachability probe; no identities/tokens returned.
