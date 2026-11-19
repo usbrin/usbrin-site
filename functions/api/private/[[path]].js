@@ -1,6 +1,7 @@
 import {respond,error,readBody,checkOrigin,str,email} from "../../_lib/security.js";
 import {authenticatedIdentity,AuthError} from "../../_lib/auth.js";
 import {portalSessionEnabled,requirePortalSession} from "../../_lib/portal-session.js";
+import {nativeEnabled} from "../../_lib/native-auth.js";
 import {handleBilling} from "../../_lib/billing.js";
 import {handleBank} from "../../_lib/bank-reconcile.js";
 import {handleFinanceControl} from "../../_lib/finance-control.js";
@@ -45,7 +46,7 @@ export async function onRequest(context){
     if(route.startsWith("admin/billing/"))return handleBilling({request,db,user,route});
     if(route.startsWith("admin/bank/"))return handleBank({request,db,user,route});
     if(route.startsWith("admin/control/"))return handleFinanceControl({request,db,user,route});
-    if(route==="me"&&method==="GET")return respond({ok:true,user,workSession:portalSessionEnabled(env)});
+    if(route==="me"&&method==="GET")return respond({ok:true,user,workSession:portalSessionEnabled(env),authMode:nativeEnabled(env)?"native":"access"});
     if(route==="session/activity"&&method==="POST"&&portalSessionEnabled(env))return respond({ok:true});
     if(route==="crm/history"&&method==="GET"&&allowed(user,"admin","representante")){
       const id=str(new URL(request.url).searchParams.get("id"),60);
