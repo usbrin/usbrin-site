@@ -1,0 +1,45 @@
+name: USBRIN Partners - Typography QA Validation
+
+on:
+  push:
+    branches:
+      - feature/usbrin-painel-tipografia-20261119
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify typography scope and original security behaviour
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test tests/portal-typography.test.cjs
+          node --test tests/zitadel-auth.test.mjs
+          node --test tests/zitadel-password.test.mjs
+          node --test tests/native-auth.test.mjs
+          node --test tests/partners-api.test.mjs
+          node --test tests/studio-pricing.test.cjs
+      - name: Generate QA bundle
+        run: npm run build
+      - name: Verify typography included without making the portal public
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f dist/css/portal-typography.css
+          test -f dist/portal.html
+          test -f dist/_routes.json
+          test ! -e dist/public/portal.html
+          test ! -e dist/public/js/portal.js
+          test ! -e dist/functions
+          grep -q 'Plus+Jakarta+Sans' dist/portal.html
+          grep -q 'css/portal-typography.css' dist/portal.html
+          node -e "let r=require('./dist/_routes.json');for(const x of ['/portal','/portal.html','/js/portal.js'])if(!r.include.includes(x))throw Error('Protected route missing: '+x)"
