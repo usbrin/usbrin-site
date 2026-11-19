@@ -4,6 +4,7 @@
 ## Escopo aprovado
 - **Manter todos os preços e condições comerciais atuais.**
 - Reunir o site oficial e suas páginas comerciais com USBRIN Studio, USBRIN Parceiros e USBRIN ID, preservando o layout, o logotipo e a experiência de login próprio.
+- Preservar integralmente o **portfólio oficial com 50 demonstrações**, seus arquivos, estilos, scripts e links. Não substituir a homepage atual por uma versão antiga da USBRIN ID.
 - Primeira campanha pública: **somente representantes comerciais**. A modalidade desenvolvedor permanece fechada.
 - O envio do formulário é uma **candidatura**, jamais aprovação automática, acesso, vínculo empregatício ou garantia de comissão.
 - Preparar a publicação para avaliação do proprietário; **não realizar merge, atualização no domínio oficial ou abertura de inscrições sem aprovação expressa**.
