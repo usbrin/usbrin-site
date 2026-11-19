@@ -68,6 +68,10 @@ function fakeProvider({verified=true,remoteID=userID,totp=false,expires=true,mis
     history.push({url:String(url),method:options.method});
     const path=new URL(url).pathname;
     if(options.method==="POST"){
+      const body=JSON.parse(options.body);
+      assert.deepEqual(body.checks.user,{userId:userID},
+        "Auth must resolve verified local link by ZITADEL ID, never email login alias");
+      assert.equal(body.lifetime,"7200s");
       deleted=false;
       totpVerified=false;
       return Response.json({sessionId:"999122200",sessionToken:"synthetic-token"});
@@ -275,4 +279,31 @@ test("nonadmins are never required to supply TOTP for normal password login",asy
     assert.ok(getCookie(r));
     assert.equal((await privateAPI(ctx(env(db),"/api/private/me",{cookie:getCookie(r)}))).status,200);
   }finally{provider.restore();}
+});
+
+test("ZITADEL login uses linked subject rather than relying on an email alias",async()=>{
+  const db=new D1();provision(db);
+  const original=globalThis.fetch;
+  const requests=[];
+  globalThis.fetch=async(_url,opts)=>{
+    if(opts.method==="POST"){
+      const body=JSON.parse(opts.body);
+      requests.push(body);
+      assert.deepEqual(body.checks.user,{userId:userID});
+      return Response.json({sessionId:"999122200",sessionToken:"synthetic-token"});
+    }
+    if(opts.method==="PATCH")return Response.json({sessionToken:"synthetic-verified-token"});
+    if(opts.method==="GET")return Response.json({
+      session:{id:"999122200",factors:{user:{id:userID,loginName:"completely-different-username",verifiedAt:new Date().toISOString()},
+        password:{verifiedAt:new Date().toISOString()}},
+        expirationDate:new Date(Date.now()+3600000).toISOString()}
+    });
+    if(opts.method==="DELETE")return Response.json({});
+    throw Error("Unexpected request");
+  };
+  try{
+    const response=await loginReq(env(db));
+    assert.equal(response.status,200);
+    assert.equal(requests.length,1);
+  }finally{globalThis.fetch=original;}
 });
