@@ -22,6 +22,21 @@ O fluxo de e-mail é **transacional**, jamais uma inscrição pública de contas
 - Migrações aditivas `0017_native_credentials.sql` e `0018_native_password_links.sql`, **não aplicadas em nenhum banco real nesta entrega**.
 - O modo novo é opt-in e isolado: `USBRIN_AUTH_MODE=native`. O login antigo permanece disponível nos ambientes existentes até homologação.
 
+## Infraestrutura QA preparada em 18/11/2026 (horário de Rondônia)
+
+Foram criados recursos **novos e isolados** na conta Cloudflare, sem alterar os projetos `usbrin-site`, `usbrin-partners-qa` ou `usbrin-id-oidc-qa`:
+
+- Pages: `usbrin-id-native-qa` (`usbrin-id-native-qa.pages.dev`), modo **Direct Upload**, sem implantação automática nem qualquer deploy executado.
+- D1: `usbrin_id_native_qa` — migrações `0001` a `0018` aplicadas **somente aqui**, em banco recém-criado; contagens verificadas: zero usuários, zero credenciais e zero candidaturas.
+- Binding: `USBRIN_ID_DB` ligado ao novo D1 em produção/preview QA.
+- Variáveis QA: `USBRIN_AUTH_MODE=native`, `NATIVE_AUTH_HOST=usbrin-id-native-qa.pages.dev`, `USBRIN_PASSWORD_EMAIL_ENABLED=false`, `APPLICATIONS_ENABLED=false`.
+- A aplicação Pages está configurada com `fail_open=false`, para não servir páginas privadas diretamente se Pages Functions exceder os limites.
+- **Ainda não há** `USBRIN_PASSWORD_PEPPER` nem credencial de e-mail neste ambiente: falha segura até provisionar esses segredos pelo painel/endpoint seguro. Não reutilizar segredos de outros ambientes.
+
+O backend agora possui `functions/_middleware.js` para exigir sessão antes de servir `/portal`, `/portal.html`, `/proposta`, `/proposta.html` e seus scripts, com `_routes.json` incluindo essas rotas e APIs. Essa mudança afeta apenas o modo `native`; o modo antigo permanece com Cloudflare Access.
+
+**Risco de capacidade que exige medição real:** o hash PBKDF2 com 600.000 iterações pode exceder o orçamento de CPU do Workers Free (10 ms por requisição). A conta permite o modelo de uso `standard`, mas não foi possível confirmar o plano de cobrança por API. Não reduzir a resistência do hash só para contornar o limite. Testar em QA e escolher alternativa segura de autenticação ou plano com CPU adequado antes de habilitar usuários reais.
+
 ## Configuração mínima de um ambiente de testes independente
 Os nomes abaixo são referências operacionais: não copiar valores de demonstração para o site real, não publicar segredos e não usar os bancos atuais de produção.
 
