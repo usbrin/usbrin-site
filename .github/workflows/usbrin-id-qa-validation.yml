@@ -44,7 +44,7 @@ jobs:
             functions/_lib/native-auth.js functions/api/native/login.js \
             functions/api/native/logout.js functions/_lib/native-password.js \
             functions/api/native/password/request.js functions/api/native/password/confirm.js \
-            js/senha.js; do
+            functions/_middleware.js js/senha.js; do
             node --check "$file"
           done
 
@@ -71,6 +71,8 @@ jobs:
           test -f dist/login.html
           test -f dist/senha.html
           test -f dist/js/senha.js
+          test -f dist/_routes.json
+          test -f functions/_middleware.js
           test -d functions
           test ! -e dist/functions
           test ! -e dist/public/portal.html
