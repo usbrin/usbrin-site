@@ -16,3 +16,5 @@ Rerun 2026-11-19: compare GitHub runner public provider connectivity; no secrets
 2026-11-19: allow Cloudflare Pages 405 fallback on removed QA diagnostic POST; 200 is forbidden.
 
 2026-11-19: validate deployed admin TOTP element, reset disabled (404), private routes and ZITADEL mode after QA deployment.
+
+2026-11-19 QA post-fix smoke: only check public login, protected routes, provider mode and reset remains disabled. No password tests with approved account.
