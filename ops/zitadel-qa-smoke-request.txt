@@ -14,3 +14,5 @@ Rerun 2026-11-19: compare GitHub runner public provider connectivity; no secrets
 2026-11-19: final post-cleanup smoke (private gates and removed diagnostic POST must return 404).
 
 2026-11-19: allow Cloudflare Pages 405 fallback on removed QA diagnostic POST; 200 is forbidden.
+
+2026-11-19: validate deployed admin TOTP element, reset disabled (404), private routes and ZITADEL mode after QA deployment.
