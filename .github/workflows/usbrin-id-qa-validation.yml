@@ -45,7 +45,8 @@ jobs:
             functions/_lib/native-auth.js functions/api/native/login.js \
             functions/api/native/logout.js functions/_lib/native-password.js \
             functions/api/native/password/request.js functions/api/native/password/confirm.js \
-            functions/_middleware.js functions/_lib/zitadel-auth.js js/senha.js; do
+            functions/_middleware.js functions/_lib/zitadel-auth.js \
+            functions/_lib/zitadel-password.js js/senha.js; do
             node --check "$file"
           done
 
@@ -56,6 +57,7 @@ jobs:
           node --test tests/partners-api.test.mjs
           node --test tests/native-auth.test.mjs
           node --test tests/zitadel-auth.test.mjs
+          node --test tests/zitadel-password.test.mjs
           node --test tests/studio-pricing.test.cjs
 
       - name: Build official Pages output
