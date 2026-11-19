@@ -1,0 +1,50 @@
+name: USBRIN ID Native QA - One-shot Error Diagnostics
+
+on:
+  push:
+    branches:
+      - feature/usbrin-id-login-proprio-20261118
+    paths:
+      - 'ops/native-qa-diagnostic-request.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qa-log-inspection:
+    if: github.repository == 'usbrin/usbrin-site' && github.ref == 'refs/heads/feature/usbrin-id-login-proprio-20261118'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect a synthetic login failure through Cloudflare tail (never credentials)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: '25eaef72c8dbc252be724778072cb0e4'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_API_TOKEN:-}"
+          timeout 30s npx --yes wrangler@4.163.0 pages deployment tail \
+            --project-name=usbrin-id-native-qa --environment=production \
+            --format=json --sampling-rate=1 > /tmp/native-qa-tail.log 2>&1 &
+          pid=$!
+          sleep 8
+          url="https://usbrin-id-native-qa.pages.dev/api/native/login"
+          body='{"email":"qa-diagnostic-unknown@invalid.example","password":"qa-synthetic-test-password-2026"}'
+          status="$(curl --max-time 25 -sS -o /dev/null -w '%{http_code}' \
+            -X POST "$url" -H 'content-type: application/json' \
+            -H 'origin: https://usbrin-id-native-qa.pages.dev' --data-binary "$body")"
+          echo "Synthetic login request status: HTTP $status"
+          sleep 5
+          kill "$pid" 2>/dev/null || true
+          if grep -Fq 'USBRIN_NATIVE_QA_LOGIN_FAILURE' /tmp/native-qa-tail.log; then
+            echo "Platform error category captured (no identity values):"
+            grep -F 'USBRIN_NATIVE_QA_LOGIN_FAILURE' /tmp/native-qa-tail.log | \
+              sed -E 's/(email|password|authorization|cookie)[^,}]*/[REDACTED]/gi' | head -n 4
+          else
+            echo "No sanitized error event was captured by the live tail."
+            if grep -qi 'error\|unauthorized\|forbidden' /tmp/native-qa-tail.log; then
+              echo "Tail command reported a diagnostic error; inspect capability without exposing secrets."
+              exit 1
+            fi
+          fi
