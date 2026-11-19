@@ -127,7 +127,10 @@ export async function zitadelLogin(request,env,mail,password,totp){
   let sid="";
   try{
     const create=await api(env,"/v2/sessions","POST",{
-      checks:{user:{loginName:normalized}},lifetime:ABSOLUTE_SECONDS+"s"
+      // Use the explicitly approved ZITADEL subject instead of assuming that
+      // the user's email is configured as an accepted ZITADEL loginName.
+      // The email is only used to find the pre-authorized, linked local user.
+      checks:{user:{userId:user.zitadel_user_id}},lifetime:ABSOLUTE_SECONDS+"s"
     });
     if(create.status===401||create.status===403)throw unavailable();
     if(!create.ok||!isValidId(create.result?.sessionId)){await failed(env,keys,t);throw invalid();}
