@@ -25,7 +25,18 @@ export async function onRequest({request,env}){
     const type=String(e?.name||"Unknown");
     outcome=/^(AbortError|TimeoutError|TypeError)$/.test(type)?type:"OtherFailure";
   }
-  return Response.json({qa:true,providerStatus:outcome},{headers:{
+  let publicMetadata="unavailable";
+  try {
+    const p=await fetch(env.ZITADEL_API_URL+"/.well-known/openid-configuration",{
+      method:"GET",redirect:"error",signal:AbortSignal.timeout(6000)
+    });
+    publicMetadata="HTTP_"+p.status;
+    await p.body?.cancel();
+  }catch(e){
+    const msg=String(e?.message||"").toLowerCase();
+    publicMetadata=String(e?.name||"Error")+":"+(msg.includes("network")?"network":msg.includes("dns")?"dns":msg.includes("fetch")?"fetch":"other");
+  }
+  return Response.json({qa:true,providerStatus:outcome,publicMetadata},{headers:{
     "cache-control":"no-store, private",
     "x-robots-tag":"noindex, nofollow",
     "x-content-type-options":"nosniff"
