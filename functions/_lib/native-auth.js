@@ -1,4 +1,4 @@
-import {AuthError} from "./auth.js";
+import {AuthError} from "./auth-errors.js";
 import {email} from "./security.js";
 
 // Native login is strictly opt-in; no fallback from Cloudflare Access on a failed login.
