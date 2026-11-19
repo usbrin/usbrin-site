@@ -1,0 +1,6 @@
+One-time deployment request for isolated ZITADEL QA only.
+Project: usbrin-id-native-qa
+Branch: native-qa
+No production domains, no applicants, no outbound mail.
+ZITADEL IAM_LOGIN_CLIENT is stored as a Cloudflare secret, never in GitHub.
+2026-11-19
