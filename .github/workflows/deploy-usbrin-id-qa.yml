@@ -36,6 +36,10 @@ jobs:
           node --check functions/_lib/native-auth.js
           node --check functions/api/native/login.js
           node --check functions/api/native/logout.js
+          node --check functions/_lib/native-password.js
+          node --check functions/api/native/password/request.js
+          node --check functions/api/native/password/confirm.js
+          node --check js/senha.js
 
       - name: Run isolated backend and pricing regression tests
         shell: bash
@@ -59,6 +63,8 @@ jobs:
           test -f dist/public/js/usbrin-id.js
           test -f dist/portal.html
           test -f dist/login.html
+          test -f dist/senha.html
+          test -f dist/js/senha.js
           test -d functions
           test ! -e dist/functions
           test ! -e dist/public/portal.html
