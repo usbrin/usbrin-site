@@ -29,13 +29,18 @@ jobs:
             echo "$path: HTTP $got (expected $expect)"
             test "$got" = "$expect"
           }
-          check "/login.html" 200
-          check "/senha.html" 200
+          # Pages canonicalizes .html URLs to extensionless paths with HTTP 308.
+          check "/login" 200
+          check "/senha" 200
           check "/portal" 302
-          check "/portal.html" 302
           check "/js/portal.js" 401
-          check "/proposta.html" 302
+          check "/proposta" 302
           check "/api/private/me" 401
+          # Verify canonical redirects, not unprotected HTML copies.
+          check "/login.html" 308
+          check "/senha.html" 308
+          check "/portal.html" 308
+          check "/proposta.html" 308
 
       - name: Verify live password derivation responds without CPU errors
         shell: bash
