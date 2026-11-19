@@ -112,3 +112,31 @@ test('approved representative-only mode receives applications, permits protocol 
   assert.equal(status.status,200);
   assert.equal((await status.json()).status,'received');
 });
+
+
+test('existing candidates can track protocol after representative signup closes',async()=>{
+  const e=env({REPRESENTATIVE_APPLICATIONS_ENABLED:'true'});
+  const created=await createApplication({env:e,request:request('/api/applications',body)});
+  assert.equal(created.status,201);
+  const protocol=(await created.json()).protocol;
+  e.REPRESENTATIVE_APPLICATIONS_ENABLED='false';
+  e.REPRESENTATIVE_STATUS_ENABLED='true';
+  const cfg=await publicConfig({env:e,request:new Request(HOST+'/api/public-config')}).json();
+  assert.equal(cfg.applicationsOpen,false);
+  assert.equal(cfg.applicationStatusOpen,true);
+  assert.deepEqual(cfg.applicationTypes,[]);
+  const newCandidate=await createApplication({env:e,request:request('/api/applications',{
+    ...body,email:'another.candidate@domain.example'
+  })});
+  assert.equal(newCandidate.status,503);
+  const existing=await applicationStatus({env:e,request:request('/api/application-status',{
+    protocol,email:body.email,turnstileToken:'status-test-token'
+  })});
+  assert.equal(existing.status,200);
+  assert.equal((await existing.json()).status,'received');
+  // A preview/foreign host cannot inspect campaign records even with a valid protocol.
+  const foreign=await applicationStatus({env:e,request:request('/api/application-status',{
+    protocol,email:body.email,turnstileToken:'status-test-token'
+  },'https://another-domain.pages.dev')});
+  assert.equal(foreign.status,503);
+});
