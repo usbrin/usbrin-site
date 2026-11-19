@@ -1,0 +1,7 @@
+USBRIN ID native QA single controlled deployment request.
+Target project: usbrin-id-native-qa (isolated).
+Target branch: native-qa.
+QA database: usbrin_id_native_qa (no customer data).
+Transactional email disabled; applications disabled.
+No production domains or production projects should be modified.
+Requested after validation and creation of QA-only pepper secret.
