@@ -2,6 +2,20 @@
 const form=document.getElementById('login-form');
 const button=document.getElementById('login-submit');
 const feedback=document.getElementById('login-feedback');
+const recover=document.getElementById('password-recovery-link');
+fetch('/api/native/config',{cache:'no-store',headers:{accept:'application/json'}})
+  .then(r=>r.ok?r.json():null)
+  .then(config=>{
+    if(!config?.ok)return;
+    if(!config.passwordRecovery){
+      recover.hidden=true;
+      recover.parentElement.firstChild.textContent='Primeiro acesso ou esqueceu a senha? Solicite a ativação à equipe USBRIN. ';
+    }
+    if(config.mode==='zitadel'){
+      form.elements.password.removeAttribute('minlength');
+    }
+  })
+  .catch(()=>{recover.hidden=true;});
 form.addEventListener('submit',async event=>{
   event.preventDefault();
   if(button.disabled)return;
