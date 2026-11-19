@@ -367,9 +367,11 @@ export async function onRequest(context){
         FROM users WHERE id=? AND role IN ('representante','desenvolvedor') AND status='active'
           AND contract_verified_at IS NOT NULL AND length(contract_reference)>=5`,fresh(),user.id,id).run();
       if(event.meta?.changes!==1)return error("O convite exige conta ativa e contrato verificado.",409);
-      const url=new URL("/portal",request.url).href;
+      const url=new URL(nativeEnabled(env)?"/senha.html":"/portal",request.url).href;
       const role=partner.role==="representante"?"representante comercial":"parceiro de desenvolvimento";
-      const message=`Olá, ${partner.name}. Seu perfil de ${role} foi aprovado na USBRIN. Acesse ${url} com ${partner.email} depois que confirmarmos a liberação no Cloudflare Access. Na tela da Cloudflare, siga a verificação por e-mail e use seu aplicativo autenticador se solicitado.`;
+      const message=nativeEnabled(env)
+        ?`Olá, ${partner.name}. Seu perfil de ${role} foi aprovado na USBRIN. Para seu primeiro acesso, abra ${url}, informe o e-mail ${partner.email} e use o link que receber para criar sua senha. Depois, entre normalmente na USBRIN ID com e-mail e senha.`
+        :`Olá, ${partner.name}. Seu perfil de ${role} foi aprovado na USBRIN. Acesse ${url} com ${partner.email} depois que confirmarmos a liberação no Cloudflare Access. Na tela da Cloudflare, siga a verificação por e-mail e use seu aplicativo autenticador se solicitado.`;
       return respond({ok:true,invitation:{email:partner.email,message}});
     }
     if(route==="admin/partner-access"&&method==="POST"&&allowed(user,"admin")){
