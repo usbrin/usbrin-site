@@ -1,0 +1,25 @@
+:root{color-scheme:dark;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#101013;color:#f5f3f9}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;background:radial-gradient(circle at 50% 27%,#2b1d3d 0%,#17131e 34%,#101013 75%)}
+.site-header{width:min(1100px,calc(100% - 36px));margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:15px;padding:25px 0}
+.site-header img{object-fit:contain;max-width:150px;height:auto}
+a{color:#cbb5fa;text-decoration:none}
+a:hover{text-decoration:underline}
+.site-header>a:last-child{font-size:13px}
+main{flex:1;display:flex;align-items:center;justify-content:center;padding:30px 16px 64px}
+.login-card{background:#19171e;border:1px solid #3a2f46;border-radius:22px;box-shadow:0 25px 75px #0006;width:min(100%,450px);padding:36px}
+.eyebrow{color:#c9aaff;font-size:11px;font-weight:750;letter-spacing:2px;text-transform:uppercase}
+h1{font-size:clamp(27px,5vw,36px);letter-spacing:-1px;margin:16px 0 10px;line-height:1.13}
+.subtitle{font-size:14px;color:#bdb7c7;line-height:1.6;margin:0 0 28px}
+form{display:grid;gap:10px}
+label{font-size:13px;font-weight:650;margin-top:4px}
+input{width:100%;border:1px solid #524758;background:#111015;color:#fff;border-radius:10px;padding:14px 15px;font:inherit;font-size:15px}
+input::placeholder{color:#847c91}
+input:focus-visible{outline:2px solid #b889ff;outline-offset:2px}
+button{font:inherit;font-size:15px;font-weight:750;cursor:pointer;background:linear-gradient(135deg,#9b5cf3,#7442c8);color:#fff;border:0;border-radius:11px;padding:15px 20px;margin-top:15px;min-height:49px}
+button:hover{filter:brightness(1.14)}
+button:disabled{opacity:.65;cursor:wait}
+.feedback{color:#ffadaf;font-size:13px;min-height:18px;line-height:1.5}
+.footnote{border-top:1px solid #312a39;padding-top:20px;color:#aaa3b5;font-size:12px;line-height:1.7}
+footer{text-align:center;padding:22px;color:#81778a;font-size:12px}
+@media(max-width:480px){.login-card{padding:27px 22px;border-radius:16px}.site-header{padding-top:18px}main{padding-top:8px}}
