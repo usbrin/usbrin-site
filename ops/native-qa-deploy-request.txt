@@ -5,3 +5,5 @@ QA database: usbrin_id_native_qa (no customer data).
 Transactional email disabled; applications disabled.
 No production domains or production projects should be modified.
 Requested after validation and creation of QA-only pepper secret.
+
+QA-only re-deploy for sanitized server-side crypto failure diagnostics, 2026-11-19.
