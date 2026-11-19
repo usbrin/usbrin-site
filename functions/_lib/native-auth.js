@@ -15,7 +15,7 @@ const hex=bytes=>Array.from(bytes,x=>x.toString(16).padStart(2,"0")).join("");
 const random=length=>hex(crypto.getRandomValues(new Uint8Array(length)));
 const bytes=hexValue=>new Uint8Array(hexValue.match(/.{2}/g).map(x=>parseInt(x,16)));
 const sha=async string=>hex(new Uint8Array(await crypto.subtle.digest("SHA-256",encoder.encode(string))));
-const denied=()=>new AuthError("session_required","Sua sessão terminou. Entre novamente na USBRIN ID.",401);
+const denied=()=>new AuthError("native_session_required","Sua sessão terminou. Entre novamente na USBRIN ID.",401);
 const unavailable=()=>new AuthError("identity_unavailable","Login USBRIN ID temporariamente indisponível.",503);
 const isValidHash=value=>typeof value==="string"&&/^[a-f0-9]{64}$/.test(value);
 const constantTimeEqual=(a,b)=>{
