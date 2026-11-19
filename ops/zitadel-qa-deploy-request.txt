@@ -16,3 +16,5 @@ ZITADEL IAM_LOGIN_CLIENT is stored as a Cloudflare secret, never in GitHub.
 2026-11-19: redeploy after removing one-time provider-status debug endpoint. Keep ZITADEL QA mode, PAT secret, D1 and private route gates unchanged.
 
 2026-11-19: deploy revised in-site admin TOTP and provider-owned reset (disabled in QA). Checks: CI tests, private Pages routes, ZITADEL mode, no production.
+
+2026-11-19 01:34 Porto Velho: deploy isolated QA login fix: use pre-authorized ZITADEL userId instead of assuming email loginName. Tests: GitHub Actions 44466340567 success. No changes to official site, passwords or production.
