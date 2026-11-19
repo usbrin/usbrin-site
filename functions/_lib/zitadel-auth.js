@@ -18,10 +18,9 @@ const sha=async value=>hex(new Uint8Array(await crypto.subtle.digest("SHA-256",e
 const unavailable=()=>new AuthError("identity_unavailable","Não foi possível verificar a identidade. Tente novamente.",503);
 const invalid=()=>new AuthError("invalid_credentials","E-mail ou senha incorretos.",401);
 const denied=()=>new AuthError("native_session_required","Sua sessão terminou. Entre novamente na USBRIN ID.",401);
-const validFactor=(value,t)=>Number.isFinite(Date.parse(value?.verifiedAt))&&
-  Math.abs(Date.parse(value.verifiedAt)/1000-t)<180;
 const requiresMfa=user=>user?.role==="admin";
-const hasMfa=(factors,t)=>["totp","webAuthN","otpSms","otpEmail"].some(k=>validFactor(factors?.[k],t));
+// The USBRIN admin login currently supports TOTP only, not weaker email-based OTP.
+// ZITADEL confirms factors; the application must explicitly enforce each one.
 const isValidId=value=>typeof value==="string"&&value.length>=1&&value.length<=200&&/^[\w-]+$/.test(value);
 
 export function zitadelReady(request,env){
@@ -81,7 +80,7 @@ function inspectedSession(record,localUser,t,maxFactorAge=ABSOLUTE_SECONDS+180){
     !(Number.isFinite(Date.parse(f?.password?.verifiedAt))&&t-Date.parse(f.password.verifiedAt)/1000>=-180&&t-Date.parse(f.password.verifiedAt)/1000<maxFactorAge)||
     !Number.isFinite(Date.parse(s.expirationDate))||Date.parse(s.expirationDate)/1000<=t||
     id!==localUser.zitadel_user_id)return false;
-  if(requiresMfa(localUser)&&!["totp","webAuthN","otpSms","otpEmail"].some(k=>Number.isFinite(Date.parse(f?.[k]?.verifiedAt))&&t-Date.parse(f[k].verifiedAt)/1000>=-180&&t-Date.parse(f[k].verifiedAt)/1000<maxFactorAge))return false;
+  if(requiresMfa(localUser)&&!(Number.isFinite(Date.parse(f?.totp?.verifiedAt))&&t-Date.parse(f.totp.verifiedAt)/1000>=-180&&t-Date.parse(f.totp.verifiedAt)/1000<maxFactorAge))return false;
   return true;
 }
 
@@ -107,7 +106,7 @@ async function failed(env,keys,t){
     .bind(key,t,t-WINDOW_SECONDS,t-WINDOW_SECONDS)));
 }
 
-export async function zitadelLogin(request,env,mail,password){
+export async function zitadelLogin(request,env,mail,password,totp){
   if(!zitadelReady(request,env))throw unavailable();
   const db=env.USBRIN_ID_DB,t=now(),normalized=email(mail);
   const keys=await throttle(env,request,normalized,t);
@@ -138,11 +137,29 @@ export async function zitadelLogin(request,env,mail,password){
     });
     if(update.status===401)throw unavailable();
     if(!update.ok){await failed(env,keys,t);throw invalid();}
+    if(requiresMfa(user)&&totp!==undefined&&totp!==""){
+      if(typeof totp!=="string"||!/^[0-9]{6,8}$/.test(totp)){
+        await failed(env,keys,t);
+        throw new AuthError("invalid_totp","Código do autenticador inválido.",401);
+      }
+      const otp=await api(env,"/v2/sessions/"+encodeURIComponent(sid),"PATCH",{
+        checks:{totp:{code:totp}}
+      });
+      if(!otp.ok){
+        await failed(env,keys,t);
+        if(otp.status>=500)throw unavailable();
+        throw new AuthError("invalid_totp","Código do autenticador inválido.",401);
+      }
+    }
     const info=await api(env,"/v2/sessions/"+encodeURIComponent(sid),"GET");
     if(!info.ok)throw unavailable();
     if(!inspectedSession(info.result,user,now(),180)){
+      // Missing second factor is not a successful login. A new TOTP check must
+      // be supplied in the next request; no incomplete session is persisted.
+      if(requiresMfa(user)&&(totp===undefined||totp==="")){
+        throw new AuthError("mfa_required","Informe o código do seu aplicativo autenticador.",403);
+      }
       await failed(env,keys,t);
-      if(requiresMfa(user))throw new AuthError("mfa_required","Este perfil exige uma verificação adicional.",403);
       throw invalid();
     }
     const token=random(32);
