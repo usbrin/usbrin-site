@@ -87,7 +87,7 @@ test("approved representative logs in, has isolated role and can revoke session"
   assert.equal(user.authMode,"native");
   assert.equal(user.user.role,"representante");
   assert.equal(user.workSession,false);
-  assert.equal((await privateAPI(context(env,"/api/private/admin/dashboard",{cookie}))).status,403);
+  assert.equal((await privateAPI(context(env,"/api/private/admin/overview",{cookie}))).status,404);
 
   const badLogout=await logout(context(env,"/api/native/logout",{method:"POST",cookie,origin:"https://foreign.test"}));
   assert.equal(badLogout.status,403);
