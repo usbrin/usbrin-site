@@ -1,0 +1,4 @@
+One-shot HTTP smoke test for deployed USBRIN ID Native QA.
+No credentials, cookies, or real accounts are used.
+Expected: login and recovery public; portal and private API gated; fake account rejected.
+Does not modify production, Cloudflare Access, customers, or D1 content beyond rate-limit counters for synthetic input.
