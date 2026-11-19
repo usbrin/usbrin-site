@@ -5,6 +5,6 @@
   "description": "Site oficial da USBRIN e USBRIN Studio",
   "scripts": {
     "build": "node scripts/build-static.cjs",
-    "test:pricing": "node --test tests/studio-pricing.test.cjs"
+    "test:pricing": "node --test tests/studio-pricing.test.cjs tests/commercial-catalog-sync.test.cjs"
   }
 }
