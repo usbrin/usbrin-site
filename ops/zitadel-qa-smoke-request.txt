@@ -10,3 +10,5 @@ Rerun 2026-11-19: measure public OIDC endpoint reachability from Pages runtime. 
 Rerun 2026-11-19: compare GitHub runner public provider connectivity; no secrets.
 
 2026-11-19: test corrected Workers fetch manual redirect handling; synthetic identity only.
+
+2026-11-19: final post-cleanup smoke (private gates and removed diagnostic POST must return 404).
