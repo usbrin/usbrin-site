@@ -31,6 +31,15 @@ jobs:
           test_status "/portal" 302
           test_status "/js/portal.js" 401
           test_status "/api/private/me" 401
+          curl -fsS --max-time 20 "$base/login" | grep -q 'id="admin-totp"'
+          test_status "/senha" 200
+          reset_status="$(curl -sS --max-time 20 -o /dev/null -w '%{http_code}' \
+            -X POST "$base/api/native/password/request" \
+            -H 'content-type: application/json' \
+            -H 'origin: https://usbrin-id-native-qa.pages.dev' \
+            --data-binary '{"email":"nonexistent-qa@invalid.example"}')"
+          echo "Password recovery disabled in QA => HTTP $reset_status"
+          test "$reset_status" = "404"
           probe_status="$(curl --max-time 20 -sS -o /dev/null -w '%{http_code}' \
             -X POST "$base/api/qa/provider-status" \
             -H 'origin: https://usbrin-id-native-qa.pages.dev')"
