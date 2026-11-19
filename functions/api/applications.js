@@ -6,8 +6,8 @@ const states=new Set("AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ R
 const fields={name:120,email:180,phone:40,city:100,state:2,experience:2600,motivation:1800,portfolio:350,availability:100};
 
 export async function onRequestPost({request,env}){
-  const {general,representativePreview}=applicationAvailability(env,request);
-  if(!general&&!representativePreview)return error("Inscrições ainda não estão abertas.",503);
+  const {general,representativePreview,representativePublic}=applicationAvailability(env,request);
+  if(!general&&!representativePublic&&!representativePreview)return error("Inscrições ainda não estão abertas.",503);
   if(!checkOrigin(request))return error("Origem não autorizada.",403);
   let b;try{b=await readBody(request,16000);}catch{return error("Dados da candidatura inválidos.");}
   if(str(b.website))return error("Candidatura inválida.",400);
@@ -29,7 +29,7 @@ export async function onRequestPost({request,env}){
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail))return error("Informe um e-mail válido.");
   if(representative?!/^(?:\+?55)?[1-9]\d[2-9]\d{7,8}$/.test(phone):phone.length<8)
     return error("Informe um WhatsApp válido com DDD.");
-  if(!general&&!isExampleCandidate(mail))return error("Use um e-mail fictício terminado em @example.com nesta homologação.");
+  if(!general&&!representativePublic&&!isExampleCandidate(mail))return error("Use um e-mail fictício terminado em @example.com nesta homologação.");
   if(portfolio){
     try{if(new URL(portfolio).protocol!=="https:")throw Error();}
     catch{return error("Use um link HTTPS para o portfólio.");}
