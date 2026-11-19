@@ -8,6 +8,7 @@ import {onRequest as logout} from "../functions/api/native/logout.js";
 import {onRequest as requestPassword} from "../functions/api/native/password/request.js";
 import {onRequest as confirmPassword} from "../functions/api/native/password/confirm.js";
 import {onRequest as privateAPI} from "../functions/api/private/[[path]].js";
+import {onRequest as staticGate} from "../functions/_middleware.js";
 
 class D1 {
   constructor(){
@@ -269,4 +270,65 @@ test("password request limits and mail configuration fail closed",async()=>{
   assert.equal((await requestPassword(context(env,"/api/native/password/request",{
     method:"POST",body:{email}
   }))).status,429);
+});
+
+test("native static middleware denies anonymous portal assets without blocking public pages",async()=>{
+  const db=new D1();
+  const env={USBRIN_ID_DB:db,USBRIN_AUTH_MODE:"native",
+    NATIVE_AUTH_HOST:"usbrin-native-qa.pages.dev",USBRIN_PASSWORD_PEPPER:pepper};
+  let forwarded=0;
+  const check=async (path,{cookie="",method="GET",runtimeEnv=env}={})=>
+    staticGate({request:req(path,{cookie,method}),env:runtimeEnv,
+      next:async()=>{forwarded++;return new Response("served",{status:200,headers:{"content-type":"text/html"}});}});
+  assert.equal((await check("/portal")).status,302);
+  assert.equal(forwarded,0);
+  assert.equal((await check("/portal.html")).headers.get("location"),"/login.html");
+  assert.equal((await check("/proposta.html")).status,302);
+  assert.equal((await check("/js/portal.js")).status,401);
+  assert.equal((await check("/portal",{method:"POST"})).status,405);
+  assert.equal(forwarded,0);
+  const publicPage=await check("/login.html");
+  assert.equal(publicPage.status,200);
+  assert.equal(forwarded,1);
+  assert.equal((await check("/public/parceiros.html")).status,200);
+  assert.equal(forwarded,2);
+  assert.equal((await check("/portal",{runtimeEnv:{...env,USBRIN_PASSWORD_PEPPER:undefined}})).status,503);
+  assert.equal(forwarded,2);
+  assert.equal((await check("/portal",{runtimeEnv:{USBRIN_AUTH_MODE:"access"}})).status,200);
+  assert.equal(forwarded,3);
+});
+
+test("native static middleware allows authorized portal but isolates admin proposal",async()=>{
+  const db=new D1(),t=Math.floor(Date.now()/1000);
+  const salt=newPasswordSalt(),hash=await hashPassword(password,salt,pepper);
+  db.sqlite.prepare("INSERT INTO users(id,email,name,role,status) VALUES (?,?,?,'representante','active')")
+    .run("rmid",email,"Representante Site");
+  db.sqlite.prepare("INSERT INTO native_credentials(user_id,salt_hex,hash_hex,iterations,version,created_at,updated_at) VALUES (?,?,?,600000,1,?,?)")
+    .run("rmid",salt,hash,t,t);
+  const env={USBRIN_ID_DB:db,USBRIN_AUTH_MODE:"native",
+    NATIVE_AUTH_HOST:"usbrin-native-qa.pages.dev",USBRIN_PASSWORD_PEPPER:pepper};
+  const loginResult=await login(context(env,"/api/native/login",{method:"POST",body:{email,password}}));
+  assert.equal(loginResult.status,200);
+  const cookie=getCookie(loginResult);
+  const middleware=path=>staticGate({request:req(path,{cookie}),env,
+    next:async()=>new Response("<html>protected page</html>",{status:200,headers:{"content-type":"text/html"}})});
+  const portal=await middleware("/portal");
+  assert.equal(portal.status,200);
+  assert.match(await portal.text(),/protected page/);
+  assert.equal(portal.headers.get("cache-control"),"no-store, private");
+  assert.equal(portal.headers.get("x-robots-tag"),"noindex, nofollow");
+  assert.equal((await middleware("/js/portal.js")).status,200);
+  assert.equal((await middleware("/proposta.html")).status,404);
+  assert.equal((await middleware("/js/proposta.js")).status,404);
+});
+
+test("Cloudflare Pages route manifest never excludes protected pages or APIs",()=>{
+  const {version,include,exclude}=JSON.parse(
+    readFileSync(new URL("../_routes.json",import.meta.url),"utf8"));
+  assert.equal(version,1);
+  assert.ok(include.includes("/api/*"));
+  assert.ok(include.includes("/public/api/*"));
+  for(const path of ["/portal","/portal.html","/proposta.html","/js/portal.js","/js/proposta.js"])
+    assert.ok(include.includes(path),path+" must invoke middleware");
+  assert.deepEqual(exclude,[]);
 });
