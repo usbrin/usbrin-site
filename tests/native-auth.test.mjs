@@ -116,3 +116,30 @@ test("bad password attempts are rate-limited without exposing account existence"
   const locked=await login(context(env,"/api/native/login",{method:"POST",body:{email:"unknown@usbrin.test",password}}));
   assert.equal(locked.status,429);
 });
+
+
+test("native sessions expire after inactivity and password changes invalidate cookies",async()=>{
+  const db=new D1(),clock=Date.now;
+  let t=Math.floor(clock()/1000);
+  Date.now=()=>t*1000;
+  try{
+    const salt=newPasswordSalt(),hash=await hashPassword(password,salt,pepper);
+    db.sqlite.prepare("INSERT INTO users(id,email,name,role,status) VALUES (?,?,?,'representante','active')")
+      .run("r2",email,"Representante de Teste");
+    db.sqlite.prepare("INSERT INTO native_credentials(user_id,salt_hex,hash_hex,iterations,version,created_at,updated_at) VALUES (?,?,?,600000,1,?,?)")
+      .run("r2",salt,hash,t,t);
+    const env={USBRIN_ID_DB:db,USBRIN_AUTH_MODE:"native",
+      NATIVE_AUTH_HOST:"usbrin-native-qa.pages.dev",USBRIN_PASSWORD_PEPPER:pepper};
+    let result=await login(context(env,"/api/native/login",{method:"POST",body:{email,password}}));
+    assert.equal(result.status,200);
+    const cookie=getCookie(result);
+    t+=30*60+1;
+    assert.equal((await privateAPI(context(env,"/api/private/me",{cookie}))).status,401);
+    result=await login(context(env,"/api/native/login",{method:"POST",body:{email,password}}));
+    assert.equal(result.status,200);
+    const freshCookie=getCookie(result);
+    assert.equal((await privateAPI(context(env,"/api/private/me",{cookie:freshCookie}))).status,200);
+    db.sqlite.prepare("UPDATE native_credentials SET version=version+1 WHERE user_id='r2'").run();
+    assert.equal((await privateAPI(context(env,"/api/private/me",{cookie:freshCookie}))).status,401);
+  }finally{Date.now=clock;}
+});
