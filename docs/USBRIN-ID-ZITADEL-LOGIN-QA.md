@@ -33,22 +33,29 @@ Branch `feature/usbrin-id-zitadel-custom-ui-20261119` (PR #12 em rascunho, deriv
 - Administradores **exigem MFA válido**; um login só com senha retorna `mfa_required` e **não concede sessão**. A etapa adicional de TOTP dentro da USBRIN precisa ser finalizada antes de homologar o perfil administrador.
 - Inscrições permanecem desligadas.
 
-## Estado real da homologação
-- Cloudflare Pages de teste: `usbrin-id-native-qa.pages.dev` — continua publicado no modo **`native`**, não no novo modo `zitadel`.
-- D1 exclusivo `usbrin_id_native_qa`: migrações 0001–0019 aplicadas, sem registros de usuários reais e sem vínculos ZITADEL.
-- Nenhum PAT ZITADEL foi configurado e nenhum login real foi executado nesta integração.
-- Os testes unitários e de API rodam no GitHub Actions, mas utilizam **respostas simuladas** da Session API; não atestam o funcionamento com contas reais.
-- Cloudflare Access existente, site oficial e campanha de representantes **não foram alterados**.
+## Estado real da homologação — atualização de 19/11/2026
 
-## Configuração que depende da administração ZITADEL
-**Nunca copiar tokens ou senhas para o chat ou para o GitHub.**
+**Confirmado no GitHub, Cloudflare e ZITADEL:**
+- Pages QA isolado `usbrin-id-native-qa.pages.dev` publicado com `USBRIN_AUTH_MODE=zitadel` e `ZITADEL_API_URL` fixo do provedor; `ZITADEL_LOGIN_CLIENT_TOKEN` armazenado na Cloudflare como **Secret** e nunca consultado/exposto em código, logs ou no chat.
+- Conta técnica `usbrin-id-login-qa` criada pela administração ZITADEL, com **somente IAM_LOGIN_CLIENT**, sem IAM_OWNER. Token PAT com expiração informada em **19/12/2026**; definir renovação/rotação antes dessa data.
+- D1 QA `usbrin_id_native_qa` migrado até 0019, sem usuários, vínculos ou sessões reais. A identidade **sintética** usada no smoke test foi eliminada ao final; contagem pós-limpeza: zero usuários, vínculos e sessões.
+- HTTP real do QA: `/login` 200; `/portal` 302 sem sessão; `/js/portal.js` e `/api/private/me` 401 sem autenticação.
+- O erro inicial 503 era **incompatibilidade do runtime Cloudflare Workers com `fetch(...,{redirect:"error"})`**, conforme documentação oficial Cloudflare. O código usa agora `redirect:"manual"` e bloqueia explicitamente respostas 3xx para impedir qualquer encaminhamento do token de serviço.
+- Após correção, teste temporário não autenticado do backend ao ZITADEL retornou **HTTP 404 para uma sessão inexistente** (esperado), enquanto o documento público de OIDC retornou **HTTP 200**. Uma tentativa de login usando identidade e senha totalmente fictícias recebeu **HTTP 401**, rejeição adequada. A execução automatizada foi aprovada: `https://github.com/usbrin/usbrin-site/actions/runs/44461702227`.
+- O endpoint temporário de diagnóstico foi **retirado do código** e o QA foi republicado pelo job de limpeza. Não há API de diagnóstico persistida na branch.
+- Testes de componentes, integração simulada, controle de acesso e regressões do USBRIN Studio continuam obrigatórios.
+- O site oficial `usbrin.com.br`, Cloudflare Access legado, os usuários reais e a campanha de representantes **não foram alterados**.
 
-1. No console da instância `usbrin-id-rzf8mn.us1.zitadel.cloud`, criar (ou reutilizar cuidadosamente) uma **conta de serviço dedicada ao login customizado**, de acordo com a documentação do ZITADEL.
-2. Conceder exclusivamente o necessário para as operações de sessão do Login Client (a documentação cita o papel `IAM_LOGIN_CLIENT`); verificar permissões `session.write` e `session.read`, sem conceder `IAM_OWNER` à aplicação sem necessidade. Emitir um PAT ou outro método de autenticação M2M apropriado; definir prazo e rotação.
-3. No Cloudflare Pages **somente** do projeto `usbrin-id-native-qa`, cadastrar o segredo `ZITADEL_LOGIN_CLIENT_TOKEN` como **Secret**, nunca Plain Text, na configuração de homologação.
-4. Após confirmar a configuração, a equipe técnica poderá definir `ZITADEL_API_URL=https://usbrin-id-rzf8mn.us1.zitadel.cloud` e `USBRIN_AUTH_MODE=zitadel`, apenas no QA. Não ativar antes da confirmação das credenciais e das políticas.
-5. Provisionar *contas sintéticas de homologação* no ZITADEL e D1 com vínculo explícito de IDs; nenhum usuário ou senha real precisa ser compartilhado.
-6. Testar sessão real de representante/desenvolvedor, fatores, senha errada, bloqueio da conta e logout. Completar MFA administrativo e políticas antes de publicar fora do QA.
+**O que esses testes NÃO comprovam:** login com uma conta real do ZITADEL, definição/recuperação de senha do provedor, MFA administrativo, vinculação real de identidade ou onboarding de representante. São gates obrigatórios antes de liberar acesso.
+
+## Próximos passos de homologação
+
+1. Criar **contas de teste sem dados de clientes** no ZITADEL com política explícita de senhas, validação de e-mail e, quando necessário, segundo fator.
+2. No D1 QA, registrar usuários aprovados de QA e seus IDs ZITADEL por vínculo explícito (nunca por correspondência de e-mail isolada). Validar representação, desenvolvimento, suspensão e logout.
+3. Finalizar o primeiro acesso/recuperação de senha usando APIs oficiais do ZITADEL, evitando manter senhas no D1 local e sem criar conta ativa na inscrição.
+4. Criar etapa visível de MFA/TOTP dentro da experiência USBRIN para administradores, preservando a tela de e-mail/senha para os demais perfis.
+5. Validar limites de abuso e custos/plano, revisar autorização por perfil, testar desktop/mobile, confirmar retenção e rollback.
+6. Apenas depois de homologação e **aprovação expressa**, integrar à rota oficial do site e planejar a abertura das candidaturas.
 
 ## Pendências antes do lançamento de representantes
 - [ ] Serviço ZITADEL com permissões suficientes e custo/plano revistos, sem contratar nada automaticamente
