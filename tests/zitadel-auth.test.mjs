@@ -6,6 +6,7 @@ import {onRequest as login} from "../functions/api/native/login.js";
 import {onRequest as logout} from "../functions/api/native/logout.js";
 import {onRequest as privateAPI} from "../functions/api/private/[[path]].js";
 import {onRequest as middleware} from "../functions/_middleware.js";
+import {onRequest as getUiConfig} from "../functions/api/native/config.js";
 
 class D1 {
   constructor(){
@@ -196,4 +197,18 @@ test("a suspended local user is denied despite a valid external password",async(
     db.sql.prepare("UPDATE users SET status='suspended' WHERE id='u1'").run();
     assert.equal((await privateAPI(ctx(env(db),"/api/private/me",{cookie}))).status,403);
   }finally{provider.restore();}
+});
+
+test("UI hides native password recovery when ZITADEL handles credentials",async()=>{
+  const db=new D1();
+  const e=env(db);
+  const r=getUiConfig(ctx(e,"/api/native/config"));
+  assert.equal(r.status,200);
+  const info=await r.json();
+  assert.equal(info.mode,"zitadel");
+  assert.equal(info.passwordRecovery,false);
+  assert.equal(JSON.stringify(info).includes(pat),false);
+  assert.equal((getUiConfig(ctx(env(db,{USBRIN_AUTH_MODE:"native",USBRIN_PASSWORD_EMAIL_ENABLED:"false"}),"/api/native/config"))).status,200);
+  const denied=await getUiConfig(ctx(e,"/api/native/config",{method:"POST"}));
+  assert.equal(denied.status,405);
 });
