@@ -1,0 +1,77 @@
+name: Preview USBRIN Partners Font in Isolated QA
+
+on:
+  push:
+    branches:
+      - feature/usbrin-painel-tipografia-20261119
+    paths:
+      - 'ops/portal-font-qa-preview-request.txt'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: usbrin-native-qa-portal-font
+  cancel-in-progress: false
+
+jobs:
+  preview:
+    if: github.repository == 'usbrin/usbrin-site' && github.ref == 'refs/heads/feature/usbrin-painel-tipografia-20261119'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test typography scope and authentication regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test tests/portal-typography.test.cjs
+          node --test tests/zitadel-auth.test.mjs
+          node --test tests/zitadel-password.test.mjs
+          node --test tests/native-auth.test.mjs
+          node --test tests/partners-api.test.mjs
+          node --test tests/studio-pricing.test.cjs
+      - name: Build unchanged app with font-only adjustment
+        run: npm run build
+      - name: Verify private portal and new font assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f dist/css/portal-typography.css
+          test ! -e dist/public/portal.html
+          test ! -e dist/public/js/portal.js
+          test -f functions/_middleware.js
+          grep -q 'Plus+Jakarta+Sans' dist/portal.html
+      - name: Deploy only to usbrin-id-native-qa (not the official site)
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: '25eaef72c8dbc252be724778072cb0e4'
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_API_TOKEN:-}"
+          npx --yes wrangler@4.163.0 pages deploy ./dist \
+            --project-name=usbrin-id-native-qa --branch=native-qa
+      - name: Verify public CSS and private page safeguards over HTTPS
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://usbrin-id-native-qa.pages.dev'
+          for n in 1 2 3 4 5; do
+            css_status="$(curl -sS --max-time 20 -o /dev/null -w '%{http_code}' "$base/css/portal-typography.css")"
+            if [ "$css_status" = '200' ]; then break; fi
+            sleep 3
+          done
+          test "$css_status" = '200'
+          curl -fsS --max-time 20 "$base/css/portal-typography.css" | grep -q 'Plus Jakarta Sans'
+          login_status="$(curl -sS --max-time 20 -o /dev/null -w '%{http_code}' "$base/login")"
+          portal_status="$(curl -sS --max-time 20 -o /dev/null -w '%{http_code}' --max-redirs 0 "$base/portal")"
+          api_status="$(curl -sS --max-time 20 -o /dev/null -w '%{http_code}' "$base/api/private/me")"
+          echo "QA: CSS=$css_status Login=$login_status Portal anonymous=$portal_status Private API=$api_status"
+          test "$login_status" = '200'
+          test "$portal_status" = '302'
+          test "$api_status" = '401'
