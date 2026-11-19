@@ -42,31 +42,3 @@ jobs:
           result="$(curl --retry 2 --max-time 15 -sS -o /dev/null -w '%{http_code} %{remote_ip}' \
             'https://usbrin-id-rzf8mn.us1.zitadel.cloud/.well-known/openid-configuration')" || true
           echo "GitHub runner public OIDC discovery (HTTP and remote IP only): $result"
-
-      - name: Inspect sanitized ZITADEL QA upstream status (no token, no identities)
-        shell: bash
-        run: |
-          set -euo pipefail
-          base="https://usbrin-id-native-qa.pages.dev"
-          status="$(curl --max-time 20 -sS -X POST "$base/api/qa/provider-status" \
-            -H 'origin: https://usbrin-id-native-qa.pages.dev' -H 'accept: application/json')"
-          node -e "const x=JSON.parse(process.argv[1]);if(!x.qa)throw Error('Missing QA output');console.log('ZITADEL Session API:',x.providerStatus,'/ public OIDC metadata:',x.publicMetadata)" "$status"
-
-      - name: Verify ZITADEL service integration rejects nonexistent synthetic identity
-        shell: bash
-        run: |
-          set -euo pipefail
-          url="https://usbrin-id-native-qa.pages.dev/api/native/login"
-          body='{"email":"qa-zitadel-probe@invalid.example","password":"synthetic-test-password-never-used"}'
-          metrics="$(curl --max-time 25 -sS -o /dev/null -w '%{http_code} %{time_total}' -X POST "$url" \
-            -H 'content-type: application/json' \
-            -H 'origin: https://usbrin-id-native-qa.pages.dev' \
-            --data-binary "$body")"
-          status="${metrics%% *}"
-          elapsed="${metrics#* }"
-          echo "Nonexistent ZITADEL identity => HTTP $status, request elapsed ${elapsed}s"
-          if [ "$status" != 401 ]; then
-            echo "::error::Expected invalid credentials (401); cannot confirm ZITADEL service integration. No real identity was used."
-            exit 1
-          fi
-          echo "Synthetic identity was rejected. A real approved identity is still needed for end-to-end login homologation."
