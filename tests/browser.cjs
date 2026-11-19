@@ -24,7 +24,9 @@ const pricing=require('../js/studio-pricing.js');
     const shown=await p.locator('.commercial-plan .commercial-price strong').allTextContents();
     const fmt=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:2,maximumFractionDigits:2});
     const expected=['landing','business','catalogo'].map(id=>fmt.format(pricing.PRODUCTS[id].base));
-    ok(shown.length===expected.length && shown.every((value,i)=>value.trim()===expected[i]),'Public prices must match USBRIN Studio');
+    // Browsers/Intl may use a non-breaking space between R$ and the number.
+    const normalizeBRL=value=>value.replace(/\s+/g,' ').trim();
+    ok(shown.length===expected.length && shown.every((value,i)=>normalizeBRL(value)===normalizeBRL(expected[i])),'Public prices must match USBRIN Studio');
     await p.locator('.faq-question').first().click();ok(await p.locator('details').first().getAttribute('open')!==null,'FAQ open');
     await p.locator('.faq-question').first().click();ok(await p.locator('details').first().getAttribute('open')===null,'FAQ closed');
     if(width<=1100){
