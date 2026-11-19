@@ -1,0 +1,59 @@
+name: USBRIN ID Native QA - HTTP Smoke
+
+on:
+  push:
+    branches:
+      - feature/usbrin-id-login-proprio-20261118
+    paths:
+      - 'ops/native-qa-smoke-request.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-qa:
+    if: github.repository == 'usbrin/usbrin-site' && github.ref == 'refs/heads/feature/usbrin-id-login-proprio-20261118'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test native QA routes anonymously without cookies or credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://usbrin-id-native-qa.pages.dev"
+          check() {
+            path="$1"
+            expect="$2"
+            got="$(curl --retry 3 --retry-delay 3 --max-time 25 -sS \
+              -o /dev/null -w '%{http_code}' --max-redirs 0 "$BASE$path")"
+            echo "$path: HTTP $got (expected $expect)"
+            test "$got" = "$expect"
+          }
+          check "/login.html" 200
+          check "/senha.html" 200
+          check "/portal" 302
+          check "/portal.html" 302
+          check "/js/portal.js" 401
+          check "/proposta.html" 302
+          check "/api/private/me" 401
+
+      - name: Verify live password derivation responds without CPU errors
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://usbrin-id-native-qa.pages.dev/api/native/login"
+          # Non-existent account, artificial password, no real account or secret.
+          # This request must fail with invalid credentials (401), not Worker CPU exception.
+          body='{"email":"unregistered-native-qa@invalid.example","password":"synthetic-qa-password-2026"}'
+          stats="$(curl --max-time 30 -sS -o /dev/null -w '%{http_code} %{time_total}' \
+            -X POST "$url" -H 'content-type: application/json' \
+            -H 'origin: https://usbrin-id-native-qa.pages.dev' \
+            --data-binary "$body")"
+          status="${stats%% *}"
+          elapsed="${stats#* }"
+          echo "Native login (non-existent synthetic account): HTTP $status, wall clock ${elapsed}s"
+          if [ "$status" != 401 ]; then
+            echo "::error::Native QA password verification failed. Check deployment logs and CPU budget; do not reduce password hashing iterations."
+            exit 1
+          fi
+          echo "Native QA server verified. A legitimate login and emails still require separate tests."
