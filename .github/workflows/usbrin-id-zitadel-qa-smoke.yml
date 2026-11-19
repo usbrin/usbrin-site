@@ -35,6 +35,14 @@ jobs:
           node -e "const o=JSON.parse(process.argv[1]);if(!o.ok||o.mode!=='zitadel'||o.passwordRecovery!==false)throw Error('ZITADEL QA mode not live');" "$config"
           echo "QA exposes only nonsensitive ZITADEL mode metadata"
 
+      - name: Check public ZITADEL discovery from GitHub runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          result="$(curl --retry 2 --max-time 15 -sS -o /dev/null -w '%{http_code} %{remote_ip}' \
+            'https://usbrin-id-rzf8mn.us1.zitadel.cloud/.well-known/openid-configuration')" || true
+          echo "GitHub runner public OIDC discovery (HTTP and remote IP only): $result"
+
       - name: Inspect sanitized ZITADEL QA upstream status (no token, no identities)
         shell: bash
         run: |
