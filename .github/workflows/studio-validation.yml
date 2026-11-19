@@ -52,8 +52,8 @@ jobs:
           # The published homepage has the canonical official hostname.
           # The synthetic Cloudflare test URL still controls Studio/sitemap output.
           grep -q 'https://usbrin.com.br/' dist/index.html
-          grep -q 'https://usbrin-site.pages.dev/studio.html' dist/studio.html
-          grep -q 'https://usbrin-site.pages.dev/studio.html' dist/sitemap.xml
+          grep -q 'https://usbrin.com.br/studio.html' dist/studio.html
+          grep -q 'https://usbrin.com.br/studio.html' dist/sitemap.xml
           test ! -f dist/tests/studio-browser.cjs
           test ! -f dist/docs/USBRIN-STUDIO-OPERACAO.md
   browser:
