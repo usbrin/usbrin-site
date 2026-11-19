@@ -8,3 +8,5 @@ Rerun at 2026-11-19 with temporary read-only upstream status diagnostic. No acco
 Rerun 2026-11-19: measure public OIDC endpoint reachability from Pages runtime. No real credentials.
 
 Rerun 2026-11-19: compare GitHub runner public provider connectivity; no secrets.
+
+2026-11-19: test corrected Workers fetch manual redirect handling; synthetic identity only.
