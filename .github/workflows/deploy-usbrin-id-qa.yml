@@ -40,6 +40,7 @@ jobs:
           node --check functions/api/native/password/request.js
           node --check functions/api/native/password/confirm.js
           node --check js/senha.js
+          node --check functions/_middleware.js
 
       - name: Run isolated backend and pricing regression tests
         shell: bash
@@ -65,6 +66,8 @@ jobs:
           test -f dist/login.html
           test -f dist/senha.html
           test -f dist/js/senha.js
+          test -f dist/_routes.json
+          test -f functions/_middleware.js
           test -d functions
           test ! -e dist/functions
           test ! -e dist/public/portal.html
