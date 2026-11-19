@@ -48,6 +48,7 @@ jobs:
         run: |
           set -euo pipefail
           node --test tests/partners-api.test.mjs
+          node --test tests/native-auth.test.mjs
           node --test tests/studio-pricing.test.cjs
 
       - name: Build official Pages output
@@ -62,6 +63,7 @@ jobs:
           test -f dist/public/candidatura.html
           test -f dist/public/status-candidatura.html
           test -f dist/portal.html
+          test -f dist/login.html
           test -d functions
           test ! -e dist/functions
           test ! -e dist/public/portal.html
