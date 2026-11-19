@@ -4,3 +4,5 @@ No real password, customer or applicant records used.
 2026-11-19.
 
 Rerun at 2026-11-19 with temporary read-only upstream status diagnostic. No account credentials.
+
+Rerun 2026-11-19: measure public OIDC endpoint reachability from Pages runtime. No real credentials.
