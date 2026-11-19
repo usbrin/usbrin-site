@@ -35,12 +35,14 @@ jobs:
         run: |
           set -euo pipefail
           for file in functions/_lib/zitadel-auth.js \
-            functions/_lib/native-auth.js functions/_lib/auth.js \
+            functions/_lib/native-auth.js functions/_lib/zitadel-password.js functions/_lib/auth.js \
             functions/_middleware.js \
             functions/api/native/config.js functions/api/native/login.js \
             functions/api/native/logout.js \
             'functions/api/private/[[path]].js' \
-            js/login.js js/portal.js; do
+            functions/api/native/password/request.js \
+            functions/api/native/password/confirm.js \
+            js/login.js js/senha.js js/portal.js; do
             node --check "$file"
           done
 
@@ -49,6 +51,7 @@ jobs:
         run: |
           set -euo pipefail
           node --test tests/zitadel-auth.test.mjs
+          node --test tests/zitadel-password.test.mjs
           node --test tests/native-auth.test.mjs
           node --test tests/partners-api.test.mjs
           node --test tests/studio-pricing.test.cjs
