@@ -60,6 +60,7 @@ function provision(db,{id="u1",role="representante",status="active",link=true}={
 function fakeProvider({verified=true,remoteID=userID,totp=false,expires=true,missing=false}={}){
   const old=globalThis.fetch,history=[];
   let deleted=false;
+  let totpVerified=false;
   globalThis.fetch=async(url,options)=>{
     assert.ok(String(url).startsWith(origin+"/v2/sessions"));
     assert.equal(options.headers.authorization,"Bearer "+pat);
@@ -69,14 +70,19 @@ function fakeProvider({verified=true,remoteID=userID,totp=false,expires=true,mis
     if(options.method==="POST")return Response.json({sessionId:"999122200",sessionToken:"synthetic-token"});
     if(options.method==="PATCH"){
       const request=JSON.parse(options.body);
-      if(request.checks.password.password!==password)return Response.json({},{status:400});
+      if(request.checks.totp){
+        if(request.checks.totp.code!=="123456")return Response.json({},{status:400});
+        totpVerified=true;
+        return Response.json({sessionToken:"synthetic-mfa-token"});
+      }
+      if(request.checks.password?.password!==password)return Response.json({},{status:400});
       return Response.json({sessionToken:"synthetic-verified-token"});
     }
     if(options.method==="GET"){
       if(deleted||missing)return Response.json({},{status:404});
       const t=new Date().toISOString();
       const f={user:{id:remoteID,loginName:mail,verifiedAt:t},
-        ...(verified?{password:{verifiedAt:t}}:{}),...(totp?{totp:{verifiedAt:t}}:{})};
+        ...(verified?{password:{verifiedAt:t}}:{}),...(totp||totpVerified?{totp:{verifiedAt:t}}:{})};
       return Response.json({session:{id:"999122200",factors:f,
         expirationDate:new Date(Date.now()+(expires?3600000:-3000)).toISOString()}});
     }
@@ -228,4 +234,41 @@ test("provider redirect is rejected without following the service credential to 
     assert.deepEqual(seen,["manual"]);
     assert.equal(db.sql.prepare("SELECT count(*) n FROM zitadel_app_sessions").get().n,0);
   }finally{globalThis.fetch=oldFetch;}
+});
+
+test("administrator completes TOTP in USBRIN login after the password check",async()=>{
+  const db=new D1();provision(db,{role:"admin"});
+  const provider=fakeProvider();
+  try{
+    const first=await loginReq(env(db));
+    assert.equal(first.status,403);
+    assert.equal((await first.json()).code,"mfa_required");
+    assert.equal(db.sql.prepare("SELECT count(*) n FROM zitadel_app_sessions").get().n,0);
+    const wrong=await loginReq(env(db),{body:{email:mail,password,totp:"000000"}});
+    assert.equal(wrong.status,401);
+    assert.equal((await wrong.json()).code,"invalid_totp");
+    assert.equal(db.sql.prepare("SELECT count(*) n FROM zitadel_app_sessions").get().n,0);
+    const correct=await loginReq(env(db),{body:{email:mail,password,totp:"123456"}});
+    assert.equal(correct.status,200);
+    const cookie=getCookie(correct);
+    assert.ok(cookie);
+    const me=await privateAPI(ctx(env(db),"/api/private/me",{cookie}));
+    assert.equal(me.status,200);
+    assert.equal((await me.json()).user.role,"admin");
+    const adminPage=await middleware({env:env(db),request:request("/proposta.html",{cookie}),
+      next:async()=>new Response("admin only")});
+    assert.equal(adminPage.status,200);
+    assert.ok(provider.history.some(x=>x.method==="PATCH"&&x.url.endsWith("/v2/sessions/999122200")));
+  }finally{provider.restore();}
+});
+
+test("nonadmins are never required to supply TOTP for normal password login",async()=>{
+  const db=new D1();provision(db,{role:"desenvolvedor"});
+  const provider=fakeProvider();
+  try{
+    const r=await loginReq(env(db));
+    assert.equal(r.status,200);
+    assert.ok(getCookie(r));
+    assert.equal((await privateAPI(ctx(env(db),"/api/private/me",{cookie:getCookie(r)}))).status,200);
+  }finally{provider.restore();}
 });
