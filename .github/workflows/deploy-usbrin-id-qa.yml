@@ -10,32 +10,64 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout validated QA source
+      - name: Checkout isolated QA source
         uses: actions/checkout@v4
         with:
           ref: ops/usbrin-id-qa-deploy
 
-      - name: Prepare Pages output
+      - name: Set up Node.js for QA validation
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate authentication and portal JavaScript syntax
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p qa-deploy
-          cp -a _headers assets css functions js qa-deploy/
-          find . -maxdepth 1 -type f \( -name '*.html' -o -name 'sitemap.xml' \) -exec cp {} qa-deploy/ \;
-          test -d qa-deploy/functions
-          test -f qa-deploy/portal.html
-          echo "QA output prepared."
+          node --check functions/_lib/auth.js
+          node --check functions/_lib/portal-session.js
+          node --check functions/api/session/start.js
+          node --check functions/api/session/verify.js
+          node --check functions/api/session/logout.js
+          node --check 'functions/api/private/[[path]].js'
+          node --check js/usbrin-id.js
+          node --check js/portal.js
 
-      - name: Deploy only to USBRIN ID QA Pages project
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
+      - name: Run isolated backend and pricing regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test tests/partners-api.test.mjs
+          node --test tests/studio-pricing.test.cjs
 
-      - name: Publish QA deployment
+      - name: Build allowlisted Cloudflare Pages assets
+        run: npm run build
+
+      - name: Verify public entry points and private boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f dist/public/usbrin-id.html
+          test -f dist/public/parceiros.html
+          test -f dist/public/candidatura.html
+          test -f dist/public/status-candidatura.html
+          test -f dist/public/js/usbrin-id.js
+          test -f dist/portal.html
+          test -d functions
+          test ! -e dist/functions
+          test ! -e dist/public/portal.html
+          test ! -e dist/public/js/portal.js
+          test ! -e dist/public/api/private
+          grep -q 'href="/portal"' dist/public/usbrin-id.html
+          echo 'QA build and route isolation verified'
+
+      - name: Deploy only to isolated USBRIN ID QA Pages project
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: "25eaef72c8dbc252be724778072cb0e4"
+          CLOUDFLARE_ACCOUNT_ID: '25eaef72c8dbc252be724778072cb0e4'
+        shell: bash
         run: |
-          npx --yes wrangler@4.163.0 pages deploy ./qa-deploy \
+          set -euo pipefail
+          npx --yes wrangler@4.163.0 pages deploy ./dist \
             --project-name=usbrin-id-oidc-qa \
             --branch=qa-oidc
