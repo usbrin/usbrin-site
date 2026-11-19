@@ -17,6 +17,9 @@ export async function onRequest({request,env}){
   }catch(e){
     if(e instanceof AuthError)return respond({ok:false,error:e.message,code:e.code},e.status);
     if(e instanceof SyntaxError)return error("Solicitação inválida.",400);
+    // Only error class in isolated QA logs; never log e-mail, password, tokens or secrets.
+    if(env.NATIVE_AUTH_HOST==="usbrin-id-native-qa.pages.dev")
+      console.error("USBRIN_NATIVE_QA_LOGIN_FAILURE",String(e?.name||"Unknown").slice(0,40));
     return error("Login temporariamente indisponível.",503);
   }
 }
