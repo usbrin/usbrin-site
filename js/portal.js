@@ -1261,7 +1261,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
  try{
    const res=await request('me');
    user=res.user;
-   if(res.authMode==='native'){
+   if(res.authMode==='native'||res.authMode==='zitadel'){
      el('work-logout').action='/api/native/logout';
      el('work-logout').hidden=false;
      el('access-logout').hidden=true;

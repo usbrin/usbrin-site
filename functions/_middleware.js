@@ -1,5 +1,6 @@
 import {nativeEnabled,nativeSessionIdentity,nativeReady} from "./_lib/native-auth.js";
 import {AuthError} from "./_lib/auth-errors.js";
+import {zitadelEnabled,zitadelReady,zitadelSessionIdentity} from "./_lib/zitadel-auth.js";
 
 // Native-mode only: protect static portal pages and their scripts BEFORE Pages serves them.
 // Legacy Cloudflare Access deployments retain their existing Access policy.
@@ -23,7 +24,7 @@ const secureHeaders={
 
 export async function onRequest(context){
   const {request,env}=context;
-  if(!nativeEnabled(env))return context.next();
+  if(!nativeEnabled(env)&&!zitadelEnabled(env))return context.next();
   const path=new URL(request.url).pathname;
   const required=protectedRoutes.get(path);
   if(!required)return context.next();
@@ -31,12 +32,12 @@ export async function onRequest(context){
   if(request.method!=="GET"&&request.method!=="HEAD"){
     return new Response(null,{status:405,headers:secureHeaders});
   }
-  if(!nativeReady(request,env)){
+  if(!(zitadelEnabled(env)?zitadelReady(request,env):nativeReady(request,env))){
     return new Response("Acesso temporariamente indisponível.",{status:503,headers:secureHeaders});
   }
   let user;
   try{
-    ({user}=await nativeSessionIdentity(request,env));
+    ({user}=await (zitadelEnabled(env)?zitadelSessionIdentity(request,env):nativeSessionIdentity(request,env)));
   }catch(err){
     if(err instanceof AuthError&&[401,403].includes(err.status)){
       if(path.startsWith("/js/"))return new Response("Não autorizado.",{status:401,headers:secureHeaders});

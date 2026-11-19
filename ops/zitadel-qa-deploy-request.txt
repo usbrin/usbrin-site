@@ -1,0 +1,20 @@
+One-time deployment request for isolated ZITADEL QA only.
+Project: usbrin-id-native-qa
+Branch: native-qa
+No production domains, no applicants, no outbound mail.
+ZITADEL IAM_LOGIN_CLIENT is stored as a Cloudflare secret, never in GitHub.
+2026-11-19
+
+2026-11-19: one redeploy after activating ZITADEL_API_URL and USBRIN_AUTH_MODE=zitadel in isolated QA, all private routes remain protected.
+
+2026-11-19: temporary read-only QA-only provider-status diagnostic to troubleshoot upstream authentication. No real user data.
+
+2026-11-19: temporary QA-only public OIDC discovery reachability probe; no identities/tokens returned.
+
+2026-11-19: deploy Workers-compatible redirect:'manual' and reject HTTP 3xx before forwarding bearer token.
+
+2026-11-19: redeploy after removing one-time provider-status debug endpoint. Keep ZITADEL QA mode, PAT secret, D1 and private route gates unchanged.
+
+2026-11-19: deploy revised in-site admin TOTP and provider-owned reset (disabled in QA). Checks: CI tests, private Pages routes, ZITADEL mode, no production.
+
+2026-11-19 01:34 Porto Velho: deploy isolated QA login fix: use pre-authorized ZITADEL userId instead of assuming email loginName. Tests: GitHub Actions 44466340567 success. No changes to official site, passwords or production.

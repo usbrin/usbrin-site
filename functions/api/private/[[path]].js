@@ -2,6 +2,7 @@ import {respond,error,readBody,checkOrigin,str,email} from "../../_lib/security.
 import {authenticatedIdentity,AuthError} from "../../_lib/auth.js";
 import {portalSessionEnabled,requirePortalSession} from "../../_lib/portal-session.js";
 import {nativeEnabled} from "../../_lib/native-auth.js";
+import {zitadelEnabled} from "../../_lib/zitadel-auth.js";
 import {handleBilling} from "../../_lib/billing.js";
 import {handleBank} from "../../_lib/bank-reconcile.js";
 import {handleFinanceControl} from "../../_lib/finance-control.js";
@@ -46,7 +47,7 @@ export async function onRequest(context){
     if(route.startsWith("admin/billing/"))return handleBilling({request,db,user,route});
     if(route.startsWith("admin/bank/"))return handleBank({request,db,user,route});
     if(route.startsWith("admin/control/"))return handleFinanceControl({request,db,user,route});
-    if(route==="me"&&method==="GET")return respond({ok:true,user,workSession:portalSessionEnabled(env),authMode:nativeEnabled(env)?"native":"access"});
+    if(route==="me"&&method==="GET")return respond({ok:true,user,workSession:portalSessionEnabled(env),authMode:zitadelEnabled(env)?"zitadel":nativeEnabled(env)?"native":"access"});
     if(route==="session/activity"&&method==="POST"&&portalSessionEnabled(env))return respond({ok:true});
     if(route==="crm/history"&&method==="GET"&&allowed(user,"admin","representante")){
       const id=str(new URL(request.url).searchParams.get("id"),60);
@@ -367,9 +368,11 @@ export async function onRequest(context){
         FROM users WHERE id=? AND role IN ('representante','desenvolvedor') AND status='active'
           AND contract_verified_at IS NOT NULL AND length(contract_reference)>=5`,fresh(),user.id,id).run();
       if(event.meta?.changes!==1)return error("O convite exige conta ativa e contrato verificado.",409);
-      const url=new URL(nativeEnabled(env)?"/senha.html":"/portal",request.url).href;
+      const url=new URL(zitadelEnabled(env)?"/login.html":nativeEnabled(env)?"/senha.html":"/portal",request.url).href;
       const role=partner.role==="representante"?"representante comercial":"parceiro de desenvolvimento";
-      const message=nativeEnabled(env)
+      const message=zitadelEnabled(env)
+        ?`Olá, ${partner.name}. Seu perfil de ${role} foi aprovado na USBRIN. Assim que nossa equipe confirmar seu vínculo de identidade, acesse ${url} usando o e-mail ${partner.email} e a senha da sua conta USBRIN ID.`
+        :nativeEnabled(env)
         ?`Olá, ${partner.name}. Seu perfil de ${role} foi aprovado na USBRIN. Para seu primeiro acesso, abra ${url}, informe o e-mail ${partner.email} e use o link que receber para criar sua senha. Depois, entre normalmente na USBRIN ID com e-mail e senha.`
         :`Olá, ${partner.name}. Seu perfil de ${role} foi aprovado na USBRIN. Acesse ${url} com ${partner.email} depois que confirmarmos a liberação no Cloudflare Access. Na tela da Cloudflare, siga a verificação por e-mail e use seu aplicativo autenticador se solicitado.`;
       return respond({ok:true,invitation:{email:partner.email,message}});

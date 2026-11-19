@@ -5,6 +5,7 @@ on:
     branches:
       - ops/usbrin-id-qa-deploy
       - fix/usbrin-id-qa-gates-20261118
+      - feature/usbrin-id-login-proprio-20261118
     paths:
       - '.github/workflows/deploy-usbrin-id-qa.yml'
       - '.github/workflows/usbrin-id-qa-validation.yml'
@@ -44,7 +45,8 @@ jobs:
             functions/_lib/native-auth.js functions/api/native/login.js \
             functions/api/native/logout.js functions/_lib/native-password.js \
             functions/api/native/password/request.js functions/api/native/password/confirm.js \
-            functions/_middleware.js js/senha.js; do
+            functions/_middleware.js functions/_lib/zitadel-auth.js \
+            functions/_lib/zitadel-password.js js/senha.js; do
             node --check "$file"
           done
 
@@ -54,6 +56,8 @@ jobs:
           set -euo pipefail
           node --test tests/partners-api.test.mjs
           node --test tests/native-auth.test.mjs
+          node --test tests/zitadel-auth.test.mjs
+          node --test tests/zitadel-password.test.mjs
           node --test tests/studio-pricing.test.cjs
 
       - name: Build official Pages output
@@ -73,6 +77,7 @@ jobs:
           test -f dist/js/senha.js
           test -f dist/_routes.json
           test -f functions/_middleware.js
+          test -f migrations/0019_zitadel_identity_sessions.sql
           test -d functions
           test ! -e dist/functions
           test ! -e dist/public/portal.html

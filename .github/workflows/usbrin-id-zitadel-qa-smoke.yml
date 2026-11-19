@@ -1,0 +1,60 @@
+name: USBRIN ID ZITADEL QA - HTTP Smoke
+
+on:
+  push:
+    branches:
+      - feature/usbrin-id-zitadel-custom-ui-20261119
+    paths:
+      - 'ops/zitadel-qa-smoke-request.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-qa:
+    if: github.repository == 'usbrin/usbrin-site' && github.ref == 'refs/heads/feature/usbrin-id-zitadel-custom-ui-20261119'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify isolated QA screens and protections anonymously
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://usbrin-id-native-qa.pages.dev"
+          test_status(){
+            local path="$1" expected="$2" got
+            got=$(curl -sS --max-time 20 -o /dev/null -w '%{http_code}' --max-redirs 0 "$base$path")
+            echo "$path => HTTP $got"
+            test "$got" = "$expected"
+          }
+          test_status "/login" 200
+          test_status "/portal" 302
+          test_status "/js/portal.js" 401
+          test_status "/api/private/me" 401
+          curl -fsS --max-time 20 "$base/login" | grep -q 'id="admin-totp"'
+          test_status "/senha" 200
+          reset_status="$(curl -sS --max-time 20 -o /dev/null -w '%{http_code}' \
+            -X POST "$base/api/native/password/request" \
+            -H 'content-type: application/json' \
+            -H 'origin: https://usbrin-id-native-qa.pages.dev' \
+            --data-binary '{"email":"nonexistent-qa@invalid.example"}')"
+          echo "Password recovery disabled in QA => HTTP $reset_status"
+          test "$reset_status" = "404"
+          probe_status="$(curl --max-time 20 -sS -o /dev/null -w '%{http_code}' \
+            -X POST "$base/api/qa/provider-status" \
+            -H 'origin: https://usbrin-id-native-qa.pages.dev')"
+          echo "Removed QA diagnostic endpoint => HTTP $probe_status"
+          # Pages can answer 405 to an unknown POST path via static-asset fallback.
+          # The former temporary diagnostic accepted POST and returned 200 JSON.
+          case "$probe_status" in 404|405) ;; *) exit 1 ;; esac
+          config="$(curl -sS --max-time 20 "$base/api/native/config")"
+          node -e "const o=JSON.parse(process.argv[1]);if(!o.ok||o.mode!=='zitadel'||o.passwordRecovery!==false)throw Error('ZITADEL QA mode not live');" "$config"
+          echo "QA exposes only nonsensitive ZITADEL mode metadata"
+
+      - name: Check public ZITADEL discovery from GitHub runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          result="$(curl --retry 2 --max-time 15 -sS -o /dev/null -w '%{http_code} %{remote_ip}' \
+            'https://usbrin-id-rzf8mn.us1.zitadel.cloud/.well-known/openid-configuration')" || true
+          echo "GitHub runner public OIDC discovery (HTTP and remote IP only): $result"

@@ -1,0 +1,20 @@
+One-time HTTPS smoke test after isolated QA ZITADEL mode activation.
+Check public login screen, private route guards, config mode, and a synthetic non-existent identity only.
+No real password, customer or applicant records used.
+2026-11-19.
+
+Rerun at 2026-11-19 with temporary read-only upstream status diagnostic. No account credentials.
+
+Rerun 2026-11-19: measure public OIDC endpoint reachability from Pages runtime. No real credentials.
+
+Rerun 2026-11-19: compare GitHub runner public provider connectivity; no secrets.
+
+2026-11-19: test corrected Workers fetch manual redirect handling; synthetic identity only.
+
+2026-11-19: final post-cleanup smoke (private gates and removed diagnostic POST must return 404).
+
+2026-11-19: allow Cloudflare Pages 405 fallback on removed QA diagnostic POST; 200 is forbidden.
+
+2026-11-19: validate deployed admin TOTP element, reset disabled (404), private routes and ZITADEL mode after QA deployment.
+
+2026-11-19 QA post-fix smoke: only check public login, protected routes, provider mode and reset remains disabled. No password tests with approved account.
