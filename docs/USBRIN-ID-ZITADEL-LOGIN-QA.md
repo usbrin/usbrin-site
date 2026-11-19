@@ -57,6 +57,18 @@ Branch `feature/usbrin-id-zitadel-custom-ui-20261119` (PR #12 em rascunho, deriv
 5. Validar limites de abuso e custos/plano, revisar autorização por perfil, testar desktop/mobile, confirmar retenção e rollback.
 6. Apenas depois de homologação e **aprovação expressa**, integrar à rota oficial do site e planejar a abertura das candidaturas.
 
+## Etapa adicional validada — TOTP administrativo e recuperação (19/11/2026)
+
+- Administradores agora usam a **mesma página de login da USBRIN**. Após e-mail e senha corretos, a interface exibe o campo de TOTP. A sessão e o cookie da aplicação só são emitidos depois que o ZITADEL confirma o fator de senha **e** o TOTP; uma senha sem segundo fator não concede acesso.
+- Representantes e desenvolvedores continuam com e-mail e senha, sem a etapa administrativa extra.
+- Primeiro acesso e recuperação de senha foram preparados via API oficial ZITADEL `/v2/users/{id}/password_reset` e `/v2/users/{id}/password`, com o mesmo `senha.html`; não são armazenados hashes de senha no D1. O código só opera para contas aprovadas, previamente vinculadas por ID de usuário, e inclui limites de tentativas.
+- O mecanismo de recuperação exige `ZITADEL_PASSWORD_RESET_ENABLED=true`. **No QA a variável está explicitamente `false`** até confirmar que o ZITADEL consegue enviar notificações e que o link enviado ao endereço de teste funciona. Nenhum e-mail foi disparado.
+- Testes automatizados do login, TOTP, recuperação, autorização do portal e regressões do Studio: [CI 44463773533](https://github.com/usbrin/usbrin-site/actions/runs/44463773533) aprovado.
+- Implantação isolada [44463895219](https://github.com/usbrin/usbrin-site/actions/runs/44463895219) aprovada.
+- Smoke HTTP após implantação [44464020586](https://github.com/usbrin/usbrin-site/actions/runs/44464020586) aprovado: login com HTML do campo TOTP, rotas privadas protegidas, reset não habilitado (HTTP 404), nenhum endpoint temporário de diagnóstico aceitando POST.
+- Inspeção pós-deploy: banco D1 QA com **0 usuários, 0 vínculos, 0 sessões e 0 tentativas de recuperação**; token ZITADEL armazenado como secret, `APPLICATIONS_ENABLED=false`, `fail_open=false`.
+- **Não homologado ainda:** login de conta legítima de teste, TOTP real de administrador, entrega de e-mail do ZITADEL, redefinição com código real, suspensão/revogação em navegador e experiência mobile. São necessários dados e identidade de teste aprovados e distintos do administrador principal do ZITADEL; não usar a senha da conta que administra toda a instância para validar um protótipo.
+
 ## Pendências antes do lançamento de representantes
 - [ ] Serviço ZITADEL com permissões suficientes e custo/plano revistos, sem contratar nada automaticamente
 - [ ] Homologação real do login pelo backend de QA (não apenas mocks)
