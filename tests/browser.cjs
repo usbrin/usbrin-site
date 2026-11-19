@@ -4,6 +4,7 @@ const root=path.resolve(__dirname,'..');
 const server=http.createServer((req,res)=>{let f=path.join(root,decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(f.endsWith('/'))f+='index.html';try{const b=fs.readFileSync(f);res.setHeader('Content-Type',({'html':'text/html','js':'text/javascript','css':'text/css','webp':'image/webp','png':'image/png'})[f.split('.').pop()]||'application/octet-stream');res.end(b);}catch{res.statusCode=404;res.end('Not found');}});
 
 const assert=require('node:assert/strict');
+const pricing=require('../js/studio-pricing.js');
 (async()=>{
  await new Promise(r=>server.listen(8001,r));
  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/tmp/usbrin-chromium',headless:true});
@@ -20,7 +21,10 @@ const assert=require('node:assert/strict');
    const broken=await p.evaluate(()=>[...document.querySelectorAll('a[href^="#"]')].filter(a=>!document.getElementById(a.getAttribute('href').slice(1))).map(a=>a.getAttribute('href')));
    ok(!broken.length,'Anchors: '+JSON.stringify(broken));
    if(file==='index.html'){
-    ok(!/R\$/.test(await p.locator('body').innerText()),'No public prices');
+    const shown=await p.locator('.commercial-plan .commercial-price strong').allTextContents();
+    const fmt=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:2,maximumFractionDigits:2});
+    const expected=['landing','business','catalogo'].map(id=>fmt.format(pricing.PRODUCTS[id].base));
+    ok(shown.length===expected.length && shown.every((value,i)=>value.trim()===expected[i]),'Public prices must match USBRIN Studio');
     await p.locator('.faq-question').first().click();ok(await p.locator('details').first().getAttribute('open')!==null,'FAQ open');
     await p.locator('.faq-question').first().click();ok(await p.locator('details').first().getAttribute('open')===null,'FAQ closed');
     if(width<=1100){
