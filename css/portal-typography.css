@@ -1,0 +1,9 @@
+/* USBRIN Partners: typography-only visual refinement.
+   Scoped to the authenticated portal to preserve the official site,
+   Studio, recruitment page, login screen, colors and existing layout. */
+#portal-content {
+  font-family: 'Plus Jakarta Sans', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+#portal-content :is(h1, h2, h3, h4, h5, h6, button, input, select, textarea, option) {
+  font-family: inherit;
+}
