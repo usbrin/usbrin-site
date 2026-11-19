@@ -1,0 +1,70 @@
+name: USBRIN ID QA - Validation
+
+on:
+  pull_request:
+    branches:
+      - ops/usbrin-id-qa-deploy
+    paths:
+      - '.github/workflows/deploy-usbrin-id-qa.yml'
+      - '.github/workflows/usbrin-id-qa-validation.yml'
+      - 'functions/**'
+      - 'js/**'
+      - 'tests/**'
+      - 'migrations/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'usbrin-id.html'
+      - 'portal.html'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout proposed QA changes
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in functions/_lib/auth.js functions/_lib/portal-session.js \
+            functions/api/session/start.js functions/api/session/verify.js \
+            functions/api/session/logout.js 'functions/api/private/[[path]].js' \
+            js/usbrin-id.js js/portal.js; do
+            node --check "$file"
+          done
+
+      - name: Execute API and pricing regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test tests/partners-api.test.mjs
+          node --test tests/studio-pricing.test.cjs
+
+      - name: Build official Pages output
+        run: npm run build
+
+      - name: Check public route and private asset isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f dist/public/usbrin-id.html
+          test -f dist/public/parceiros.html
+          test -f dist/public/candidatura.html
+          test -f dist/public/status-candidatura.html
+          test -f dist/portal.html
+          test -d functions
+          test ! -e dist/functions
+          test ! -e dist/public/portal.html
+          test ! -e dist/public/js/portal.js
+          test ! -e dist/public/api/private
+          grep -q 'href="/portal"' dist/public/usbrin-id.html
