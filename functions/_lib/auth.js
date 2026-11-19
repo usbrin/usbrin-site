@@ -1,4 +1,6 @@
 import {email} from "./security.js";
+import {AuthError} from "./auth-errors.js";
+export {AuthError};
 import {nativeEnabled,nativeSessionIdentity} from "./native-auth.js";
 
 const roles=new Set(["admin","representante","desenvolvedor"]);
@@ -8,14 +10,6 @@ const read=s=>JSON.parse(new TextDecoder().decode(parse64(s)));
 const unavailable=()=>new AuthError("identity_unavailable","A verificação de acesso está temporariamente indisponível.",503);
 const invalidSession=()=>new AuthError("session_required","Entre novamente com seu e-mail autorizado.",401);
 let jwksCache=null;
-
-export class AuthError extends Error{
-  constructor(code,message,status){
-    super(message);
-    this.code=code;
-    this.status=status;
-  }
-}
 
 async function accessKeys(domain,kid){
   const now=Date.now();
