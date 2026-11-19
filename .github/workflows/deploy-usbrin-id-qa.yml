@@ -32,12 +32,22 @@ jobs:
           node --check 'functions/api/private/[[path]].js'
           node --check js/usbrin-id.js
           node --check js/portal.js
+          node --check js/login.js
+          node --check functions/_lib/native-auth.js
+          node --check functions/api/native/login.js
+          node --check functions/api/native/logout.js
+          node --check functions/_lib/native-password.js
+          node --check functions/api/native/password/request.js
+          node --check functions/api/native/password/confirm.js
+          node --check js/senha.js
+          node --check functions/_middleware.js
 
       - name: Run isolated backend and pricing regression tests
         shell: bash
         run: |
           set -euo pipefail
           node --test tests/partners-api.test.mjs
+          node --test tests/native-auth.test.mjs
           node --test tests/studio-pricing.test.cjs
 
       - name: Build allowlisted Cloudflare Pages assets
@@ -53,6 +63,11 @@ jobs:
           test -f dist/public/status-candidatura.html
           test -f dist/public/js/usbrin-id.js
           test -f dist/portal.html
+          test -f dist/login.html
+          test -f dist/senha.html
+          test -f dist/js/senha.js
+          test -f dist/_routes.json
+          test -f functions/_middleware.js
           test -d functions
           test ! -e dist/functions
           test ! -e dist/public/portal.html

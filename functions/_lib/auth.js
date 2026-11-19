@@ -1,4 +1,7 @@
 import {email} from "./security.js";
+import {AuthError} from "./auth-errors.js";
+export {AuthError};
+import {nativeEnabled,nativeSessionIdentity} from "./native-auth.js";
 
 const roles=new Set(["admin","representante","desenvolvedor"]);
 const algorithm={name:"RSASSA-PKCS1-v1_5",hash:"SHA-256"};
@@ -7,14 +10,6 @@ const read=s=>JSON.parse(new TextDecoder().decode(parse64(s)));
 const unavailable=()=>new AuthError("identity_unavailable","A verificação de acesso está temporariamente indisponível.",503);
 const invalidSession=()=>new AuthError("session_required","Entre novamente com seu e-mail autorizado.",401);
 let jwksCache=null;
-
-export class AuthError extends Error{
-  constructor(code,message,status){
-    super(message);
-    this.code=code;
-    this.status=status;
-  }
-}
 
 async function accessKeys(domain,kid){
   const now=Date.now();
@@ -70,6 +65,10 @@ async function verifySession(request,audience,domain){
 }
 
 export async function authenticatedIdentity(request,env,audience=env.USBRIN_ID_ACCESS_AUD){
+  if(nativeEnabled(env)){
+    if(audience!==env.USBRIN_ID_ACCESS_AUD)throw new AuthError("session_required","Autenticação adicional indisponível neste modo.",401);
+    return nativeSessionIdentity(request,env);
+  }
   const url=new URL(request.url),domain=String(env.ACCESS_TEAM_DOMAIN||"").replace(/\/$/,"");
   // The Access application must cover this exact host. Pages shares preview settings across branches.
   if(!env.USBRIN_ID_DB||!env.USBRIN_ID_ACCESS_AUD||!audience||url.protocol!=="https:"||url.host!==env.ACCESS_APP_HOST||

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#101013">
+  <title>Definir senha — USBRIN ID</title>
+  <link rel="icon" href="assets/favicon-small.png">
+  <link rel="stylesheet" href="css/login.css">
+  <script defer src="js/senha.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <a href="parceiros.html" aria-label="USBRIN — Programa de Parceiros">
+      <img src="assets/usbrin-logo-sem-fundo.svg" alt="USBRIN" width="156" height="44">
+    </a>
+    <a href="login.html">Voltar ao login</a>
+  </header>
+  <main>
+    <section class="login-card" aria-labelledby="title">
+      <div class="eyebrow">USBRIN ID · Sua conta</div>
+      <h1 id="title">Definir sua senha</h1>
+      <p class="subtitle" id="instructions">Primeiro acesso ou esqueceu a senha? Enviaremos um link ao e-mail autorizado pela USBRIN.</p>
+      <form id="request-form">
+        <label for="recover-email">E-mail da sua conta</label>
+        <input id="recover-email" type="email" name="email" required maxlength="254"
+          autocomplete="email" placeholder="seuemail@exemplo.com">
+        <button id="request-submit" type="submit">Enviar link de acesso</button>
+      </form>
+      <form id="confirm-form" hidden>
+        <label for="new-password">Nova senha</label>
+        <input id="new-password" type="password" name="password" required
+          autocomplete="new-password" minlength="12" maxlength="128"
+          placeholder="Pelo menos 12 caracteres">
+        <label for="confirm-password">Confirmar nova senha</label>
+        <input id="confirm-password" type="password" name="confirmPassword" required
+          autocomplete="new-password" minlength="12" maxlength="128"
+          placeholder="Repita a nova senha">
+        <button id="confirm-submit" type="submit">Salvar minha senha</button>
+      </form>
+      <p id="password-feedback" class="feedback" role="status" aria-live="polite"></p>
+      <p class="footnote">O link expira em 20 minutos e só pode ser usado uma vez.
+        Se não foi você quem solicitou, ignore o e-mail.
+        <a href="login.html">Voltar ao login</a>.
+      </p>
+    </section>
+  </main>
+  <footer>USBRIN — Sua solução digital.</footer>
+</body>
+</html>

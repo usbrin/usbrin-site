@@ -1,0 +1,8 @@
+One-shot HTTP smoke test for deployed USBRIN ID Native QA.
+No credentials, cookies, or real accounts are used.
+Expected: login and recovery public; portal and private API gated; fake account rejected.
+Does not modify production, Cloudflare Access, customers, or D1 content beyond rate-limit counters for synthetic input.
+
+Rerun: verify Cloudflare Pages extensionless canonicalization and anonymous private boundaries, 2026-11-19.
+
+Rerun: check middleware handles .html private aliases before canonical redirects, 2026-11-19.

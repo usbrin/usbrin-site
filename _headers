@@ -38,5 +38,17 @@
 /usbrin-id
   X-Robots-Tag: noindex, nofollow
 
+/login
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store, private
+
+/login.html
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store, private
+
+/senha.html
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store, private
+
 /public/usbrin-id
   X-Robots-Tag: noindex, nofollow

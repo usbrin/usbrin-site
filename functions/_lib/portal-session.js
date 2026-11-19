@@ -7,7 +7,7 @@ const VERIFY="/api/session/verify";
 const IDLE=30*60;
 const CHALLENGE_TTL=5*60;
 const nowSeconds=()=>Math.floor(Date.now()/1000);
-export const portalSessionEnabled=env=>env.USBRIN_SESSION_EXPERIMENT==="true";
+export const portalSessionEnabled=env=>env.USBRIN_AUTH_MODE!=="native"&&env.USBRIN_SESSION_EXPERIMENT==="true";
 const needSession=()=>new AuthError("usbrin_session_required","Inicie uma nova sessão USBRIN com seu autenticador.",401);
 
 function cookieValue(request,name){

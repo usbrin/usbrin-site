@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "include": [
+    "/api/*",
+    "/public/api/*",
+    "/portal",
+    "/portal/",
+    "/portal.html",
+    "/proposta",
+    "/proposta/",
+    "/proposta.html",
+    "/js/portal.js",
+    "/js/proposta.js"
+  ],
+  "exclude": []
+}

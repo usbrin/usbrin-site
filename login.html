@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#101013">
+  <title>Entrar — USBRIN ID</title>
+  <link rel="icon" href="assets/favicon-small.png">
+  <link rel="stylesheet" href="css/login.css">
+  <script defer src="js/login.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <a href="parceiros.html" aria-label="USBRIN — Programa de Parceiros">
+      <img src="assets/usbrin-logo-sem-fundo.svg" alt="USBRIN" width="156" height="44">
+    </a>
+    <a href="parceiros.html">Voltar ao site</a>
+  </header>
+  <main>
+    <section class="login-card" aria-labelledby="title">
+      <div class="eyebrow">USBRIN ID · Acesso exclusivo</div>
+      <h1 id="title">Entre na sua conta</h1>
+      <p class="subtitle">Acesse seu painel de administração, representação ou desenvolvimento.</p>
+      <form id="login-form" autocomplete="on">
+        <label for="user-email">E-mail</label>
+        <input id="user-email" name="email" type="email" required autocomplete="username"
+          inputmode="email" maxlength="254" placeholder="seuemail@exemplo.com">
+        <label for="user-password">Senha</label>
+        <input id="user-password" name="password" type="password" required autocomplete="current-password"
+          minlength="12" maxlength="128" placeholder="Sua senha">
+        <button id="login-submit" type="submit">Entrar na USBRIN ID</button>
+      </form>
+      <p id="login-feedback" class="feedback" aria-live="polite" role="status"></p>
+      <p class="footnote">Acesso disponível somente para contas aprovadas pela USBRIN.
+        Primeiro acesso ou esqueceu a senha? <a href="senha.html">Definir ou recuperar senha</a>.
+      </p>
+    </section>
+  </main>
+  <footer>USBRIN — Sua solução digital.</footer>
+</body>
+</html>

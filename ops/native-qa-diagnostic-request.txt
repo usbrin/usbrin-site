@@ -1,0 +1,3 @@
+One-shot native QA diagnostics for synthetic account PBKDF2/crypto runtime failure.
+No real credentials, no customer data and no production effects.
+Observe only exception class name. 2026-11-19.
