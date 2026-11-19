@@ -47,6 +47,7 @@ jobs:
           node --test tests/portal-typography.test.cjs
           node --test tests/studio-pricing.test.cjs
           node --test tests/commercial-catalog-sync.test.cjs
+          node --test tests/portfolio*.test.cjs
           node --test tests/native-auth.test.mjs
           node --test tests/zitadel-auth.test.mjs
           node --test tests/zitadel-password.test.mjs
@@ -66,6 +67,9 @@ jobs:
           grep -q 'R$ 1.190,00' dist/index.html
           grep -q 'R$ 1.790,00' dist/index.html
           grep -q 'id="studio-form"' dist/studio.html
+          test -f dist/portfolio.html
+          test -f dist/demo-nimbo.html
+          test -f dist/demo-flor-raiz.html
           test ! -e dist/public/portal.html
           test ! -e dist/public/js/portal.js
           test ! -e dist/functions
@@ -93,6 +97,10 @@ jobs:
           [[ "$home" == *'R$ 690,00'* ]]
           [[ "$home" == *'R$ 1.190,00'* ]]
           [[ "$home" == *'R$ 1.790,00'* ]]
+          gallery="$(curl -fsS --max-time 25 "$base/portfolio")"
+          [[ "$gallery" == *'50 experiências digitais'* ]]
+          demo_status="$(curl -sS --max-time 25 -o /dev/null -w '%{http_code}' "$base/demo-nimbo")"
+          test "$demo_status" = '200'
           partners="$(curl -fsS --max-time 25 "$base/parceiros")"
           [[ "$partners" == *'Quero me candidatar'* ]]
           studio="$(curl -fsS --max-time 25 "$base/studio")"
