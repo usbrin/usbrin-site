@@ -39,8 +39,9 @@ jobs:
           # Verify canonical redirects, not unprotected HTML copies.
           check "/login.html" 308
           check "/senha.html" 308
-          check "/portal.html" 308
-          check "/proposta.html" 308
+          # Middleware intentionally intercepts the protected .html aliases before Pages canonicalization.
+          check "/portal.html" 302
+          check "/proposta.html" 302
 
       - name: Verify live password derivation responds without CPU errors
         shell: bash
