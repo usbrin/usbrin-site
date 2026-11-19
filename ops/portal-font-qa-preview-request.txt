@@ -1,0 +1,4 @@
+QA-only typography preview request, 2026-11-19.
+Target: Cloudflare Pages usbrin-id-native-qa, not usbrin-site.
+Only font-family changes, no auth/business logic changes.
+Apply after test suite; preserve all ZITADEL credentials, D1 binding and current authentication mode.
