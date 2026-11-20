@@ -17,3 +17,5 @@ Requested 2026-11-19.
 2026-11-19: activate QA-only Turnstile widget for synthetic representative applications (@example.com), verify real emails and developer signups blocked; production flags untouched.
 
 2026-11-19: QA-only candidate admin activation guard. Prevent privilege change from approved representative to developer; preserve all applicant data and identity links; exercise complete automated tests before staging.
+
+2026-11-20: repeat QA-only admin role authorization, candidate review and suspension tests; preserve live synthetic application, private ZITADEL login and official production.
