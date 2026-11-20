@@ -999,7 +999,7 @@ test("Gestão de Acessos audits role assignment and a prepared invitation withou
  assert.match(invitation.data.invitation.message,/https:\/\/usbrin-preview\.pages\.dev\/portal/);
  assert.doesNotMatch(invitation.data.invitation.message,/outside\.example/);
  const token=await signed(mail);
- const check=()=>privateAPI({request:new Request("https://usbrin-preview.pages.dev/api/private/desenvolvedor/dashboard",
+ const check=()=>privateAPI({request:new Request("https://usbrin-preview.pages.dev/api/private/representante/dashboard",
    {headers:{"Cf-Access-Jwt-Assertion":token}}),env});
  assert.equal((await check()).status,200);
  assert.equal((await call(admin,"admin/partner-access",{userId:id,status:"suspended",reason:"Suspensão QA em homologação"})).status,200);
