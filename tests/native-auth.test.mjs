@@ -294,8 +294,10 @@ test("native static middleware denies anonymous portal assets without blocking p
   assert.equal(forwarded,2);
   assert.equal((await check("/portal",{runtimeEnv:{...env,USBRIN_PASSWORD_PEPPER:undefined}})).status,503);
   assert.equal(forwarded,2);
-  assert.equal((await check("/portal",{runtimeEnv:{USBRIN_AUTH_MODE:"access"}})).status,200);
-  assert.equal(forwarded,3);
+  // The integrated USBRIN ID release no longer exposes private assets
+  // through an unconfigured legacy Cloudflare Access fallback.
+  assert.equal((await check("/portal",{runtimeEnv:{USBRIN_AUTH_MODE:"access"}})).status,503);
+  assert.equal(forwarded,2);
 });
 
 test("native static middleware allows authorized portal but isolates admin proposal",async()=>{
