@@ -304,8 +304,11 @@ export async function onRequest(context){
       if(b.contractVerified!==true||contractReference.length<5)return error("Confirme a assinatura e informe a referência documental do contrato.");
       const a=await query(db,"SELECT id,name,email,type,status FROM applications WHERE id=?",id).first();
       if(!a||a.status!=="approved")return error("A candidatura ainda não está aprovada.");
+      // A signed contract for one modality must never silently grant a different
+      // role. Any modality change requires a separate reviewed application.
       const role=b.role===undefined?a.type:b.role;
-      if(!partnerRoles.has(role))return error("Escolha um perfil de parceiro autorizado.",400);
+      if(!partnerRoles.has(role)||role!==a.type)
+        return error("O perfil de acesso deve corresponder à modalidade aprovada.",400);
       const userId=fresh();
       const [result]=await db.batch([
         query(db,`INSERT INTO users(id,email,name,role,status,application_id,contract_reference,contract_verified_at,created_at)
