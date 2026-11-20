@@ -43,6 +43,9 @@ jobs:
         run: |
           set -euo pipefail
           node --test tests/recruitment-release.test.mjs
+          node --test tests/portal-auth-failclosed.test.mjs
+          node --test tests/production-readiness.test.cjs
+          node --test tests/production-schema.test.cjs
           node --test tests/partners-api.test.mjs
           node --test tests/portal-typography.test.cjs
           node --test tests/studio-pricing.test.cjs
@@ -51,6 +54,11 @@ jobs:
           node --test tests/native-auth.test.mjs
           node --test tests/zitadel-auth.test.mjs
           node --test tests/zitadel-password.test.mjs
+      - name: Validate production gate script syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/production-readiness.cjs
       - name: Build release preview (no official site deployment)
         run: npm run build
       - name: Verify official offer pages, Studio and partner routes are preserved
