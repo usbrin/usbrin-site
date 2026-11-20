@@ -865,7 +865,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
            try{
              await request('admin/partner-access',{userId:partner.id,status:next,reason:reason.value.trim()});
              await load('partners');
-             message(next==='suspended'?'Acesso bloqueado no servidor.':'Acesso reativado no servidor. Confira também a autorização na Cloudflare.');
+             message(next==='suspended'?'Acesso bloqueado no servidor.':'Acesso reativado no servidor. Confirme as permissões no ZITADEL.');
            }catch(e){message(e.message,true);}
            finally{action.disabled=false;}
          });
@@ -882,7 +882,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
                el('access-invite-text').value=invitation.message;
                el('access-invitation').classList.remove('hidden');
                el('access-invite-text').focus();
-               message('Convite preparado. Confira a liberação no Cloudflare Access antes de enviar.');
+               message('Modelo de convite preparado. Confirme a identidade vinculada no ZITADEL antes de enviar.');
              }catch(e){message(e.message,true);}
              finally{invite.disabled=false;}
            });
@@ -892,14 +892,10 @@ document.addEventListener('DOMContentLoaded',async()=>{
      table(el('access-candidates'),['Candidato','E-mail','Protocolo'],
        candidates.map(x=>[x.name,x.email,x.protocol]),(cell,i)=>{
          const candidate=candidates[i];
-         const label=node('label','Perfil de '+candidate.name,'field-label'),select=node('select');
-         for(const role of ['representante','desenvolvedor']){
-           select.append(new Option(accessRoles[role],role,role===candidate.type,role===candidate.type));
-         }
-         label.append(select);
+         const label=node('p','Perfil aprovado: '+(accessRoles[candidate.type]||candidate.type),'field-label');
          const activate=btn('Ativar parceiro',async()=>{
            activate.disabled=true;
-           try{if(await activatePartner(candidate,select.value)){await load('partners');message('Conta ativada. Prepare o convite após conferir a autorização na Cloudflare.');}}
+           try{if(await activatePartner(candidate,candidate.type)){await load('partners');message('Conta ativada no cadastro. Vincule a identidade aprovada no ZITADEL antes de enviar o convite.');}}
            catch(e){message(e.message,true);}
            finally{activate.disabled=false;}
          });

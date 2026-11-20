@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
  try{
    const resp=await fetch('api/public-config',{cache:'no-store'});
    const cfg=await resp.json();
-   if(!cfg.applicationsOpen||!cfg.turnstileSiteKey){info.textContent='Acompanhamento indisponível enquanto o programa não recebe candidaturas.';return;}
+   if(!cfg.applicationStatusOpen||!cfg.turnstileSiteKey){info.textContent='Acompanhamento temporariamente indisponível. Tente novamente mais tarde.';return;}
    const script=document.createElement('script');script.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';script.async=true;
    script.onload=()=>window.turnstile.render('#status-turnstile',{size:document.getElementById('status-turnstile').clientWidth<300?'compact':'flexible',sitekey:cfg.turnstileSiteKey,action:'usbrin_status',callback:t=>{token=t;button.disabled=false;},'expired-callback':()=>{token='';button.disabled=true;},'error-callback':()=>{token='';button.disabled=true;}});
    script.onerror=()=>{info.textContent='Verificação de segurança temporariamente indisponível.';form.classList.add('hidden');};

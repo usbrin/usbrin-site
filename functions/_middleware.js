@@ -2,8 +2,9 @@ import {nativeEnabled,nativeSessionIdentity,nativeReady} from "./_lib/native-aut
 import {AuthError} from "./_lib/auth-errors.js";
 import {zitadelEnabled,zitadelReady,zitadelSessionIdentity} from "./_lib/zitadel-auth.js";
 
-// Native-mode only: protect static portal pages and their scripts BEFORE Pages serves them.
-// Legacy Cloudflare Access deployments retain their existing Access policy.
+// This release ALWAYS guards sensitive static pages before Pages serves assets.
+// Missing/unknown authentication mode MUST fail closed: Cloudflare Access alone
+// is not an accepted fallback on the integrated release.
 const protectedRoutes=new Map([
   ["/portal","portal"],
   ["/portal/","portal"],
@@ -24,10 +25,15 @@ const secureHeaders={
 
 export async function onRequest(context){
   const {request,env}=context;
-  if(!nativeEnabled(env)&&!zitadelEnabled(env))return context.next();
   const path=new URL(request.url).pathname;
   const required=protectedRoutes.get(path);
   if(!required)return context.next();
+
+  // On a freshly deployed site with no auth variables configured, serving
+  // a static portal page would expose private content before the ID rollout.
+  if(!nativeEnabled(env)&&!zitadelEnabled(env)){
+    return new Response("Acesso temporariamente indisponível.",{status:503,headers:secureHeaders});
+  }
 
   if(request.method!=="GET"&&request.method!=="HEAD"){
     return new Response(null,{status:405,headers:secureHeaders});

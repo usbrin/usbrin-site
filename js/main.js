@@ -21,10 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     navToggle.addEventListener('click', () => setMenu(!mobileNav.classList.contains('open')));
     mobileNav.querySelectorAll('a').forEach(link => link.addEventListener('click', () => {
       setMenu(false);
-      const destination = link.getAttribute('href') || '';
-      const target = destination.startsWith('#') && destination.length > 1
-        ? document.querySelector(destination)
-        : null;
+      const target = document.querySelector(link.getAttribute('href'));
       if (target) { target.setAttribute('tabindex', '-1'); target.focus({preventScroll:true}); }
     }));
     document.addEventListener('keydown', event => {

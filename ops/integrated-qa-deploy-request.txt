@@ -1,0 +1,21 @@
+USBRIN integrated release candidate, QA-only. Prices unchanged; applicants closed.
+Target: usbrin-id-native-qa Pages project, existing isolated D1 and ZITADEL binding.
+Do not modify usbrin-site production, DNS, Cloudflare secrets or APPLICATIONS_ENABLED.
+Test suite must pass before deploy.
+Requested 2026-11-19.
+
+2026-11-19: QA redeploy with independent protected candidate status lookup after registration closes. Flags stay unset and signup disabled.
+
+2026-11-19: stage full official portfolio of 50 demos and preserve private USBRIN ID; test complete catalog, website, Studio, login and campaign; no production deployment.
+
+2026-11-19: final QA deployment of official 50-demo portfolio including four upgraded demos, while preserving closed recruitment and ZITADEL permissions.
+
+2026-11-19 security hardening: fail closed on unconfigured protected assets; audit 19 migrations and Pages production readiness; campaign page reads safe open/closed state. Publish QA only after all tests.
+
+2026-11-19: repeat integrated QA build after updating legacy Access regression: unknown mode must return 503, never serve portal assets.
+
+2026-11-19: activate QA-only Turnstile widget for synthetic representative applications (@example.com), verify real emails and developer signups blocked; production flags untouched.
+
+2026-11-19: QA-only candidate admin activation guard. Prevent privilege change from approved representative to developer; preserve all applicant data and identity links; exercise complete automated tests before staging.
+
+2026-11-20: repeat QA-only admin role authorization, candidate review and suspension tests; preserve live synthetic application, private ZITADEL login and official production.

@@ -981,12 +981,16 @@ test("Gestão de Acessos audits role assignment and a prepared invitation withou
  assert.equal((await access()).data.candidates[0].id,applicantId);
  const details={applicationId:applicantId,contractVerified:true,contractReference:"CONTRATO-QA-2026"};
  assert.equal((await call(admin,"admin/activate",{...details,role:"admin"})).status,400);
- assert.equal((await call(admin,"admin/activate",{...details,role:"desenvolvedor"})).status,200);
+ // The contract and reviewed application authorize the representative role
+ // only. A different role must require a separate approved application.
+ assert.equal((await call(admin,"admin/activate",{...details,role:"desenvolvedor"})).status,400);
+ assert.equal((await access()).data.candidates.length,1);
+ assert.equal((await call(admin,"admin/activate",{...details,role:"representante"})).status,200);
  const after=await access();
  assert.equal(after.data.candidates.length,0);
- assert.equal(after.data.users[0].role,"desenvolvedor");
+ assert.equal(after.data.users[0].role,"representante");
  const id=after.data.users[0].id;
- assert.equal((await call(mail,"me")).data.user.role,"desenvolvedor");
+ assert.equal((await call(mail,"me")).data.user.role,"representante");
  assert.equal((await call(admin,route+"/invitation",{userId:"a1"})).status,404);
  assert.equal((await call(admin,route+"/invitation",{userId:"r1"})).status,409);
  const invitation=await call(admin,route+"/invitation",{userId:id,redirectUrl:"https://outside.example"});
@@ -995,7 +999,7 @@ test("Gestão de Acessos audits role assignment and a prepared invitation withou
  assert.match(invitation.data.invitation.message,/https:\/\/usbrin-preview\.pages\.dev\/portal/);
  assert.doesNotMatch(invitation.data.invitation.message,/outside\.example/);
  const token=await signed(mail);
- const check=()=>privateAPI({request:new Request("https://usbrin-preview.pages.dev/api/private/desenvolvedor/dashboard",
+ const check=()=>privateAPI({request:new Request("https://usbrin-preview.pages.dev/api/private/representante/dashboard",
    {headers:{"Cf-Access-Jwt-Assertion":token}}),env});
  assert.equal((await check()).status,200);
  assert.equal((await call(admin,"admin/partner-access",{userId:id,status:"suspended",reason:"Suspensão QA em homologação"})).status,200);

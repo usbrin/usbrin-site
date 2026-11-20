@@ -1,0 +1,141 @@
+name: USBRIN Integrated Launch - Isolated QA
+
+on:
+  push:
+    branches:
+      - feature/usbrin-lancamento-integrado-qa-20261119
+    paths:
+      - 'ops/integrated-qa-deploy-request.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: usbrin-integrated-launch-qa
+  cancel-in-progress: false
+
+jobs:
+  test-and-stage:
+    if: github.repository == 'usbrin/usbrin-site' && github.ref == 'refs/heads/feature/usbrin-lancamento-integrado-qa-20261119'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact release candidate
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate frontend and backend JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in js/main.js js/candidatura.js js/parceiros-campaign.js js/status-candidatura.js js/portal.js js/studio-pricing.js \
+            functions/api/public-config.js functions/api/applications.js \
+            functions/api/application-status.js functions/_lib/application-availability.js \
+            functions/_lib/zitadel-auth.js functions/_middleware.js; do
+            node --check "$f"
+          done
+      - name: Test commercial consistency, registration safety and account authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test tests/partners-campaign-ui.test.cjs
+          node --test tests/recruitment-release.test.mjs
+          node --test tests/portal-auth-failclosed.test.mjs
+          node --test tests/production-readiness.test.cjs
+          node --test tests/production-schema.test.cjs
+          node --test tests/partners-api.test.mjs
+          node --test tests/portal-typography.test.cjs
+          node --test tests/studio-pricing.test.cjs
+          node --test tests/commercial-catalog-sync.test.cjs
+          node --test tests/portfolio*.test.cjs
+          node --test tests/native-auth.test.mjs
+          node --test tests/zitadel-auth.test.mjs
+          node --test tests/zitadel-password.test.mjs
+      - name: Validate production gate script syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/production-readiness.cjs
+      - name: Build release preview (no official site deployment)
+        run: npm run build
+      - name: Verify official offer pages, Studio and partner routes are preserved
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in index.html studio.html parceiros.html candidatura.html \
+             status-candidatura.html login.html portal.html \
+             css/portal-typography.css js/studio-pricing.js _routes.json; do
+             test -f "dist/$f"
+          done
+          grep -q 'Site Business' dist/index.html
+          grep -q 'R$ 690,00' dist/index.html
+          grep -q 'R$ 1.190,00' dist/index.html
+          grep -q 'R$ 1.790,00' dist/index.html
+          grep -q 'id="studio-form"' dist/studio.html
+          test -f dist/portfolio.html
+          test -f dist/demo-nimbo.html
+          test -f dist/demo-flor-raiz.html
+          test -f dist/js/parceiros-campaign.js
+          test -f dist/public/js/parceiros-campaign.js
+          test ! -e dist/public/portal.html
+          test ! -e dist/public/js/portal.js
+          test ! -e dist/functions
+          node -e "const r=require('./dist/_routes.json');for(const p of ['/portal','/portal.html','/js/portal.js','/api/*'])if(!r.include.includes(p))throw Error('Unprotected route: '+p)"
+      - name: Deploy exclusively to isolated USBRIN ID QA (never official site)
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: '25eaef72c8dbc252be724778072cb0e4'
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_API_TOKEN:-}"
+          npx --yes wrangler@4.163.0 pages deploy ./dist \
+            --project-name=usbrin-id-native-qa --branch=native-qa
+      - name: Verify public QA content and fail-closed private pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://usbrin-id-native-qa.pages.dev'
+          for n in 1 2 3 4 5; do
+            home="$(curl -fsS --max-time 25 "$base/")"
+            if [[ "$home" == *'Site Business'* ]]; then break; fi
+            sleep 3
+          done
+          [[ "$home" == *'R$ 690,00'* ]]
+          [[ "$home" == *'R$ 1.190,00'* ]]
+          [[ "$home" == *'R$ 1.790,00'* ]]
+          gallery="$(curl -fsS --max-time 25 "$base/portfolio")"
+          [[ "$gallery" == *'50 experiências digitais'* ]]
+          demo_status="$(curl -sS --max-time 25 -o /dev/null -w '%{http_code}' "$base/demo-nimbo")"
+          test "$demo_status" = '200'
+          partners="$(curl -fsS --max-time 25 "$base/parceiros")"
+          [[ "$partners" == *'id="representative-availability"'* ]]
+          [[ "$partners" == *'js/parceiros-campaign.js'* ]]
+          studio="$(curl -fsS --max-time 25 "$base/studio")"
+          [[ "$studio" == *'id="studio-form"'* ]]
+          statuspage="$(curl -fsS --max-time 25 "$base/status-candidatura")"
+          [[ "$statuspage" == *'Acompanhe sua candidatura'* ]]
+          cfg="$(curl -fsS --max-time 25 "$base/api/public-config")"
+          # QA may expose only a synthetic-data representative preview; never real enrollment.
+          node -e 'const c=JSON.parse(process.argv[1]);const p=c.representativePreview===true;const valid=p?(c.applicationsOpen===true&&c.applicationStatusOpen===true&&c.applicationTypes?.length===1&&c.applicationTypes[0]==="representante"&&typeof c.turnstileSiteKey==="string"):(c.applicationsOpen===false&&c.applicationStatusOpen===false&&c.applicationTypes?.length===0);if(!valid)process.exit(1)' "$cfg"
+          if echo "$cfg" | grep -q '"representativePreview":true'; then
+            invalid_email_status="$(curl -sS --max-time 25 -o /dev/null -w '%{http_code}' -X POST "$base/api/applications" \
+              -H 'origin: https://usbrin-id-native-qa.pages.dev' -H 'content-type: application/json' \
+              --data-binary '{"type":"representante","name":"Candidato QA","email":"pessoa@invalid.org","phone":"69999999999","city":"Porto Velho","state":"RO","experience":"Atendimento comercial profissional.","motivation":"Gostaria de prospectar clientes para a USBRIN.","privacy":true}')"
+            dev_status="$(curl -sS --max-time 25 -o /dev/null -w '%{http_code}' -X POST "$base/api/applications" \
+              -H 'origin: https://usbrin-id-native-qa.pages.dev' -H 'content-type: application/json' \
+              --data-binary '{"type":"desenvolvedor"}')"
+            test "$invalid_email_status" = '400'
+            test "$dev_status" = '503'
+          fi
+          auth="$(curl -sS --max-time 25 -o /dev/null -w '%{http_code}' "$base/login")"
+          portal="$(curl -sS --max-time 25 --max-redirs 0 -o /dev/null -w '%{http_code}' "$base/portal")"
+          private="$(curl -sS --max-time 25 -o /dev/null -w '%{http_code}' "$base/api/private/me")"
+          echo "QA login=$auth, anonymous portal=$portal, private API=$private; real recruitment remains closed"
+          test "$auth" = '200'
+          test "$portal" = '302'
+          test "$private" = '401'
