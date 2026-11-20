@@ -135,7 +135,7 @@ jobs:
           auth="$(curl -sS --max-time 25 -o /dev/null -w '%{http_code}' "$base/login")"
           portal="$(curl -sS --max-time 25 --max-redirs 0 -o /dev/null -w '%{http_code}' "$base/portal")"
           private="$(curl -sS --max-time 25 -o /dev/null -w '%{http_code}' "$base/api/private/me")"
-          echo "QA login=$auth, anonymous portal=$portal, private API=$private; candidate submissions closed"
+          echo "QA login=$auth, anonymous portal=$portal, private API=$private; real recruitment remains closed"
           test "$auth" = '200'
           test "$portal" = '302'
           test "$private" = '401'
