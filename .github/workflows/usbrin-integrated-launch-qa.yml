@@ -32,7 +32,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for f in js/main.js js/candidatura.js js/status-candidatura.js js/portal.js js/studio-pricing.js \
+          for f in js/main.js js/candidatura.js js/parceiros-campaign.js js/status-candidatura.js js/portal.js js/studio-pricing.js \
             functions/api/public-config.js functions/api/applications.js \
             functions/api/application-status.js functions/_lib/application-availability.js \
             functions/_lib/zitadel-auth.js functions/_middleware.js; do
@@ -42,6 +42,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          node --test tests/partners-campaign-ui.test.cjs
           node --test tests/recruitment-release.test.mjs
           node --test tests/portal-auth-failclosed.test.mjs
           node --test tests/production-readiness.test.cjs
@@ -78,6 +79,8 @@ jobs:
           test -f dist/portfolio.html
           test -f dist/demo-nimbo.html
           test -f dist/demo-flor-raiz.html
+          test -f dist/js/parceiros-campaign.js
+          test -f dist/public/js/parceiros-campaign.js
           test ! -e dist/public/portal.html
           test ! -e dist/public/js/portal.js
           test ! -e dist/functions
@@ -110,7 +113,8 @@ jobs:
           demo_status="$(curl -sS --max-time 25 -o /dev/null -w '%{http_code}' "$base/demo-nimbo")"
           test "$demo_status" = '200'
           partners="$(curl -fsS --max-time 25 "$base/parceiros")"
-          [[ "$partners" == *'Quero me candidatar'* ]]
+          [[ "$partners" == *'id="representative-availability"'* ]]
+          [[ "$partners" == *'js/parceiros-campaign.js'* ]]
           studio="$(curl -fsS --max-time 25 "$base/studio")"
           [[ "$studio" == *'id="studio-form"'* ]]
           statuspage="$(curl -fsS --max-time 25 "$base/status-candidatura")"
