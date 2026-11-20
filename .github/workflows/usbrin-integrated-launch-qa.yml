@@ -120,7 +120,18 @@ jobs:
           statuspage="$(curl -fsS --max-time 25 "$base/status-candidatura")"
           [[ "$statuspage" == *'Acompanhe sua candidatura'* ]]
           cfg="$(curl -fsS --max-time 25 "$base/api/public-config")"
-          node -e "const o=JSON.parse(process.argv[1]);if(o.applicationsOpen!==false||o.applicationStatusOpen!==false||o.applicationTypes?.length)throw Error('QA recruitment must remain closed')" "$cfg"
+          # QA may expose only a synthetic-data representative preview; never real enrollment.
+          node -e 'const c=JSON.parse(process.argv[1]);const p=c.representativePreview===true;const valid=p?(c.applicationsOpen===true&&c.applicationStatusOpen===true&&c.applicationTypes?.length===1&&c.applicationTypes[0]==="representante"&&typeof c.turnstileSiteKey==="string"):(c.applicationsOpen===false&&c.applicationStatusOpen===false&&c.applicationTypes?.length===0);if(!valid)process.exit(1)' "$cfg"
+          if echo "$cfg" | grep -q '"representativePreview":true'; then
+            invalid_email_status="$(curl -sS --max-time 25 -o /dev/null -w '%{http_code}' -X POST "$base/api/applications" \
+              -H 'origin: https://usbrin-id-native-qa.pages.dev' -H 'content-type: application/json' \
+              --data-binary '{"type":"representante","name":"Candidato QA","email":"pessoa@invalid.org","phone":"69999999999","city":"Porto Velho","state":"RO","experience":"Atendimento comercial profissional.","motivation":"Gostaria de prospectar clientes para a USBRIN.","privacy":true}')"
+            dev_status="$(curl -sS --max-time 25 -o /dev/null -w '%{http_code}' -X POST "$base/api/applications" \
+              -H 'origin: https://usbrin-id-native-qa.pages.dev' -H 'content-type: application/json' \
+              --data-binary '{"type":"desenvolvedor"}')"
+            test "$invalid_email_status" = '400'
+            test "$dev_status" = '503'
+          fi
           auth="$(curl -sS --max-time 25 -o /dev/null -w '%{http_code}' "$base/login")"
           portal="$(curl -sS --max-time 25 --max-redirs 0 -o /dev/null -w '%{http_code}' "$base/portal")"
           private="$(curl -sS --max-time 25 -o /dev/null -w '%{http_code}' "$base/api/private/me")"
