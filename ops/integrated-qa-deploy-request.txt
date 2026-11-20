@@ -13,3 +13,5 @@ Requested 2026-11-19.
 2026-11-19 security hardening: fail closed on unconfigured protected assets; audit 19 migrations and Pages production readiness; campaign page reads safe open/closed state. Publish QA only after all tests.
 
 2026-11-19: repeat integrated QA build after updating legacy Access regression: unknown mode must return 503, never serve portal assets.
+
+2026-11-19: activate QA-only Turnstile widget for synthetic representative applications (@example.com), verify real emails and developer signups blocked; production flags untouched.
