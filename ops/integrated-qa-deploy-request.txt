@@ -9,3 +9,5 @@ Requested 2026-11-19.
 2026-11-19: stage full official portfolio of 50 demos and preserve private USBRIN ID; test complete catalog, website, Studio, login and campaign; no production deployment.
 
 2026-11-19: final QA deployment of official 50-demo portfolio including four upgraded demos, while preserving closed recruitment and ZITADEL permissions.
+
+2026-11-19 security hardening: fail closed on unconfigured protected assets; audit 19 migrations and Pages production readiness; campaign page reads safe open/closed state. Publish QA only after all tests.
