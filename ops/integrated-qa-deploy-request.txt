@@ -15,3 +15,5 @@ Requested 2026-11-19.
 2026-11-19: repeat integrated QA build after updating legacy Access regression: unknown mode must return 503, never serve portal assets.
 
 2026-11-19: activate QA-only Turnstile widget for synthetic representative applications (@example.com), verify real emails and developer signups blocked; production flags untouched.
+
+2026-11-19: QA-only candidate admin activation guard. Prevent privilege change from approved representative to developer; preserve all applicant data and identity links; exercise complete automated tests before staging.
