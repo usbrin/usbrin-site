@@ -47,7 +47,7 @@ Valores são referências para escopos definidos e sujeitos à proposta definiti
 
 ## Ambientes reais — conferidos em 19/11/2026
 - `usbrin-site` é o projeto Pages atualmente associado ao site oficial, com branch de produção `feature/usbrin-studio-mvp`. Não possui hoje D1 nem variáveis/segredos de autenticação registrados em sua configuração de produção. **Não publicar este bundle sem configurar controles e ambiente definitivos.**
-- `usbrin-id-native-qa` é o ambiente isolado já funcional para autenticação real (ZITADEL + D1 QA); permanece sem inscrições e sem envio de reset.
+- `usbrin-id-native-qa` é o ambiente isolado de autenticação real (ZITADEL + D1 QA), sem reset de senha ou inscrição real. Um widget Turnstile QA dedicado ao host `usbrin-id-native-qa.pages.dev` foi criado, com `TURNSTILE_SECRET` armazenado como Cloudflare Secret. As flags `REPRESENTATIVE_APPLICATIONS_PREVIEW` e `ACCESS_APP_HOST` habilitam somente candidaturas de representante com **e-mail fictício `@example.com`**; não aceitar e-mails reais. `APPLICATIONS_ENABLED=false` continua ativo. Essa prévia será validada manualmente antes de considerar o fluxo homologado.
 - `usbrin-partners-qa` é um projeto antigo de testes do programa de parceiros, com inscrições desativadas e sem ser origem de produção.
 - Branch de homologação `feature/usbrin-lancamento-integrado-qa-20261119`, derivada da tipografia homologada, com home e tabela comercial alinhadas à branch do site oficial. Mantém a versão mais recente do Studio com formulário opcional de contato.
 
